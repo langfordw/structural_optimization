@@ -7,6 +7,25 @@ var camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.inner
 
 var wrapper = new THREE.Object3D();//object to set global scale and position
 
+var reflectionCube;
+var refractionCube;
+
+function loadCubeMap() { 
+// Define the urls for the cube map textures 
+var path = "textures/cube/SwedishRoyalCastle/";
+var format = '.jpg';
+var urls = [
+		path + 'px' + format, path + 'nx' + format,
+		path + 'py' + format, path + 'ny' + format,
+		path + 'pz' + format, path + 'nz' + format
+	];
+reflectionCube = new THREE.CubeTextureLoader().load( urls );
+reflectionCube.format = THREE.RGBFormat;
+
+refractionCube = new THREE.CubeTextureLoader().load( urls );
+refractionCube.mapping = THREE.CubeRefractionMapping;
+refractionCube.format = THREE.RGBFormat;
+}
 
 function initThreeJS() {
 	container = document.createElement( 'div' );
@@ -36,6 +55,13 @@ function initThreeJS() {
 	renderer.shadowMap.enabled = true;
 	container.appendChild( renderer.domElement );
 
+	var ambient = new THREE.AmbientLight( 0xffffff );
+	scene.add( ambient );
+
+	pointLight = new THREE.PointLight( 0xffffff, 1 );
+	pointLight.position.x = -200;
+	scene.add( pointLight );
+
 	var info = document.createElement( 'div' );
 	info.style.position = 'absolute';
 	info.style.top = '10px';
@@ -56,15 +82,14 @@ function initThreeJS() {
 	// Controls
 	controls = new THREE.OrbitControls( camera, renderer.domElement );
 	controls.damping = 0.2;
-	controls.enableRotate = false;
+	// controls.enableRotate = false;
 	controls.addEventListener( 'change', render );
 	controls.target = new THREE.Vector3(camera_center.x,0,camera_center.z);
-	// console.log(controls.getPolarAngle())
-	// console.log(controls.getAzimuthalAngle())
-	// controls.reset();
 	controls.rotateLeft(Math.PI/2);
 
 	scene.add(wrapper);
+
+	// loadCubeMap();
 }
 
 function sceneAdd(object){
@@ -76,6 +101,7 @@ function sceneClear(){
 }
 
 function render(){
+	// updateGeometry();
     renderer.render(scene, camera);
 }
 
