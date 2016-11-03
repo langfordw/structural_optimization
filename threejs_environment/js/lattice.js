@@ -159,11 +159,11 @@ function Beam(nodes, index) {
 
 Beam.prototype.updatePosition = function(){
     this.object3D.geometry.verticesNeedUpdate = true;
-    // this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
+    this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
     // this.object3D.geometry.normalsNeedUpdate = true;
     // this.object3D.geometry.computeFaceNormals();
     // this.object3D.geometry.computeVertexNormals();
-    this.object3D.geometry.computeBoundingSphere(); // this is very expensive (roughly doubles the compute time for an update)
+    // this.object3D.geometry.computeBoundingSphere(); // this is very expensive (roughly doubles the compute time for an update)
 };
 
 Beam.prototype.getAngle = function(fromNode) {
@@ -251,11 +251,20 @@ function generateGeometry() {
 			// positive slope diagonals
 			if (j > 0 && i > 0){
 
-				if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
+				// if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
+				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
+				// 	_beams.push(beam)
+				// }
+				// if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
+				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
+				// 	_beams.push(beam)
+				// }
+
+				if (i == 1 && j != 1 && j != globals.ntall-1){
 					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
 					_beams.push(beam)
 				}
-				if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
+				if (j == 1 && i != 1 && i != globals.nwide-1){
 					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
 					_beams.push(beam)
 				}
@@ -306,7 +315,7 @@ function updatePositions(x) {
 	// this is rather expensive and accounts for ~10% of the running time of the objective function
 	var index = 0;
 	for (var i=0; i < geom.nodes.length; i++) {
-		geom.nodes[i].move(new THREE.Vector3(x[index],0,x[index+1])) 
+		geom.nodes[i].move(new THREE.Vector3(x[index],0,x[index+1]));
 		index += 2;
 	}
 }
@@ -355,7 +364,7 @@ function objectiveFunction(n,m,x,con) {
 			index +=2;
 		}
 	}
-	
+
 	console.log(con)
 	return potentialEnergy(geom)
 }
@@ -433,7 +442,7 @@ function initLattice() {
 
 	// geom.nodes[1].move(new THREE.Vector3(-30,0,-100));
 	// potentialEnergy(geom);
-	geom.nodes[2].addDisplacement( new THREE.Vector3(-10,0,0) )
+	geom.nodes[2].addDisplacement( new THREE.Vector3(-30,0,0) )
 	solveNums = calculateSolveNums();
 	// var x = new Array(solveNums.n);
 	// var con = new Array(solveNums.m);
