@@ -1,6 +1,6 @@
 var globals = {
 	nwide: 4,
-	ntall: 3
+	ntall: 4
 };
 
 var nodeMat = new THREE.MeshBasicMaterial({color: 0x259997});
@@ -19,7 +19,11 @@ function displayFixedTriangle(node) {
 	// 	envMap: reflectionCube, 
 	// 	combine: THREE.MixOperation, 
 	// 	reflectivity: 0.1 } );
-	var material = new THREE.MeshBasicMaterial( {color: 0x4E0463} );
+	if (node.fixed_dof.x && node.fixed_dof.z) {
+		var material = new THREE.MeshBasicMaterial( {color: 0x4E0463} );
+	} else {
+		var material = new THREE.MeshBasicMaterial( {color: 0x9E0463} );
+	}
 	var triangle = new THREE.Mesh(fixedGeo, material);
 	triangle.position.add(node.getPosition());
 	sceneAdd(triangle)
@@ -39,6 +43,7 @@ function Node(position, index) {
 	sceneAdd(this.object3D);
 	this.beams = [];
 	this.fixed = false;
+	this.fixed_dof = {x:0,z:0};
 	this.externalForce = null;
 	this.springs = [];
 	this.x0 = position.x;
@@ -69,6 +74,7 @@ Node.prototype.getPosition = function() {
 }
 
 Node.prototype.move = function(position){
+	// this routine is expensive
     this.object3D.position.set(position.x, position.y, position.z);
     for (i=0; i < this.beams.length; i++) {
         this.beams[i].updatePosition();
@@ -79,8 +85,9 @@ Node.prototype.getIndex = function() {
 	return this.index;
 }
 
-Node.prototype.setFixed = function(fixed) {
+Node.prototype.setFixed = function(fixed,dof_object) {
 	this.fixed = fixed;
+	this.fixed_dof = dof_object;
 	displayFixedTriangle(this);
 }
 
@@ -135,6 +142,7 @@ function Beam(nodes, index) {
 	this.vertices = [nodes[0].getPosition(), nodes[1].getPosition()];
 	this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
 	this.len0 = this.len;
+	this.k = 10;
 
 	// BEAMS AS LINES
 	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
@@ -151,11 +159,11 @@ function Beam(nodes, index) {
 
 Beam.prototype.updatePosition = function(){
     this.object3D.geometry.verticesNeedUpdate = true;
-    this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
+    // this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
     // this.object3D.geometry.normalsNeedUpdate = true;
     // this.object3D.geometry.computeFaceNormals();
     // this.object3D.geometry.computeVertexNormals();
-    this.object3D.geometry.computeBoundingSphere();
+    this.object3D.geometry.computeBoundingSphere(); // this is very expensive (roughly doubles the compute time for an update)
 };
 
 Beam.prototype.getAngle = function(fromNode) {
@@ -164,12 +172,27 @@ Beam.prototype.getAngle = function(fromNode) {
 	return Math.atan2(node2.z-fromNode.z, node2.x-fromNode.x);
 };
 
+Beam.prototype.getPE = function() {
+	return (this.k * Math.pow(this.len-this.len0,2));
+};
+
 function Spring(node, beam1, beam2) {
 	this.node = node;
 	this.beams = [];
 	this.beams.push(beam1);
 	this.fixed = node.fixed;
-	this.k = 50;
+	this.k = 1;
+
+	// if (node.getPosition().x == 0) {
+	// 	this.k = 50;
+	// }
+	// if (node.getPosition().equals(new THREE.Vector3(0,0,0))) {
+	// 	this.k = 1;
+	// }
+	// if (node.getPosition().z == 0) {
+	// 	this.k = 500;
+	// }
+
 	if (!this.fixed) {
 		this.beams.push(beam2);
 	}
@@ -227,7 +250,12 @@ function generateGeometry() {
 
 			// positive slope diagonals
 			if (j > 0 && i > 0){
-				if (i == 2){
+
+				if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
+					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
+					_beams.push(beam)
+				}
+				if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
 					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
 					_beams.push(beam)
 				}
@@ -264,14 +292,21 @@ function potentialEnergy(_geom) {
 			sum_PE += nodes[i].springs[j].getPE();
 		}		
 	}
+
+	// for (var i=0; i < beams.length; i++) {
+	// 	sum_PE += beams[i].getPE();
+	// }
+
 	// console.log(sum_PE);
+	// console.log(nodes);
 	return 0.5*sum_PE;
 }
 
 function updatePositions(x) {
+	// this is rather expensive and accounts for ~10% of the running time of the objective function
 	var index = 0;
 	for (var i=0; i < geom.nodes.length; i++) {
-		geom.nodes[i].move(new THREE.Vector3(x[index],0,x[index+1]))
+		geom.nodes[i].move(new THREE.Vector3(x[index],0,x[index+1])) 
 		index += 2;
 	}
 }
@@ -294,47 +329,73 @@ function objectiveFunction(n,m,x,con) {
 
 	//constraints
 	var index = 0;
+
+	// beam length
 	for (var i=0; i < geom.beams.length; i++) {
 		con[index] = geom.beams[i].len - geom.beams[i].len0
 		con[index+1] = -(geom.beams[i].len - geom.beams[i].len0)
 		index += 2
 	}
 
+	// fixed and displaced nodes
 	for (var i = 0; i < geom.nodes.length; i++) {
-		if (geom.nodes[i].fixed) {
-			con[index] = geom.nodes[i].getPosition().x - geom.nodes[i].x0
-			con[index+1] = -(geom.nodes[i].getPosition().x - geom.nodes[i].x0)
-			con[index+2] =  geom.nodes[i].getPosition().z - geom.nodes[i].z0
-			con[index+3] =  -(geom.nodes[i].getPosition().z - geom.nodes[i].z0)
-			index += 4;
+		if (geom.nodes[i].fixed_dof.x) {
+			con[index] = geom.nodes[i].getPosition().x - geom.nodes[i].x0;
+			con[index+1] = -(geom.nodes[i].getPosition().x - geom.nodes[i].x0);
+			index += 2;
 		}
-
+		if (geom.nodes[i].fixed_dof.z) {
+			con[index] =  geom.nodes[i].getPosition().z - geom.nodes[i].z0
+			con[index+1] =  -(geom.nodes[i].getPosition().z - geom.nodes[i].z0)
+			index += 2;
+		}
 		if (geom.nodes[i].displacement != null) {
 			con[index] = geom.nodes[i].getPosition().x - (geom.nodes[i].x0-geom.nodes[i].displacement.x);
 			con[index+1] = -(geom.nodes[i].getPosition().x - (geom.nodes[i].x0-geom.nodes[i].displacement.x));
 			index +=2;
 		}
 	}
-
-	// con[index] = geom.nodes[1].getPosition().x - (geom.nodes[1].x0+60);
-	// con[index+1] = -(geom.nodes[1].getPosition().x - (geom.nodes[1].x0+60));
 	
-	// console.log(con)
+	console.log(con)
 	return potentialEnergy(geom)
 }
 
-function solveEquilibrium() {
-	var n=geom.nodes.length*2; 			// + of variables
+function solveEquilibrium(solveNums) {
+	var n=solveNums.n; 			// + of variables
 	var x=new Array(n);
-	var m=(geom.beams.length + 4 + 1)*2; 			// number of constraints
+	var m=solveNums.m; 			// number of constraints
 	var rhobeg = 5.0;	// Various Cobyla constants, see Cobyla docs in Cobyja.js
 	var rhoend = 1.0e-6;
 	var iprint = 1;
-	var maxfun = 1500;
+	var maxfun = 1000;
 
 	x = getX(x);
 
 	var r=FindMinimum(objectiveFunction, n,  m, x, rhobeg, rhoend,  iprint,  maxfun);
+}
+
+function calculateSolveNums() {
+	var _n = geom.nodes.length*2; // number of variables
+	var _m = 0; // number of constraints
+	for (var i = 0; i < geom.nodes.length; i++) {
+		if (geom.nodes[i].fixed) {
+			if (geom.nodes[i].fixed_dof.x && geom.nodes[i].fixed_dof.z) {
+				_m += 2;
+			} else {
+				_m +=1 ;
+			}
+		}
+		if (geom.nodes[i].displacement != null) {
+			_m += 1;
+		}
+	}
+	_m += geom.beams.length;
+	_m *= 2;
+
+	return {
+		n: _n,
+		m: _m 
+	};
 }
 
 var f = 0;
@@ -366,14 +427,24 @@ function refreshPoints() {
 
 function initLattice() {
 	geom = generateGeometry()
-	geom.nodes[0].setFixed(true);
-	geom.nodes[globals.ntall*(globals.nwide-1)].setFixed(true);
+	geom.nodes[globals.ntall].setFixed(true,{x:1,z:1});
+	// geom.nodes[3].setFixed(true,{x:1,z:0});
+	geom.nodes[globals.ntall*(globals.nwide-2)].setFixed(true,{x:1,z:1});
 
 	// geom.nodes[1].move(new THREE.Vector3(-30,0,-100));
 	// potentialEnergy(geom);
-	geom.nodes[2].addDisplacement( new THREE.Vector3(-100,0,0) )
+	geom.nodes[2].addDisplacement( new THREE.Vector3(-10,0,0) )
+	solveNums = calculateSolveNums();
+	// var x = new Array(solveNums.n);
+	// var con = new Array(solveNums.m);
 	var start = new Date().getTime();
-	solveEquilibrium();
+	solveEquilibrium(solveNums);
+	// for (var i = 0; i < 10000; i++) {
+	// 	// console.log(solveNums)
+	// 	x=getX(x);
+	// 	x[0] += 0.001
+	// 	objectiveFunction(solveNums.n,solveNums.m,x,con);
+	// }
 	var dt = new Date().getTime() - start;
 	console.log('Solved in ' + dt + 'ms');
 	console.log(geom.nodes);
