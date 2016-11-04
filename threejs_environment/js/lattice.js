@@ -301,11 +301,28 @@ function generateGeometry() {
 					_beams.push(beam)
 					beam_index++;
 				}
-				if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
+				if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
 					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
 					_beams.push(beam)
 					beam_index++;
 				}
+
+				if (j == 2 && i ==2) {
+					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+					_beams.push(beam)
+					beam_index++;
+				}
+
+				// if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
+				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+				// 	_beams.push(beam)
+				// 	beam_index++;
+				// }
+				// if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
+				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+				// 	_beams.push(beam)
+				// 	beam_index++;
+				// }
 
 				// if (i == 1 && j != 1 && j != globals.ntall-1){
 				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
@@ -526,6 +543,7 @@ function DirectStiffnessSolver(nodes, beams, constraints) {
 	this.K = new jsfeat.matrix_t(num_node_dofs, num_node_dofs, data_type);
 	this.u = new jsfeat.matrix_t(num_node_dofs, 1, data_type);
 	this.f = new jsfeat.matrix_t(num_beams, 1, data_type);
+	this.tmp = new jsfeat.matrix_t(num_beams, num_node_dofs, data_type)
 }
 
 DirectStiffnessSolver.prototype.assemble_AX = function() {
@@ -535,12 +553,12 @@ DirectStiffnessSolver.prototype.assemble_AX = function() {
 		if (!node.fixed) {
 			for (var j=0; j < this.beams.length; j++) {
 				var beam = this.beams[i];
-				this.A[index+this.num_beams*beam.index] = Math.cos(beam.getAngle(node.getPosition()));
-				this.A[(index+1)+this.num_beams*beam.index] = Math.sin(beam.getAngle(node.getPosition()));
+				this.A.data[index+this.num_beams*beam.index] = Math.cos(beam.getAngle(node.getPosition()));
+				this.A.data[(index+1)+this.num_beams*beam.index] = Math.sin(beam.getAngle(node.getPosition()));
 			}
 			if (node.externalForce != null) {
-				this.X[index] = node.externalForce.x;
-				this.X[index+1] = node.externalForce.z;
+				this.X.data[index] = node.externalForce.x;
+				this.X.data[index+1] = node.externalForce.z;
 			}
 			index += 2;
 		}
@@ -554,12 +572,20 @@ DirectStiffnessSolver.prototype.assemble_AX = function() {
 DirectStiffnessSolver.prototype.assemble_k = function() {
 	for (var i = 0; i < this.beams.length; i++) {
 		var beam = this.beams[i];
-		this.k[i+i*this.num_beams] = beam.k;
+		this.k.data[i+this.num_beams*i] = beam.k;
 	}
+	return this.k
 }
 
 DirectStiffnessSolver.prototype.calculate_K = function() {
+	jsfeat.matmath.multiply(this.tmp, this.A, this.k);
+	// jsfeat.matmath.multiply_ABt(this.K, this.tmp, this.A);
+	return this.tmp
+}
 
+DirectStiffnessSolver.prototype.calculate_U = function() {
+	jsfeat.linalg.cholesky_solve(this.K, this.X);
+	return this.X
 }
 
 function initLattice() {
@@ -571,7 +597,8 @@ function initLattice() {
 	geom.nodes[globals.ntall*(globals.nwide-2)].setFixed(true,{x:1,z:1});
 
 	// prescribe displacements
-	geom.nodes[2].addDisplacement( new THREE.Vector3(80,0,0) )
+	// geom.nodes[2].addDisplacement( new THREE.Vector3(80,0,0) )
+	geom.nodes[2].addExternalForce( new THREE.Vector3(80,0,0));
 
 	// setup solve
 	solveNums = calculateSolveNums();
@@ -583,6 +610,10 @@ function initLattice() {
 	var start = new Date().getTime();
 	solver = new DirectStiffnessSolver(geom.nodes,geom.beams,[geom.nodes[globals.ntall]]);
 	console.log(solver.assemble_AX())
+	console.log(solver.assemble_k())
+	console.log(solver.calculate_K())
+	// console.log()
+	console.log(solver.calculate_U())
 	// solveEquilibrium(solveNums);
 	// console.log(dLdx())
 	// x = newton(x);
@@ -593,7 +624,7 @@ function initLattice() {
 
 
 	// update graphics
-	drawDisplacementArrow(geom.nodes[2]);
+	// drawDisplacementArrow(geom.nodes[2]);
 	
 }
 
