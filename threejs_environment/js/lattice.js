@@ -6,6 +6,8 @@ var globals = {
 var nodeMat = new THREE.MeshBasicMaterial({color: 0x259997});
 var nodeGeo = new THREE.SphereGeometry(6,20,20);
 
+var arrow;
+
 function displayFixedTriangle(node) {
 	_sideLength = 30
 	var y = Math.sqrt(Math.pow(_sideLength,2) - Math.pow(_sideLength/2,2));
@@ -27,6 +29,15 @@ function displayFixedTriangle(node) {
 	var triangle = new THREE.Mesh(fixedGeo, material);
 	triangle.position.add(node.getPosition());
 	sceneAdd(triangle)
+}
+
+function drawDisplacementArrow(node) {
+	var hex = 0xff0088;
+
+	arrow = new THREE.ArrowHelper( node.displacement, node.getPosition().clone().sub(node.displacement).sub(new THREE.Vector3(5,0,0)), 
+				Math.abs(node.displacement.x), hex, 10, 20 );
+	arrow.line.material = new THREE.LineBasicMaterial( { color: hex, linewidth: 14})
+	sceneAdd(arrow);
 }
 
 function Node(position, index) {
@@ -53,6 +64,7 @@ function Node(position, index) {
 
 Node.prototype.addDisplacement = function(displacement_vector) {
 	this.displacement = displacement_vector;
+	// drawDisplacementArrow(this);
 }
 
 Node.prototype.addExternalForce = function(force_vector) {
@@ -251,23 +263,23 @@ function generateGeometry() {
 			// positive slope diagonals
 			if (j > 0 && i > 0){
 
-				// if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
-				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
-				// 	_beams.push(beam)
-				// }
-				// if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
-				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
-				// 	_beams.push(beam)
-				// }
+				if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
+					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
+					_beams.push(beam)
+				}
+				if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
+					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
+					_beams.push(beam)
+				}
 
-				if (i == 1 && j != 1 && j != globals.ntall-1){
-					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
-					_beams.push(beam)
-				}
-				if (j == 1 && i != 1 && i != globals.nwide-1){
-					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
-					_beams.push(beam)
-				}
+				// if (i == 1 && j != 1 && j != globals.ntall-1){
+				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
+				// 	_beams.push(beam)
+				// }
+				// if (j == 1 && i != 1 && i != globals.nwide-1){
+				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
+				// 	_beams.push(beam)
+				// }
 			}	
 
 			// // negative slope diagonals
@@ -359,13 +371,13 @@ function objectiveFunction(n,m,x,con) {
 			index += 2;
 		}
 		if (geom.nodes[i].displacement != null) {
-			con[index] = geom.nodes[i].getPosition().x - (geom.nodes[i].x0-geom.nodes[i].displacement.x);
-			con[index+1] = -(geom.nodes[i].getPosition().x - (geom.nodes[i].x0-geom.nodes[i].displacement.x));
+			con[index] = geom.nodes[i].getPosition().x - (geom.nodes[i].x0+geom.nodes[i].displacement.x);
+			con[index+1] = -(geom.nodes[i].getPosition().x - (geom.nodes[i].x0+geom.nodes[i].displacement.x));
 			index +=2;
 		}
 	}
 
-	console.log(con)
+	// console.log(con)
 	return potentialEnergy(geom)
 }
 
@@ -434,6 +446,35 @@ function refreshPoints() {
 	geom.nodes[globals.ntall*(globals.nwide-1)].setFixed(true);
 }
 
+function dLdx(x) {
+	var x = new Array(solveNums.n);
+	var x_perturbed = new Array(x.length);
+	var dx = new Array(x.length);
+	var con = new Array(solveNums.m);
+	x=getX(x);
+	var eps = 1;
+	
+	for (var i=0; i < x.length; i++) {
+		x_perturbed[i] = x[i] + eps;
+		var x1 = objectiveFunction(solveNums.n,solveNums.m,x,con);
+		var x2 = objectiveFunction(solveNums.n,solveNums.m,x_perturbed,con);
+		dx[i] = x1-x2
+		x_perturbed[i] -= eps;
+	}
+
+	return dx
+}
+
+function newton(x) {
+	// console.log(x);
+	var _dx = dLdx(x);
+	console.log(_dx)
+	for (var i=0; i < x.length; i++) {
+		x[i] -= _dx[i];
+	}
+	return x
+}
+
 function initLattice() {
 	geom = generateGeometry()
 	geom.nodes[globals.ntall].setFixed(true,{x:1,z:1});
@@ -442,12 +483,18 @@ function initLattice() {
 
 	// geom.nodes[1].move(new THREE.Vector3(-30,0,-100));
 	// potentialEnergy(geom);
-	geom.nodes[2].addDisplacement( new THREE.Vector3(-30,0,0) )
+	geom.nodes[2].addDisplacement( new THREE.Vector3(80,0,0) )
 	solveNums = calculateSolveNums();
-	// var x = new Array(solveNums.n);
-	// var con = new Array(solveNums.m);
+	var x = new Array(solveNums.n);
+	var con = new Array(solveNums.m);
+	x = getX(x);
 	var start = new Date().getTime();
 	solveEquilibrium(solveNums);
+	// console.log(dLdx())
+	// x = newton(x);
+	// console.log(x)
+
+	drawDisplacementArrow(geom.nodes[2]);
 	// for (var i = 0; i < 10000; i++) {
 	// 	// console.log(solveNums)
 	// 	x=getX(x);
