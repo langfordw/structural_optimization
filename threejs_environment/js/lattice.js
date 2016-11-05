@@ -1,289 +1,10 @@
 var globals = {
-	nwide: 8,
-	ntall: 8
+	nwide: 10,
+	ntall: 10,
+	needToRefresh: false
 };
-
-var nodeMat = new THREE.MeshBasicMaterial({color: 0x259997});
-var nodeGeo = new THREE.SphereGeometry(6,20,20);
-
-var arrow;
-
-function displayFixedTriangle(node) {
-	_sideLength = 30
-	var y = Math.sqrt(Math.pow(_sideLength,2) - Math.pow(_sideLength/2,2));
-	var fixedGeo = new THREE.Geometry();
-	fixedGeo.vertices.push(new THREE.Vector3(-_sideLength/2,0,y),
-						   new THREE.Vector3(0,0,0),
-						   new THREE.Vector3(_sideLength/2,0,y));
-	fixedGeo.faces.push( new THREE.Face3(0,2,1));
-	fixedGeo.computeFaceNormals();
-	// var material = new THREE.MeshLambertMaterial( { color: 0x4E0463, 
-	// 	envMap: reflectionCube, 
-	// 	combine: THREE.MixOperation, 
-	// 	reflectivity: 0.1 } );
-	if (node.fixed_dof.x && node.fixed_dof.z) {
-		var material = new THREE.MeshBasicMaterial( {color: 0x4E0463} );
-	} else {
-		var material = new THREE.MeshBasicMaterial( {color: 0x9E0463} );
-	}
-	var triangle = new THREE.Mesh(fixedGeo, material);
-	triangle.position.add(node.getPosition());
-	sceneAdd(triangle)
-}
-
-function drawDisplacementArrow(node) {
-	var hex = 0xff0088;
-
-	arrow = new THREE.ArrowHelper( node.displacement, node.getPosition().clone().sub(node.displacement).sub(new THREE.Vector3(5,0,0)), 
-				Math.abs(node.displacement.x), hex, 10, 20 );
-	arrow.line.material = new THREE.LineBasicMaterial( { color: hex, linewidth: 14})
-	sceneAdd(arrow);
-}
-
-function Node(position, index) {
-
-	// var nodeMat = new THREE.MeshLambertMaterial( { color: 0x0066ff, 
-	// 	envMap: reflectionCube, 
-	// 	combine: THREE.MixOperation, 
-	// 	reflectivity: 0.3 } );
-
-	this.index = index;
-	this.object3D = new THREE.Mesh(nodeGeo, nodeMat);
-	position = position.clone();
-	this.object3D.position.set(position.x,position.y,position.z);
-	sceneAdd(this.object3D);
-	this.beams = [];
-	this.fixed = false;
-	this.fixed_dof = {x:0,z:0};
-	this.externalForce = null;
-	this.springs = [];
-	this.x0 = position.x;
-	this.z0 = position.z;
-	this.displacement_vector = null;
-}
-
-Node.prototype.addDisplacement = function(displacement_vector) {
-	this.displacement = displacement_vector;
-	// drawDisplacementArrow(this);
-}
-
-Node.prototype.addExternalForce = function(force_vector) {
-	if (this.fixed == false) {
-		if (this.externalForce == null) {
-		this.externalForce = force_vector;
-		} else {
-			this.externalForce.add(force_vector);
-		}
-	}
-}
-
-Node.prototype.addBeam = function(beam) {
-	this.beams.push(beam);
-}
-
-Node.prototype.getPosition = function() {
-	return this.object3D.position;
-}
-
-Node.prototype.move = function(position){
-	// this routine is expensive
-    this.object3D.position.set(position.x, position.y, position.z);
-    for (i=0; i < this.beams.length; i++) {
-        this.beams[i].updatePosition();
-    }
-}
-
-Node.prototype.getIndex = function() {
-	return this.index;
-}
-
-Node.prototype.setFixed = function(fixed,dof_object) {
-	this.fixed = fixed;
-	this.fixed_dof = dof_object;
-	displayFixedTriangle(this);
-}
-
-Node.prototype.attachSprings = function() {
-	if (this.fixed) {
-		// number of springs = number of links
-		for (i=0; i < this.beams.length; i++) {
-			this.attachSpring(new Spring(this, this.beams[i], null));
-		}
-	} else {
-		// number of springs = number of links - 1
-		for (i=0; i < this.beams.length-1; i++) {
-			this.attachSpring(new Spring(this, this.beams[i], this.beams[i+1]));
-		}
-	}
-}
-
-Node.prototype.attachSpring = function(spring) {
-	this.springs.push(spring);
-}
-
-function drawCylinder(vstart, vend) {
-    var HALF_PI = Math.PI * .5;
-    var distance = vstart.distanceTo(vend);
-    var position  = vend.clone().add(vstart).divideScalar(2);
-
-    var cylinder = new THREE.CylinderGeometry(3,3,distance,6,6,false);
-    var material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-	// var material = new THREE.MeshLambertMaterial( { color: 0xbbbbbb, 
-	// 	envMap: reflectionCube, 
-	// 	combine: THREE.MixOperation, 
-	// 	reflectivity: 0.3 } );
-
-    var orientation = new THREE.Matrix4();
-    var offsetRotation = new THREE.Matrix4();
-    var offsetPosition = new THREE.Matrix4();
-    orientation.lookAt(vstart,vend,new THREE.Vector3(0,1,0));
-    offsetRotation.makeRotationX(HALF_PI);
-    orientation.multiply(offsetRotation);
-    cylinder.applyMatrix(orientation)
-
-    var mesh = new THREE.Mesh(cylinder,material);
-    mesh.position.x=position.x;
-    mesh.position.z=position.z;
-	return mesh
-}
-
-function drawPlate(vstart,vend) {
-	var HALF_PI = Math.PI * .5;
-    var distance = vstart.distanceTo(vend);
-    var position  = vstart.clone().add(vend).divideScalar(2); //new THREE.Vector3(0,0,0);//
-
-    var plate = new THREE.BoxGeometry(distance,5,50);
-    // var material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-	var material = new THREE.MeshLambertMaterial( { color: 0xbbbbbb, 
-		envMap: reflectionCube, 
-		combine: THREE.MixOperation, 
-		reflectivity: 0.3 } );
-
-    var orientation = new THREE.Matrix4();
-    var offsetRotation = new THREE.Matrix4();
-    var offsetPosition = new THREE.Matrix4();
-    orientation.lookAt(vstart,vend,new THREE.Vector3(0,1,0));
-    offsetRotation.makeRotationX(HALF_PI);
-    orientation.multiply(offsetRotation);
-    plate.applyMatrix(orientation)
-
-    var mesh = new THREE.Mesh(plate,material);
-    // mesh.position.x=0;
-    mesh.position.z=position.clone().add(new THREE.Vector3(0,0,-distance/2.)).z;
-
-	return mesh
-}
-
-function Beam(nodes, index) {
-	this.index = index;
-	nodes[0].addBeam(this);
-	nodes[1].addBeam(this);
-	this.vertices = [nodes[0].getPosition(), nodes[1].getPosition()];
-	this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
-	this.len0 = this.len;
-	this.k = 10;
-	this.force = 0;
-
-	// BEAMS AS LINES
-	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
-	var lineGeo = new THREE.Geometry();
-	lineGeo.dynamic = true;
-	lineGeo.vertices = this.vertices;
-	this.object3D = new THREE.Line(lineGeo, beamMat);
-
-	// BEAMS AS CYLINDERS
-	// this.object3D = drawCylinder(this.vertices[0],this.vertices[1])
-
-	// BEAMS AS PLATES
-	// this.object3D = drawPlate(this.vertices[0],this.vertices[1]);
-	
-	sceneAdd(this.object3D);
-}
-
-Beam.prototype.updatePosition = function(){
-    this.object3D.geometry.verticesNeedUpdate = true;
-    this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
-    // this.object3D.geometry.normalsNeedUpdate = true;
-    // this.object3D.geometry.computeFaceNormals();
-    // this.object3D.geometry.computeVertexNormals();
-    // this.object3D.geometry.computeBoundingSphere(); // this is very expensive (roughly doubles the compute time for an update)
-};
-
-Beam.prototype.getAngle = function(fromNode) {
-	var node2 = this.vertices[0];
-    if (node2.equals(fromNode)) node2 = this.vertices[1];
-	// return Math.atan2(node2.z-fromNode.z, node2.x-fromNode.x);
-	return Math.atan2(fromNode.z-node2.z, fromNode.x-node2.x);
-};
-
-Beam.prototype.getPE = function() {
-	return (this.k * Math.pow(this.len-this.len0,2));
-};
-
-Beam.prototype.getIndex = function() {
-	return this.index;
-};
-
-Beam.prototype.setForce = function(forceMag) {
-	this.force = forceMag;
-}
-
-Beam.prototype.setColor = function() {
-	if (this.force > 0) {
-		this.object3D.material.color.setHex(0x0000ff);
-	}
-	if (this.force < 0) {
-		this.object3D.material.color.setHex(0xff0000);
-	}
-}
-
-function Spring(node, beam1, beam2) {
-	this.node = node;
-	this.beams = [];
-	this.beams.push(beam1);
-	this.fixed = node.fixed;
-	this.k = 1;
-
-	// if (node.getPosition().x == 0) {
-	// 	this.k = 50;
-	// }
-	// if (node.getPosition().equals(new THREE.Vector3(0,0,0))) {
-	// 	this.k = 1;
-	// }
-	// if (node.getPosition().z == 0) {
-	// 	this.k = 500;
-	// }
-
-	if (!this.fixed) {
-		this.beams.push(beam2);
-	}
-
-	if (this.fixed) {
-		this.init_angle = this.beams[0].getAngle(this.node.getPosition());
-	} else {
-		this.init_angle = this.beams[0].getAngle(this.node.getPosition())-this.beams[1].getAngle(this.node.getPosition());
-	}
-
-	this.angle = this.init_angle;
-	this.dAngle = this.angle-this.init_angle;
-}
-
-Spring.prototype.getdAngle = function() {
-	if (this.fixed) {
-		this.angle = this.beams[0].getAngle(this.node.getPosition());
-	} else {
-		this.angle = this.beams[0].getAngle(this.node.getPosition())-this.beams[1].getAngle(this.node.getPosition());
-	}
-	this.dAngle = this.angle-this.init_angle;
-	return this.dAngle;
-}
-
-Spring.prototype.getPE = function() {
-	return this.k*Math.pow(this.getdAngle(),2);
-}
 
 function generateGeometry() {
-
 	_nodes = [];
 	_beams = [];
 	_h = -100;
@@ -314,12 +35,9 @@ function generateGeometry() {
 
 			// positive slope diagonals
 			if (j > 0 && i > 0){
-
 				var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
 				_beams.push(beam)
 				beam_index++;
-
-			}
 
 			// 	if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
 			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
@@ -332,39 +50,14 @@ function generateGeometry() {
 			// 		beam_index++;
 			// 	}
 
-			// 	if (j == 2 && i ==2) {
-			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 		_beams.push(beam)
-			// 		beam_index++;
-			// 	}
+			}	
 
-			// 	// if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
-			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 	// 	_beams.push(beam)
-			// 	// 	beam_index++;
-			// 	// }
-			// 	// if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
-			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 	// 	_beams.push(beam)
-			// 	// 	beam_index++;
-			// 	// }
-
-			// 	// if (i == 1 && j != 1 && j != globals.ntall-1){
-			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
-			// 	// 	_beams.push(beam)
-			// 	// }
-			// 	// if (j == 1 && i != 1 && i != globals.nwide-1){
-			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
-			// 	// 	_beams.push(beam)
-			// 	// }
-			// }	
-
-			// negative slope diagonals
-			if (j < globals.ntall-1 && i > 0){
-				var beam = new Beam([_nodes[index],_nodes[index-globals.ntall+1]],beam_index)
-				_beams.push(beam)
-				beam_index++;
-			}
+			// // negative slope diagonals
+			// if (j < globals.ntall-1 && i > 0){
+			// 	var beam = new Beam([_nodes[index],_nodes[index-globals.ntall+1]],beam_index)
+			// 	_beams.push(beam)
+			// 	beam_index++;
+			// }
 
 			index = index +1;
 		}
@@ -396,8 +89,6 @@ function potentialEnergy(_geom) {
 	// 	sum_PE += beams[i].getPE();
 	// }
 
-	// console.log(sum_PE);
-	// console.log(nodes);
 	return 0.5*sum_PE;
 }
 
@@ -405,20 +96,18 @@ function updatePositions(x) {
 	// this is rather expensive and accounts for ~10% of the running time of the objective function
 	var index = 0;
 	for (var i=0; i < geom.nodes.length; i++) {
-		geom.nodes[i].move(new THREE.Vector3(x[index],0,x[index+1]));
+		geom.nodes[i].setPosition(new THREE.Vector3(x[index],0,x[index+1]));
 		index += 2;
 	}
 }
 
 function getX(x) {
 	var index = 0;
-
 	for (var i=0; i < geom.nodes.length; i++) {
 		x[index] = geom.nodes[i].getPosition().x;
 		x[index+1] = geom.nodes[i].getPosition().z;
 		index += 2;
 	}
-
 	return x
 }
 
@@ -454,8 +143,6 @@ function objectiveFunction(n,m,x,con) {
 			index +=2;
 		}
 	}
-
-	// console.log(con)
 	return potentialEnergy(geom)
 }
 
@@ -497,21 +184,7 @@ function calculateSolveNums() {
 	};
 }
 
-var f = 0;
-var v = 0;
-var t = 0;
-
 function updateGeometry() {
-	// for (i=0; i < 100; i++) {
-		// f = 0.1*(geom.nodes[1].getPosition().x - 0);
-		// v = (v + f/1.0)*0.95
-		// geom.nodes[1].move(geom.nodes[1].getPosition().clone().add( new THREE.Vector3(-v,0,0) ));
-		// console.log(f)
-	// }
-	// t += 0.1;
-	// var displacement = Math.sin(t)*60
-	// console.log(displacement)
-	// geom.nodes[1].addDisplacement( new THREE.Vector3(displacement,0,0) )
 	// solveEquilibrium();
 }
 
@@ -519,13 +192,11 @@ function deformGeometry(u) {
 	var index = 0;
 	for (var i = 0; i < geom.nodes.length; i++) {
 		if (!geom.nodes[i].fixed) {
-			geom.nodes[i].move(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index][0],0,u[index+1][0])));
+			geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index][0],0,u[index+1][0])));
 			index+=2;
 		}
 	}
-	
 }
-
 
 function refreshPoints() {
 	sceneClear();
@@ -535,167 +206,69 @@ function refreshPoints() {
 	geom.nodes[globals.ntall*(globals.nwide-1)].setFixed(true);
 }
 
-function dLdx(x) {
-	var x = new Array(solveNums.n);
-	var x_perturbed = new Array(x.length);
-	var dx = new Array(x.length);
-	var con = new Array(solveNums.m);
-	x=getX(x);
-	var eps = 1;
-	
-	for (var i=0; i < x.length; i++) {
-		x_perturbed[i] = x[i] + eps;
-		var x1 = objectiveFunction(solveNums.n,solveNums.m,x,con);
-		var x2 = objectiveFunction(solveNums.n,solveNums.m,x_perturbed,con);
-		dx[i] = x1-x2
-		x_perturbed[i] -= eps;
+function updateForces(beams,forces) {
+	_.each(forces, function(force,i){
+		beams[i].setForce(force);
+	});	
+}
+
+function displayForces(beams,forces) {
+	displayStyle = 'magnitude';
+	if (displayStyle == 'magnitude') {
+		_.map(forces, function(force) { Math.abs(force) });
 	}
-
-	return dx
-}
-
-function newton(x) {
-	// console.log(x);
-	var _dx = dLdx(x);
-	console.log(_dx)
-	for (var i=0; i < x.length; i++) {
-		x[i] -= _dx[i];
-	}
-	return x
-}
-
-
-function DirectStiffnessSolver(nodes, beams, constraints) {
-	var num_dofs = (nodes.length - constraints.length)*2;
-	var num_beams = beams.length;
-	this.num_dofs = num_dofs
-	this.num_beams = num_beams
-	this.nodes = nodes;
-	this.beams = beams;
-	this.constraints = constraints;
-
-	this.A = math.zeros(num_beams, num_dofs);
-	this.A = math.transpose(this.A);
-	this.X = math.zeros(num_dofs);
-	this.k = math.zeros(num_beams, num_beams);
-	this.Ksys = math.zeros(num_dofs, num_dofs);
-
-	this.u = math.zeros(num_dofs);
-	this.f = math.zeros(num_beams);
-}
-
-DirectStiffnessSolver.prototype.assemble_AX = function() {
-	var index = 0;
-	for (var i = 0; i < this.nodes.length; i++) {
-		var node = this.nodes[i];
-		if (!node.fixed) {
-			// console.log("node: " + node.index)
-			for (var j=0; j < node.beams.length; j++) {
-				var beam = node.beams[j];
-				// console.log("beam: " + beam.index);
-				this.A.subset(math.index(index,beam.index),Math.cos(beam.getAngle(node.getPosition())));
-				this.A.subset(math.index(index+1,beam.index),Math.sin(beam.getAngle(node.getPosition())));
+	var minf = _.min(forces)
+	var maxf = _.max(forces)
+	_.each(forces, function(force, i) {
+		if (displayStyle == 'magnitude') {
+			geom.beams[i].setHSLColor(force,minf,maxf);
+		} else {
+			if (force > 0) {
+				geom.beams[i].setTensionCompressionColor(force,maxf)
+			} else {
+				geom.beams[i].setTensionCompressionColor(force,minf)
 			}
-			if (node.externalForce != null) {
-				this.X.subset(math.index(index),node.externalForce.x);
-				this.X.subset(math.index(index+1),node.externalForce.z);
-			}
-			index += 2;
 		}
-	}
-	return {
-		A: this.A,
-		X: this.X
-	}
+	});
 }
-
-DirectStiffnessSolver.prototype.assemble_k = function() {
-	for (var i = 0; i < this.beams.length; i++) {
-		var beam = this.beams[i];
-		this.k.subset(math.index(i,i),beam.k);
-	}
-	return this.k
-}
-
-DirectStiffnessSolver.prototype.calculate_K = function() {
-	this.Ksys = math.multiply(math.multiply(this.A,this.k),math.transpose(this.A));
-	// this.Ksys = math.multiply(this.k,math.transpose(this.A));
-	return this.Ksys
-}
-
-DirectStiffnessSolver.prototype.calculate_U = function() {
-	this.u = math.lusolve(this.Ksys,this.X)
-	// console.log(math.det(this.Ksys));
-	// this.u = this.X * math.inv(this.Ksys);
-	return this.u
-}
-
-DirectStiffnessSolver.prototype.calculate_f = function() {
-	this.f = math.multiply(math.multiply(this.k,math.transpose(this.A)),this.u)
-	// console.log(math.det(this.Ksys));
-	// this.u = this.X * math.inv(this.Ksys);
-	return this.f
-}
-
 
 function initLattice() {
 	// Generate geometry
 	geom = generateGeometry()
+	console.log(geom)
 
 	// Fix nodes
 	geom.nodes[globals.ntall].setFixed(true,{x:1,z:1});
 	geom.nodes[globals.ntall*(globals.nwide-2)].setFixed(true,{x:1,z:1});
 
-	// prescribe displacements
-	geom.nodes[globals.ntall-1].addDisplacement( new THREE.Vector3(80,0,0) )
+	// prescribe forces and displacements
+	// geom.nodes[globals.ntall-1].addDisplacement( new THREE.Vector3(80,0,0));
+	// geom.nodes[globals.nwide*globals.ntall-1].addDisplacement( new THREE.Vector3(-80,0,0));
 	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(80,0,0));
+	geom.nodes[globals.nwide*globals.ntall-1].addExternalForce( new THREE.Vector3(-80,0,0));
 
 	// setup solve
-	solveNums = calculateSolveNums();
-	var x = new Array(solveNums.n);
-	var con = new Array(solveNums.m);
-	x = getX(x);
-
-	console.log(geom)
+	// solveNums = calculateSolveNums();
+	// var x = new Array(solveNums.n);
+	// var con = new Array(solveNums.m);
+	// x = getX(x);
 
 	// solve
 	var start = new Date().getTime();
-	solver = new DirectStiffnessSolver(geom.nodes,geom.beams,[geom.nodes[globals.ntall],geom.nodes[globals.ntall*(globals.nwide-2)]]);
-	console.log()
-	console.log(solver.assemble_AX())
-	console.log(solver.assemble_k())
-	console.log(solver.calculate_K())
-	// console.log()
-	console.log(solver.calculate_U())
-	console.log(solver.calculate_f())
-	deformGeometry(solver.u._data)
-	// geom.nodes[1].move(geom.nodes[1].getPosition().clone().add(new THREE.Vector3(solver.u._data[0][0],0,solver.u._data[1][0])))
-	// geom.nodes[3].move(geom.nodes[3].getPosition().clone().add(new THREE.Vector3(solver.u._data[2][0],0,solver.u._data[3][0])))
-	
-	// solver.f.forEach(function (value, index, matrix) {
-	// 	console.log(geom)
-	// 	geom.beams[index].setForce(value);
-	// 	geom.beams[index].setColor();
-	// });
-
-	for (var i = 0; i < geom.beams.length; i++) {
-		geom.beams[i].setForce(solver.f._data[i][0]);
-		geom.beams[i].setColor();
-	}
-	
-
 	// solveEquilibrium(solveNums);
-	// console.log(dLdx())
-	// x = newton(x);
-	// console.log(x)
+
+	solver = new DirectStiffnessSolver(geom.nodes,geom.beams,[
+		geom.nodes[globals.ntall],geom.nodes[globals.ntall*(globals.nwide-2)]]);
+
+	solver.solveForces()
 	var dt = new Date().getTime() - start;
 	console.log('Solved in ' + dt + 'ms');
 	console.log(geom.nodes);
 
-
-	// update graphics
-	drawDisplacementArrow(geom.nodes[globals.ntall-1]);
-	
+	deformGeometry(solver.u._data);
+	var forces = _.flatten(solver.f._data);
+	updateForces(geom.beams,forces);
+	displayForces(geom.beams,forces);	
 }
 
 
