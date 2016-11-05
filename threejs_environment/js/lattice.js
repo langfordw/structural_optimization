@@ -1,6 +1,6 @@
 var globals = {
-	nwide: 4,
-	ntall: 4
+	nwide: 8,
+	ntall: 8
 };
 
 var nodeMat = new THREE.MeshBasicMaterial({color: 0x259997});
@@ -182,6 +182,7 @@ function Beam(nodes, index) {
 	this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
 	this.len0 = this.len;
 	this.k = 10;
+	this.force = 0;
 
 	// BEAMS AS LINES
 	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
@@ -211,12 +212,30 @@ Beam.prototype.updatePosition = function(){
 Beam.prototype.getAngle = function(fromNode) {
 	var node2 = this.vertices[0];
     if (node2.equals(fromNode)) node2 = this.vertices[1];
-	return Math.atan2(node2.z-fromNode.z, node2.x-fromNode.x);
+	// return Math.atan2(node2.z-fromNode.z, node2.x-fromNode.x);
+	return Math.atan2(fromNode.z-node2.z, fromNode.x-node2.x);
 };
 
 Beam.prototype.getPE = function() {
 	return (this.k * Math.pow(this.len-this.len0,2));
 };
+
+Beam.prototype.getIndex = function() {
+	return this.index;
+};
+
+Beam.prototype.setForce = function(forceMag) {
+	this.force = forceMag;
+}
+
+Beam.prototype.setColor = function() {
+	if (this.force > 0) {
+		this.object3D.material.color.setHex(0x0000ff);
+	}
+	if (this.force < 0) {
+		this.object3D.material.color.setHex(0xff0000);
+	}
+}
 
 function Spring(node, beam1, beam2) {
 	this.node = node;
@@ -296,49 +315,56 @@ function generateGeometry() {
 			// positive slope diagonals
 			if (j > 0 && i > 0){
 
-				if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
-					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-					_beams.push(beam)
-					beam_index++;
-				}
-				if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
-					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-					_beams.push(beam)
-					beam_index++;
-				}
+				var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+				_beams.push(beam)
+				beam_index++;
 
-				if (j == 2 && i ==2) {
-					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-					_beams.push(beam)
-					beam_index++;
-				}
+			}
 
-				// if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
-				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-				// 	_beams.push(beam)
-				// 	beam_index++;
-				// }
-				// if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
-				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-				// 	_beams.push(beam)
-				// 	beam_index++;
-				// }
+			// 	if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
+			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// 		_beams.push(beam)
+			// 		beam_index++;
+			// 	}
+			// 	if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
+			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// 		_beams.push(beam)
+			// 		beam_index++;
+			// 	}
 
-				// if (i == 1 && j != 1 && j != globals.ntall-1){
-				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
-				// 	_beams.push(beam)
-				// }
-				// if (j == 1 && i != 1 && i != globals.nwide-1){
-				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
-				// 	_beams.push(beam)
-				// }
-			}	
+			// 	if (j == 2 && i ==2) {
+			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// 		_beams.push(beam)
+			// 		beam_index++;
+			// 	}
 
-			// // negative slope diagonals
-			// if (j < globals.ntall-1 && i > 0){
-			// 	var beam = new Beam([_nodes[index],_nodes[index-globals.ntall+1]])
-			// 	_beams.push(beam)
-			// }
+			// 	// if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
+			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// 	// 	_beams.push(beam)
+			// 	// 	beam_index++;
+			// 	// }
+			// 	// if ((j == 1 || j == globals.ntall-1) && i != 1 && i != globals.nwide-1){
+			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// 	// 	_beams.push(beam)
+			// 	// 	beam_index++;
+			// 	// }
+
+			// 	// if (i == 1 && j != 1 && j != globals.ntall-1){
+			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
+			// 	// 	_beams.push(beam)
+			// 	// }
+			// 	// if (j == 1 && i != 1 && i != globals.nwide-1){
+			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]])
+			// 	// 	_beams.push(beam)
+			// 	// }
+			// }	
+
+			// negative slope diagonals
+			if (j < globals.ntall-1 && i > 0){
+				var beam = new Beam([_nodes[index],_nodes[index-globals.ntall+1]],beam_index)
+				_beams.push(beam)
+				beam_index++;
+			}
 
 			index = index +1;
 		}
@@ -489,6 +515,17 @@ function updateGeometry() {
 	// solveEquilibrium();
 }
 
+function deformGeometry(u) {
+	var index = 0;
+	for (var i = 0; i < geom.nodes.length; i++) {
+		if (!geom.nodes[i].fixed) {
+			geom.nodes[i].move(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index][0],0,u[index+1][0])));
+			index+=2;
+		}
+	}
+	
+}
+
 
 function refreshPoints() {
 	sceneClear();
@@ -529,21 +566,22 @@ function newton(x) {
 
 
 function DirectStiffnessSolver(nodes, beams, constraints) {
-	var num_node_dofs = (nodes.length - constraints.length)*2;
+	var num_dofs = (nodes.length - constraints.length)*2;
 	var num_beams = beams.length;
-	this.num_node_dofs = num_node_dofs
+	this.num_dofs = num_dofs
 	this.num_beams = num_beams
 	this.nodes = nodes;
 	this.beams = beams;
 	this.constraints = constraints;
-	var data_type = jsfeat.F32_t | jsfeat.C1_t
-	this.A = new jsfeat.matrix_t(num_beams,num_node_dofs, data_type);
-	this.X = new jsfeat.matrix_t(num_node_dofs, 1, data_type);
-	this.k = new jsfeat.matrix_t(num_beams,num_beams, data_type);
-	this.K = new jsfeat.matrix_t(num_node_dofs, num_node_dofs, data_type);
-	this.u = new jsfeat.matrix_t(num_node_dofs, 1, data_type);
-	this.f = new jsfeat.matrix_t(num_beams, 1, data_type);
-	this.tmp = new jsfeat.matrix_t(num_beams, num_node_dofs, data_type)
+
+	this.A = math.zeros(num_beams, num_dofs);
+	this.A = math.transpose(this.A);
+	this.X = math.zeros(num_dofs);
+	this.k = math.zeros(num_beams, num_beams);
+	this.Ksys = math.zeros(num_dofs, num_dofs);
+
+	this.u = math.zeros(num_dofs);
+	this.f = math.zeros(num_beams);
 }
 
 DirectStiffnessSolver.prototype.assemble_AX = function() {
@@ -551,14 +589,16 @@ DirectStiffnessSolver.prototype.assemble_AX = function() {
 	for (var i = 0; i < this.nodes.length; i++) {
 		var node = this.nodes[i];
 		if (!node.fixed) {
-			for (var j=0; j < this.beams.length; j++) {
-				var beam = this.beams[i];
-				this.A.data[index+this.num_beams*beam.index] = Math.cos(beam.getAngle(node.getPosition()));
-				this.A.data[(index+1)+this.num_beams*beam.index] = Math.sin(beam.getAngle(node.getPosition()));
+			// console.log("node: " + node.index)
+			for (var j=0; j < node.beams.length; j++) {
+				var beam = node.beams[j];
+				// console.log("beam: " + beam.index);
+				this.A.subset(math.index(index,beam.index),Math.cos(beam.getAngle(node.getPosition())));
+				this.A.subset(math.index(index+1,beam.index),Math.sin(beam.getAngle(node.getPosition())));
 			}
 			if (node.externalForce != null) {
-				this.X.data[index] = node.externalForce.x;
-				this.X.data[index+1] = node.externalForce.z;
+				this.X.subset(math.index(index),node.externalForce.x);
+				this.X.subset(math.index(index+1),node.externalForce.z);
 			}
 			index += 2;
 		}
@@ -572,21 +612,31 @@ DirectStiffnessSolver.prototype.assemble_AX = function() {
 DirectStiffnessSolver.prototype.assemble_k = function() {
 	for (var i = 0; i < this.beams.length; i++) {
 		var beam = this.beams[i];
-		this.k.data[i+this.num_beams*i] = beam.k;
+		this.k.subset(math.index(i,i),beam.k);
 	}
 	return this.k
 }
 
 DirectStiffnessSolver.prototype.calculate_K = function() {
-	jsfeat.matmath.multiply(this.tmp, this.A, this.k);
-	// jsfeat.matmath.multiply_ABt(this.K, this.tmp, this.A);
-	return this.tmp
+	this.Ksys = math.multiply(math.multiply(this.A,this.k),math.transpose(this.A));
+	// this.Ksys = math.multiply(this.k,math.transpose(this.A));
+	return this.Ksys
 }
 
 DirectStiffnessSolver.prototype.calculate_U = function() {
-	jsfeat.linalg.cholesky_solve(this.K, this.X);
-	return this.X
+	this.u = math.lusolve(this.Ksys,this.X)
+	// console.log(math.det(this.Ksys));
+	// this.u = this.X * math.inv(this.Ksys);
+	return this.u
 }
+
+DirectStiffnessSolver.prototype.calculate_f = function() {
+	this.f = math.multiply(math.multiply(this.k,math.transpose(this.A)),this.u)
+	// console.log(math.det(this.Ksys));
+	// this.u = this.X * math.inv(this.Ksys);
+	return this.f
+}
+
 
 function initLattice() {
 	// Generate geometry
@@ -597,8 +647,8 @@ function initLattice() {
 	geom.nodes[globals.ntall*(globals.nwide-2)].setFixed(true,{x:1,z:1});
 
 	// prescribe displacements
-	// geom.nodes[2].addDisplacement( new THREE.Vector3(80,0,0) )
-	geom.nodes[2].addExternalForce( new THREE.Vector3(80,0,0));
+	geom.nodes[globals.ntall-1].addDisplacement( new THREE.Vector3(80,0,0) )
+	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(80,0,0));
 
 	// setup solve
 	solveNums = calculateSolveNums();
@@ -606,14 +656,34 @@ function initLattice() {
 	var con = new Array(solveNums.m);
 	x = getX(x);
 
+	console.log(geom)
+
 	// solve
 	var start = new Date().getTime();
-	solver = new DirectStiffnessSolver(geom.nodes,geom.beams,[geom.nodes[globals.ntall]]);
+	solver = new DirectStiffnessSolver(geom.nodes,geom.beams,[geom.nodes[globals.ntall],geom.nodes[globals.ntall*(globals.nwide-2)]]);
+	console.log()
 	console.log(solver.assemble_AX())
 	console.log(solver.assemble_k())
 	console.log(solver.calculate_K())
 	// console.log()
 	console.log(solver.calculate_U())
+	console.log(solver.calculate_f())
+	deformGeometry(solver.u._data)
+	// geom.nodes[1].move(geom.nodes[1].getPosition().clone().add(new THREE.Vector3(solver.u._data[0][0],0,solver.u._data[1][0])))
+	// geom.nodes[3].move(geom.nodes[3].getPosition().clone().add(new THREE.Vector3(solver.u._data[2][0],0,solver.u._data[3][0])))
+	
+	// solver.f.forEach(function (value, index, matrix) {
+	// 	console.log(geom)
+	// 	geom.beams[index].setForce(value);
+	// 	geom.beams[index].setColor();
+	// });
+
+	for (var i = 0; i < geom.beams.length; i++) {
+		geom.beams[i].setForce(solver.f._data[i][0]);
+		geom.beams[i].setColor();
+	}
+	
+
 	// solveEquilibrium(solveNums);
 	// console.log(dLdx())
 	// x = newton(x);
@@ -624,7 +694,7 @@ function initLattice() {
 
 
 	// update graphics
-	// drawDisplacementArrow(geom.nodes[2]);
+	drawDisplacementArrow(geom.nodes[globals.ntall-1]);
 	
 }
 
