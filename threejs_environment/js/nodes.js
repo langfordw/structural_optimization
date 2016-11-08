@@ -23,6 +23,7 @@ function Node(position, index) {
 	this.z0 = position.z;
 	this.displacement = null;
 	this.arrow = null;
+	this.externalMoment = 0;
 }
 
 Node.prototype.addDisplacement = function(displacement_vector) {

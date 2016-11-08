@@ -1,6 +1,6 @@
 var globals = {
-	nwide: 10,
-	ntall: 10,
+	nwide: 1,
+	ntall: 2,
 	needToRefresh: false
 };
 
@@ -35,9 +35,21 @@ function generateGeometry() {
 
 			// positive slope diagonals
 			if (j > 0 && i > 0){
-				var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-				_beams.push(beam)
-				beam_index++;
+				// var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+				// _beams.push(beam)
+				// beam_index++;
+
+				if (j < 2 || j > globals.ntall-2) {
+					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+					_beams.push(beam)
+					beam_index++;
+				}
+
+				if (i < 2 || i > globals.nwide-2) {
+					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+					_beams.push(beam)
+					beam_index++;
+				}
 
 			// 	if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
 			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
@@ -192,7 +204,7 @@ function deformGeometry(u) {
 	var index = 0;
 	for (var i = 0; i < geom.nodes.length; i++) {
 		if (!geom.nodes[i].fixed) {
-			geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index][0],0,u[index+1][0])));
+			geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index],0,u[index+1])));
 			index+=2;
 		}
 	}
@@ -213,14 +225,14 @@ function updateForces(beams,forces) {
 }
 
 function displayForces(beams,forces) {
-	displayStyle = 'magnitude';
-	if (displayStyle == 'magnitude') {
+	displayMagnitude = true;
+	if (displayMagnitude) {
 		_.map(forces, function(force) { Math.abs(force) });
 	}
 	var minf = _.min(forces)
 	var maxf = _.max(forces)
 	_.each(forces, function(force, i) {
-		if (displayStyle == 'magnitude') {
+		if (displayMagnitude) {
 			geom.beams[i].setHSLColor(force,minf,maxf);
 		} else {
 			if (force > 0) {
@@ -238,14 +250,17 @@ function initLattice() {
 	console.log(geom)
 
 	// Fix nodes
-	geom.nodes[globals.ntall].setFixed(true,{x:1,z:1});
-	geom.nodes[globals.ntall*(globals.nwide-2)].setFixed(true,{x:1,z:1});
+	constraints = [];
+	geom.nodes[0].setFixed(true,{x:1,z:1});
+	constraints.push(geom.nodes[0]);
+	// geom.nodes[globals.ntall].setFixed(true,{x:1,z:1});
+	// geom.nodes[globals.ntall*(globals.nwide-2)].setFixed(true,{x:1,z:1});
 
 	// prescribe forces and displacements
 	// geom.nodes[globals.ntall-1].addDisplacement( new THREE.Vector3(80,0,0));
 	// geom.nodes[globals.nwide*globals.ntall-1].addDisplacement( new THREE.Vector3(-80,0,0));
-	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(80,0,0));
-	geom.nodes[globals.nwide*globals.ntall-1].addExternalForce( new THREE.Vector3(-80,0,0));
+	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(40,0,0));
+	// geom.nodes[globals.nwide*globals.ntall-1].addExternalForce( new THREE.Vector3(-100,0,0));
 
 	// setup solve
 	// solveNums = calculateSolveNums();
@@ -257,18 +272,18 @@ function initLattice() {
 	var start = new Date().getTime();
 	// solveEquilibrium(solveNums);
 
-	solver = new DirectStiffnessSolver(geom.nodes,geom.beams,[
-		geom.nodes[globals.ntall],geom.nodes[globals.ntall*(globals.nwide-2)]]);
+	solver = new FrameSolver(geom.nodes,geom.beams,constraints);
 
 	solver.solveForces()
-	var dt = new Date().getTime() - start;
-	console.log('Solved in ' + dt + 'ms');
-	console.log(geom.nodes);
+	// var dt = new Date().getTime() - start;
+	// console.log('Solved in ' + dt + 'ms');
+	console.log(geom);
+	console.log(_.flatten(solver.u._data))
 
-	deformGeometry(solver.u._data);
-	var forces = _.flatten(solver.f._data);
-	updateForces(geom.beams,forces);
-	displayForces(geom.beams,forces);	
+	// deformGeometry(solver.u._data);
+	// var forces = _.flatten(solver.f._data);
+	// updateForces(geom.beams,forces);
+	// displayForces(geom.beams,forces);	
 }
 
 

@@ -1,12 +1,16 @@
 function Beam(nodes, index) {
 	this.index = index;
+	this.nodes = [nodes[0], nodes[1]];
 	nodes[0].addBeam(this);
 	nodes[1].addBeam(this);
 	this.vertices = [nodes[0].getPosition(), nodes[1].getPosition()];
 	this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
 	this.len0 = this.len;
-	this.k = 10;
+	this.k = 100;
 	this.force = 0;
+	this.a1 = 100;
+	this.a2 = 10;
+	this.k_prime = math.zeros(6,6);
 
 	// BEAMS AS LINES
 	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
@@ -22,6 +26,30 @@ function Beam(nodes, index) {
 	// this.object3D = drawPlate(this.vertices[0],this.vertices[1]);
 	
 	sceneAdd(this.object3D);
+}
+
+Beam.prototype.assemble_k_prime = function() {
+	this.k_prime.subset(math.index(0,0),this.a1);
+	this.k_prime.subset(math.index(1,1),12*this.a2);
+	this.k_prime.subset(math.index(2,1),6*this.len*this.a2);
+	this.k_prime.subset(math.index(1,2),6*this.len*this.a2);
+	this.k_prime.subset(math.index(2,2),4*Math.pow(this.len,2)*this.a2);
+	this.k_prime.subset(math.index(3,3),this.a1);
+	this.k_prime.subset(math.index(4,4),12*this.a2);
+	this.k_prime.subset(math.index(5,4),6*this.len*this.a2);
+	this.k_prime.subset(math.index(4,5),6*this.len*this.a2);
+	this.k_prime.subset(math.index(5,5),4*Math.pow(this.len,2)*this.a2);
+	this.k_prime.subset(math.index(0,3),-this.a1);
+	this.k_prime.subset(math.index(1,4),-12*this.a2);
+	this.k_prime.subset(math.index(2,4),-6*this.len*this.a2);
+	this.k_prime.subset(math.index(1,5),6*this.len*this.a2);
+	this.k_prime.subset(math.index(2,5),4*Math.pow(this.len,2)*this.a2);
+	this.k_prime.subset(math.index(3,0),-this.a1);
+	this.k_prime.subset(math.index(4,1),-12*this.a2);
+	this.k_prime.subset(math.index(5,1),6*this.len*this.a2);
+	this.k_prime.subset(math.index(4,2),-6*this.len*this.a2);
+	this.k_prime.subset(math.index(5,2),4*Math.pow(this.len,2)*this.a2);
+	return this.k_prime;
 }
 
 Beam.prototype.updatePosition = function(){

@@ -53,8 +53,8 @@ DirectStiffnessSolver.prototype.calculate_K = function() {
 	return this.Ksys
 }
 
-DirectStiffnessSolver.prototype.calculate_U = function() {
-	this.u = math.lusolve(this.Ksys,this.X)
+DirectStiffnessSolver.prototype.calculate_U = function() {	
+	this.u = math.lusolve(this.Ksys,this.X);
 	return this.u
 }
 
