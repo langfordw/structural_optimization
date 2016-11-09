@@ -16,14 +16,15 @@ function Node(position, index) {
 	sceneAdd(this.object3D);
 	this.beams = [];
 	this.fixed = false;
-	this.fixed_dof = {x:0,z:0};
+	this.fixed_dof = {x:0,z:0,c:0};
 	this.externalForce = null;
+	this.externalMoment = 0;
 	this.springs = [];
 	this.x0 = position.x;
 	this.z0 = position.z;
 	this.displacement = null;
 	this.arrow = null;
-	this.externalMoment = 0;
+	
 }
 
 Node.prototype.addDisplacement = function(displacement_vector) {

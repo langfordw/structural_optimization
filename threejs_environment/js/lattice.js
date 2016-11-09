@@ -251,7 +251,7 @@ function initLattice() {
 
 	// Fix nodes
 	constraints = [];
-	geom.nodes[0].setFixed(true,{x:1,z:1});
+	geom.nodes[0].setFixed(true,{x:1,z:1,c:1});
 	constraints.push(geom.nodes[0]);
 	// geom.nodes[globals.ntall].setFixed(true,{x:1,z:1});
 	// geom.nodes[globals.ntall*(globals.nwide-2)].setFixed(true,{x:1,z:1});
@@ -272,13 +272,15 @@ function initLattice() {
 	var start = new Date().getTime();
 	// solveEquilibrium(solveNums);
 
-	solver = new FrameSolver(geom.nodes,geom.beams,constraints);
+	// solver = new FrameSolver(geom.nodes,geom.beams,constraints);
 
-	solver.solveForces()
+	console.log(geom.beams[0].assemble_T());
+
+	// solver.solveForces()
 	// var dt = new Date().getTime() - start;
 	// console.log('Solved in ' + dt + 'ms');
 	console.log(geom);
-	console.log(_.flatten(solver.u._data))
+	// console.log(_.flatten(solver.u._data))
 
 	// deformGeometry(solver.u._data);
 	// var forces = _.flatten(solver.f._data);
