@@ -4,6 +4,39 @@ var globals = {
 	needToRefresh: false
 };
 
+function generateBeamGeometry() {
+	_nodes = [];
+	_beams = [];
+	_h = -100;
+	_l = 100;
+
+	var node = new Node(new THREE.Vector3(0, 0, 0),0);
+	_nodes.push(node);
+
+	var node = new Node(new THREE.Vector3(0, 0, _h),1);
+	_nodes.push(node);
+
+	var node = new Node(new THREE.Vector3(_l, 0, _h),2);
+	_nodes.push(node);
+
+	var node = new Node(new THREE.Vector3(_l, 0, 0),3);
+	_nodes.push(node);
+
+	var beam = new Beam([_nodes[0],_nodes[1]],0)
+	_beams.push(beam)
+
+	// var beam = new Beam([_nodes[1],_nodes[2]],1)
+	// _beams.push(beam)
+
+	var beam = new Beam([_nodes[2],_nodes[3]],1)
+	_beams.push(beam)
+
+	return {
+		nodes: _nodes,
+		beams: _beams 
+	};
+}
+
 function generateGeometry() {
 	_nodes = [];
 	_beams = [];
@@ -220,7 +253,10 @@ function deformGeometryBending(u) {
 			index+=3;
 		}
 	}
-	geom.beams[0].updateBeam();
+	sceneClearBeam();
+	_.each(geom.beams, function(beam) {
+		beam.updateBeam();
+	});
 }
 
 function refreshPoints() {
@@ -264,20 +300,22 @@ function displayForces(beams,forces) {
 
 function initLattice() {
 	// Generate geometry
-	geom = generateGeometry()
+	geom = generateBeamGeometry();
 	console.log(geom)
 
 	// Fix nodes
 	constraints = [];
 	geom.nodes[0].setFixed(true,{x:1,z:1,c:1});
 	constraints.push(geom.nodes[0]);
+	geom.nodes[3].setFixed(true,{x:1,z:1,c:1});
+	constraints.push(geom.nodes[3]);
 	// geom.nodes[globals.ntall].setFixed(true,{x:1,z:1});
 	// geom.nodes[globals.ntall*(globals.nwide-2)].setFixed(true,{x:1,z:1});
 
 	// prescribe forces and displacements
 	// geom.nodes[globals.ntall-1].addDisplacement( new THREE.Vector3(80,0,0));
 	// geom.nodes[globals.nwide*globals.ntall-1].addDisplacement( new THREE.Vector3(-80,0,0));
-	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(40,0,0));
+	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(400,0,0));
 	// geom.nodes[globals.nwide*globals.ntall-1].addExternalForce( new THREE.Vector3(-100,0,0));
 
 	// setup solve
@@ -293,19 +331,24 @@ function initLattice() {
 	solver = new FrameSolver(geom.nodes,geom.beams,constraints);
 	solver.assemble_X();
 	console.log(solver.X)
-	console.log(geom.beams[0].assemble_T())
-	geom.beams[0].calculate_k()
-	console.log(geom.beams[0].k)
-	u = math.lusolve(geom.beams[0].k,solver.X);
-	// console.log(math.inv(geom.beams[0].k))
+	solver.calculate_Ksys();
+	var Ksys = []
+	solver.Ksys.forEach(function (value, index, matrix) {
+  		Ksys.push(value);
+	});
+	console.log(Ksys)
+	solver.calculate_U();
+
+	var dt = new Date().getTime() - start;
+	console.log('Solved in ' + dt + 'ms');
+
 	displacements = [];
-	u.forEach(function (value, index, matrix) {
+	solver.u.forEach(function (value, index, matrix) {
   		displacements.push(value);
 	});
+	console.log(displacements)
 	deformGeometryBending(displacements);
-	// solver.solveForces()
-	// var dt = new Date().getTime() - start;
-	// console.log('Solved in ' + dt + 'ms');
+
 	console.log(geom);
 	// console.log(_.flatten(solver.u._data))
 

@@ -60,6 +60,10 @@ function elementAdd(matrix, index, value){
 	return matrix.subset(math.index(index[0],index[1]),matrix.subset(math.index(index[0],index[1]))+value);
 }
 
+function addEl(matrix, index, value){
+	return matrix.subset(math.index(index[0],index[1]),matrix.subset(math.index(index[0],index[1]))+value);
+}
+
 FrameSolver.prototype.assemble_k = function() {
 	// for (var i = 0; i < this.beams.length; i+=3) {
 	// 	var beam = this.beams[i];
@@ -129,16 +133,56 @@ FrameSolver.prototype.assemble_k = function() {
 	};
 }
 
-// FrameSolver.prototype.calculate_K = function() {
-// 	console.log(math.transpose(this.T))
-// 	console.log(this.k)
-// 	console.log(this.T)
-// 	this.Ksys = math.multiply(math.multiply(this.T,math.transpose(this.k)),this.T);
-// 	// this.Ksys = math.multiply(math.multiply(this.T,this.k),math.transpose(this.T));
-// 	// this.Ksys = math.multiply(math.multiply(math.transpose(this.T),this.k),this.T);
+FrameSolver.prototype.calculate_Ksys = function() {
+	var node_indices = [];
+	var array_index = [];
+	var last_size = 0;
+	_.each(this.beams, function(beam) {
 
-// 	return this.Ksys
-// }
+		var self = this;
+		// _.each(beam.nodes, function(node) {
+			var node = beam.nodes[0];
+			var othernode = beam.nodes[1];
+			if (node.fixed) {
+				node = beam.nodes[1];
+				othernode = beam.nodes[0];
+			}
+			if (!node.fixed) {
+
+				var rows = beam.k._size[0];
+				var cols = beam.k._size[1];
+
+				index = _.indexOf(node_indices,node.index);
+				if (index == -1) {
+					node_indices.push(node.index);
+					index = node_indices.length-1;
+					if (rows > 3) {
+						node_indices.push(othernode.index);
+						array_index.push(rows/2);
+						array_index.push(rows/2);
+					} else {
+						array_index.push(rows);
+					}
+				}
+				console.log('index = ' + index);
+
+				console.log("size k = " + rows + " by " + cols);
+
+				for (var i = 0; i < rows; i++) {
+					for (var j = 0; j < cols; j++) {
+						addEl(self.Ksys,[index+i,index+j],getEl(beam.k,[i,j]));
+					}
+				}
+
+			}
+
+		// },beam);
+
+	},this);
+
+
+	return this.Ksys
+}
 
 FrameSolver.prototype.calculate_U = function() {	
 	this.u = math.lusolve(this.Ksys,this.X);

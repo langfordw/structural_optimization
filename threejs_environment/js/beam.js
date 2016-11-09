@@ -4,19 +4,23 @@ function Beam(nodes, index) {
 	nodes[0].addBeam(this);
 	nodes[1].addBeam(this);
 	this.vertices = [nodes[0].getPosition(), nodes[1].getPosition()];
+	this.theta0 = [this.getAngle(this.vertices[1]), this.getAngle(this.vertices[1])];
+	this.theta = [this.nodes[0].theta, this.nodes[1].theta];
 	this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
 	this.len0 = this.len;
 	this.force = 0;
+
 	this.a1 = 1;
 	this.a2 = 1;
+
 	this.k_prime = math.zeros(6,6);
 	this.assemble_k_prime();
+
 	this.T = math.matrix([0]);
-	this.k = math.matrix([0]);
 	this.assemble_T();
-	this.theta = [this.nodes[0].theta, this.nodes[1].theta];
-	console.log(this.theta)
-	// this.calculate_k();
+
+	this.k = math.matrix([0]);
+	this.calculate_k();
 
 	// BEAMS AS LINES
 	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
@@ -26,10 +30,12 @@ function Beam(nodes, index) {
 	// this.object3D = new THREE.Line(lineGeo, beamMat);
 
 	// BEAMS AS CUBIC BEZIERS
+	var l = this.len/3;
+	var dtheta = [this.theta[0]-this.getAngle(this.vertices[0])+Math.PI/2,this.theta[1]-this.getAngle(this.vertices[1])+Math.PI/2];
 	var curve = new THREE.CubicBezierCurve3(
 		this.vertices[0],
-		this.vertices[0].clone().add(new THREE.Vector3( this.len*Math.sin(this.theta[0]), 0, this.len*Math.cos(this.theta[0]) )),
-		this.vertices[1].clone().add(new THREE.Vector3( -this.len*Math.sin(this.theta[1]), 0, this.len*Math.cos(this.theta[1]) )),
+		this.vertices[0].clone().add(new THREE.Vector3( l*Math.sin(dtheta[0]), 0, l*Math.cos(dtheta[0]) )),
+		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.sin(dtheta[1]), 0, -l*Math.cos(dtheta[1]) )),
 		this.vertices[1]
 	);
 
@@ -52,12 +58,15 @@ function Beam(nodes, index) {
 
 Beam.prototype.updateBeam = function() {
 	this.theta = [-this.nodes[0].theta, -this.nodes[1].theta];
-	console.log(this.theta)
+	
 	var l = this.len/3;
+	var dtheta = [this.theta[0]-this.getAngle(this.vertices[0]),this.theta[1]-this.getAngle(this.vertices[1])];
+	var dtheta = [this.theta0[0]-this.theta[0], this.theta0[1]+this.theta[1]];
+	console.log("dtheta = " + dtheta)
 	var curve = new THREE.CubicBezierCurve3(
 		this.vertices[0],
-		this.vertices[0].clone().add(new THREE.Vector3( l*Math.sin(this.theta[0]), 0, l*Math.cos(this.theta[0]) )),
-		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.sin(this.theta[1]), 0, -l*Math.cos(this.theta[1]) )),
+		this.vertices[0].clone().add(new THREE.Vector3( l*Math.cos(dtheta[0]), 0, l*Math.sin(dtheta[0]) )),
+		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.cos(dtheta[1]), 0, -l*Math.sin(dtheta[1]) )),
 		this.vertices[1]
 	);
 
@@ -71,7 +80,7 @@ Beam.prototype.updateBeam = function() {
 	var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
 
 	this.object3D = new THREE.Line( lineGeo, beamMat );
-	sceneClearBeam();
+	
 	sceneAddBeam(this.object3D);
 }
 
@@ -113,7 +122,6 @@ Beam.prototype.getAngle = function(fromNode) {
 Beam.prototype.assemble_T = function() {
 	var index = 0;
 	var dof_count = 0;
-
 	_.each(this.nodes, function(node) {
 		var c = Math.cos(this.getAngle(node.getPosition()));
 		var s = Math.sin(this.getAngle(node.getPosition()));

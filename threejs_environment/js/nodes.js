@@ -1,5 +1,5 @@
 var nodeMat = new THREE.MeshBasicMaterial({color: 0x259997});
-var nodeGeo = new THREE.SphereGeometry(6,20,20);
+var nodeGeo = new THREE.SphereGeometry(1,20,20);
 var arrowColor = 0xff0088;
 
 function Node(position, index) {
@@ -72,6 +72,10 @@ Node.prototype.setFixed = function(fixed,dof_object) {
 	this.fixed = fixed;
 	this.fixed_dof = dof_object;
 	displayFixedTriangle(this);
+	_.each(this.beams, function(beam){
+		beam.assemble_T();
+		beam.calculate_k();
+	});
 }
 
 Node.prototype.attachSprings = function() {
