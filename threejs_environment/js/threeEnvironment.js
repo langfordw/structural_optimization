@@ -6,6 +6,7 @@ var camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.inner
 									window.innerHeight / 2, window.innerHeight / - 2, -1000, 10000 );
 
 var wrapper = new THREE.Object3D();//object to set global scale and position
+var beamWrapper = new THREE.Object3D();//object to set global scale and position
 
 var reflectionCube;
 var refractionCube;
@@ -87,6 +88,7 @@ function initThreeJS() {
 	controls.target = new THREE.Vector3(camera_center.x,0,camera_center.z);
 	controls.rotateLeft(Math.PI/2);
 
+	sceneAdd(beamWrapper);
 	scene.add(wrapper);
 
 	// loadCubeMap();
@@ -96,8 +98,16 @@ function sceneAdd(object){
     wrapper.add(object);
 }
 
+function sceneAddBeam(object){
+    beamWrapper.add(object);
+}
+
 function sceneClear(){
     wrapper.children = [];
+}
+
+function sceneClearBeam(){
+    beamWrapper.children = [];
 }
 
 function render(){

@@ -17,29 +17,43 @@ function FrameSolver(nodes, beams, constraints) {
 	this.f = math.zeros(num_beams);
 }
 
-FrameSolver.prototype.assemble_T = function() {
+// FrameSolver.prototype.assemble_T = function() {
+// 	var index = 0;
+// 	for (var i = 0; i < this.nodes.length; i++) {
+// 		var node = this.nodes[i];
+// 		if (!node.fixed) {
+// 			for (var j=0; j < node.beams.length; j++) {
+// 				var beam = node.beams[j];
+// 				this.T.subset(math.index(index,beam.index),Math.cos(beam.getAngle(node.getPosition())));
+// 				this.T.subset(math.index(index+1,beam.index),Math.sin(beam.getAngle(node.getPosition())));
+// 				this.T.subset(math.index(index+2,beam.index),1);
+// 			}
+// 			if (node.externalForce != null) {
+// 				this.X.subset(math.index(index),node.externalForce.x);
+// 				this.X.subset(math.index(index+1),node.externalForce.z);
+// 				this.X.subset(math.index(index+2),node.externalMoment);
+// 			}
+// 			index += 3;
+// 		}
+// 	}
+// 	return {
+// 		T: this.T,
+// 		X: this.X
+// 	}
+// }
+
+FrameSolver.prototype.assemble_X = function() {
 	var index = 0;
-	for (var i = 0; i < this.nodes.length; i++) {
-		var node = this.nodes[i];
-		if (!node.fixed) {
-			for (var j=0; j < node.beams.length; j++) {
-				var beam = node.beams[j];
-				this.T.subset(math.index(index,beam.index),Math.cos(beam.getAngle(node.getPosition())));
-				this.T.subset(math.index(index+1,beam.index),Math.sin(beam.getAngle(node.getPosition())));
-				this.T.subset(math.index(index+2,beam.index),1);
-			}
-			if (node.externalForce != null) {
-				this.X.subset(math.index(index),node.externalForce.x);
-				this.X.subset(math.index(index+1),node.externalForce.z);
-				this.X.subset(math.index(index+2),node.externalMoment);
-			}
+	_.each(this.nodes, function(node) {
+		if (node.externalForce != null) {
+			this.X.subset(math.index(index),node.externalForce.x);
+			this.X.subset(math.index(index+1),node.externalForce.z);
+			this.X.subset(math.index(index+2),node.externalMoment);
 			index += 3;
-		}
-	}
-	return {
-		T: this.T,
-		X: this.X
-	}
+		}	
+	}, this);
+
+	return this.X;
 }
 
 function elementAdd(matrix, index, value){
@@ -115,17 +129,16 @@ FrameSolver.prototype.assemble_k = function() {
 	};
 }
 
-FrameSolver.prototype.calculate_K = function() {
-	console.log(math.transpose(this.T))
-	console.log(this.k)
-	console.log(this.T)
-	this.Ksys = math.multiply(math.multiply(this.T,math.transpose(this.k)),this.T);
-	// this.Ksys = math.multiply(math.multiply(this.T,this.k),math.transpose(this.T));
-	// this.Ksys = math.multiply(math.multiply(math.transpose(this.T),this.k),this.T);
+// FrameSolver.prototype.calculate_K = function() {
+// 	console.log(math.transpose(this.T))
+// 	console.log(this.k)
+// 	console.log(this.T)
+// 	this.Ksys = math.multiply(math.multiply(this.T,math.transpose(this.k)),this.T);
+// 	// this.Ksys = math.multiply(math.multiply(this.T,this.k),math.transpose(this.T));
+// 	// this.Ksys = math.multiply(math.multiply(math.transpose(this.T),this.k),this.T);
 
-	// need to remove fixed elements from Ksys (rows and columns)
-	return this.Ksys
-}
+// 	return this.Ksys
+// }
 
 FrameSolver.prototype.calculate_U = function() {	
 	this.u = math.lusolve(this.Ksys,this.X);

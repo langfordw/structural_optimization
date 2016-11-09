@@ -24,6 +24,7 @@ function Node(position, index) {
 	this.z0 = position.z;
 	this.displacement = null;
 	this.arrow = null;
+	this.theta = 0;
 	
 }
 

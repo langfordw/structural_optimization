@@ -210,6 +210,19 @@ function deformGeometry(u) {
 	}
 }
 
+function deformGeometryBending(u) {
+	var index = 0;
+	for (var i = 0; i < geom.nodes.length; i++) {
+		if (!geom.nodes[i].fixed) {
+			console.log(u[index])
+			geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index],0,u[index+1])));
+			geom.nodes[i].theta = u[index+2];
+			index+=3;
+		}
+	}
+	geom.beams[0].updateBeam();
+}
+
 function refreshPoints() {
 	sceneClear();
 	geom = generateGeometry();
@@ -222,6 +235,11 @@ function updateForces(beams,forces) {
 	_.each(forces, function(force,i){
 		beams[i].setForce(force);
 	});	
+}
+
+
+function getEl(matrix, index){
+	return matrix.subset(math.index(index[0],index[1]));
 }
 
 function displayForces(beams,forces) {
@@ -272,10 +290,19 @@ function initLattice() {
 	var start = new Date().getTime();
 	// solveEquilibrium(solveNums);
 
-	// solver = new FrameSolver(geom.nodes,geom.beams,constraints);
-
-	console.log(geom.beams[0].assemble_T());
-
+	solver = new FrameSolver(geom.nodes,geom.beams,constraints);
+	solver.assemble_X();
+	console.log(solver.X)
+	console.log(geom.beams[0].assemble_T())
+	geom.beams[0].calculate_k()
+	console.log(geom.beams[0].k)
+	u = math.lusolve(geom.beams[0].k,solver.X);
+	// console.log(math.inv(geom.beams[0].k))
+	displacements = [];
+	u.forEach(function (value, index, matrix) {
+  		displacements.push(value);
+	});
+	deformGeometryBending(displacements);
 	// solver.solveForces()
 	// var dt = new Date().getTime() - start;
 	// console.log('Solved in ' + dt + 'ms');
