@@ -122,10 +122,12 @@ Beam.prototype.getAngle = function(fromNode) {
 Beam.prototype.assemble_T = function() {
 	var index = 0;
 	var dof_count = 0;
+	this.T = math.matrix([0]);
 	_.each(this.nodes, function(node) {
-		var c = Math.cos(this.getAngle(node.getPosition()));
-		var s = Math.sin(this.getAngle(node.getPosition()));
-
+		var c = Math.abs(Math.cos(this.getAngle(node.getPosition())));
+		var s = Math.abs(Math.sin(this.getAngle(node.getPosition())));
+		// var c = (this.nodes[0].getPosition().x - this.nodes[1].getPosition().x)/this.len;
+		// var s = (this.nodes[0].getPosition().z - this.nodes[1].getPosition().z)/this.len;
 		if (!node.fixed_dof.x) {
 			dof_count++;
 			setEl(this.T,[index,dof_count-1],c);
@@ -144,7 +146,6 @@ Beam.prototype.assemble_T = function() {
 		}
 		index += 3
 	}, this);
-
 	this.T = this.T.resize([6,dof_count]);
 	return this.T
 }

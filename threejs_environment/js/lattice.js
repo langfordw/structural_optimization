@@ -1,5 +1,5 @@
 var globals = {
-	nwide: 1,
+	nwide: 3,
 	ntall: 2,
 	needToRefresh: false
 };
@@ -84,36 +84,36 @@ function generateGeometry() {
 				beam_index++;
 			}			
 
-			// positive slope diagonals
-			if (j > 0 && i > 0){
-				// var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-				// _beams.push(beam)
-				// beam_index++;
+			// // positive slope diagonals
+			// if (j > 0 && i > 0){
+			// 	// var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// 	// _beams.push(beam)
+			// 	// beam_index++;
 
-				if (j < 2 || j > globals.ntall-2) {
-					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-					_beams.push(beam)
-					beam_index++;
-				}
-
-				if (i < 2 || i > globals.nwide-2) {
-					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-					_beams.push(beam)
-					beam_index++;
-				}
-
-			// 	if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
-			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 		_beams.push(beam)
-			// 		beam_index++;
-			// 	}
-			// 	if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
+			// 	if (j < 2 || j > globals.ntall-2) {
 			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
 			// 		_beams.push(beam)
 			// 		beam_index++;
 			// 	}
 
-			}	
+			// 	if (i < 2 || i > globals.nwide-2) {
+			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// 		_beams.push(beam)
+			// 		beam_index++;
+			// 	}
+
+			// // 	if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
+			// // 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// // 		_beams.push(beam)
+			// // 		beam_index++;
+			// // 	}
+			// // 	if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
+			// // 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// // 		_beams.push(beam)
+			// // 		beam_index++;
+			// // 	}
+
+			// }	
 
 			// // negative slope diagonals
 			// if (j < globals.ntall-1 && i > 0){
@@ -318,6 +318,7 @@ function displayForces(beams,forces) {
 
 function initLattice() {
 	// Generate geometry
+	// geom = generateGeometry();
 	geom = generateBeamGeometry();
 	console.log(geom)
 
@@ -349,46 +350,10 @@ function initLattice() {
 	solver = new FrameSolver(geom.nodes,geom.beams,constraints);
 	solver.assemble_X();
 	console.log(solver.X)
-	
-	// var Ksys = []
-	// solver.Ksys.forEach(function (value, index, matrix) {
- //  		Ksys.push(value);
-	// });
-	console.log("kprime")
-	console.log(geom.beams[0].k_prime)
-	console.log("beam 0: T, k")
-	geom.beams[0].T._data = [[0, 0, 0],
-							 [0, 0, 0],
-							 [0, 0, 0],
-							 [0, 1, 0],
-							 [-1, 0, 0],
-							 [0, 0, 1]];
-	console.log(geom.beams[0].T)
-	console.log(geom.beams[0].calculate_k())
-	console.log("beam 1: T, k")
-	geom.beams[1].T._data = [[1, 0, 0, 0, 0, 0],
-							 [0, 1, 0, 0, 0, 0],
-							 [0, 0, 1, 0, 0, 0],
-							 [0, 0, 0, 1, 0, 0],
-							 [0, 0, 0, 0, 1, 0],
-							 [0, 0, 0, 0, 0, 1]];
-	console.log(geom.beams[1].T)
-	console.log(geom.beams[1].calculate_k())
-	console.log("beam 2: T, k")
-	geom.beams[2].T._data = [[0, -1, 0],
-							 [1, 0, 0],
-							 [0, 0, 1],
-							 [0, 0, 0],
-							 [0, 0, 0],
-							 [0, 0, 0]];
-							 
-	console.log(geom.beams[2].T)
-	console.log(geom.beams[2].calculate_k())
-
 	solver.calculate_Ksys();
 	console.log(solver.Ksys)
-	// solver.calculate_U();
-	solver.u = math.multiply(math.inv(solver.Ksys),solver.X)
+	solver.calculate_U();
+	// solver.u = math.multiply(math.inv(solver.Ksys),solver.X)
 
 	console.log(math.multiply(solver.Ksys,solver.u))
 
