@@ -1,7 +1,9 @@
 var globals = {
-	nwide: 5,
-	ntall: 5,
-	needToRefresh: false
+	nwide: 7,
+	ntall: 7,
+	linear_scale: 1.0,
+	angular_scale: 1.0,
+	beam_forces: []
 };
 
 function initLattice() {
@@ -11,8 +13,9 @@ function initLattice() {
 
 	// ***** CONSTRAIN NODES *******
 	constraints = [];
-	geom.nodes[0].setFixed(true,{x:1,z:1,c:1});
-	constraints.push(geom.nodes[0]);
+	var bottomleft = globals.ntall*4
+	geom.nodes[bottomleft].setFixed(true,{x:1,z:1,c:1});
+	constraints.push(bottomleft);
 	var bottomright = globals.ntall*(globals.nwide-1);
 	geom.nodes[bottomright].setFixed(true,{x:1,z:1,c:1});
 	constraints.push(geom.nodes[bottomright]);
@@ -23,7 +26,7 @@ function initLattice() {
 	// **** PRESCRIBE FORCES AND DISPLACEMENTS ******
 	// geom.nodes[globals.ntall-1].addDisplacement( new THREE.Vector3(80,0,0));
 	// geom.nodes[globals.nwide*globals.ntall-1].addDisplacement( new THREE.Vector3(-80,0,0));
-	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(40,0,0));
+	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(0,0,-40));
 	// geom.nodes[globals.nwide*globals.ntall-1].addExternalForce( new THREE.Vector3(-100,0,0));
 
 	console.log("initial state:")
@@ -44,17 +47,12 @@ function initLattice() {
 
 	// frame solve:
 	solver = new FrameSolver(geom.nodes,geom.beams,constraints);
-	solver.assemble_X();
-	console.log("external forces:")
-	console.log(solver.X)
-
-	solver.calculate_Ksys();
-	solver.calculate_U();
-	console.log("forces:")
-	console.log(math.multiply(solver.Ksys,solver.u))
-
-	console.log("solver:")
+	console.log("solver setup:")
 	console.log(solver)
+	solver.solve();
+	console.log("solver results:")
+	console.log(solver)
+	solver.calculate_beam_forces();
 
 	var dt = new Date().getTime() - start;
 	console.log('Solved in ' + dt + 'ms');
@@ -68,6 +66,12 @@ function initLattice() {
 	console.log("displacements:")
 	console.log(displacements)
 	deformGeometryBending(displacements,3.0);
+
+	_.each(geom.beams, function(beam) {
+		var f = Math.sqrt(Math.pow(beam.f._data[0][0],2) + Math.pow(beam.f._data[1][0],2));
+		globals.beam_forces.push(f);
+	})
+	displayForces(geom.beams,globals.beam_forces);
 
 	// axial solve
 	// deformGeometry(solver.u._data);

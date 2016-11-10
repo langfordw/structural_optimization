@@ -96,13 +96,15 @@ Node.prototype.drawArrow = function(position) {
 		position = this.getPosition().clone();
 	}
 	if (this.displacement != null) {
-		vector = this.displacement;
+		vector = this.displacement.clone();
 	} else if (this.externalForce != null) {
-		vector = this.externalForce;
+		vector = this.externalForce.clone();
 	} else {
 		return;
 	}
+	vector.z *= -1;
 	var offsetOrigin = this.externalForce.clone().normalize().multiplyScalar(5);
+	offsetOrigin.z *= -1;
 	var arrow = new THREE.ArrowHelper( vector, position.sub(vector).sub(offsetOrigin), 
 									   vector.length(), arrowColor, 10, 20 );
 	arrow.line.material = new THREE.LineBasicMaterial( { color: arrowColor, linewidth: 14});

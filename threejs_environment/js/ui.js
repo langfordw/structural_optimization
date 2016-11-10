@@ -1,15 +1,15 @@
 $('#scale').on('input', function() { 
      // get the current value of the input field.
-     var scale = $(this).val();
-     deformGeometryBending(displacements,scale);
+     globals.linear_scale = $(this).val();
+     deformGeometryBending(displacements,globals.linear_scale,globals.angular_scale);
      // updatePoints();
      // console.log(globals.nwide);
 });
 
-$('#ntall').on('input', function() { 
+$('#angular_scale').on('input', function() { 
      // get the current value of the input field.
-     globals.ntall = $(this).val();
-     refreshPoints();
+     globals.angular_scale = $(this).val();
+     deformGeometryBending(displacements,globals.linear_scale,globals.angular_scale);
      // updatePoints();
      // console.log(globals.nwide);
 });

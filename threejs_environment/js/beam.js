@@ -8,7 +8,8 @@ function Beam(nodes, index) {
 	this.theta = [this.nodes[0].theta, this.nodes[1].theta];
 	this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
 	this.len0 = this.len;
-	this.force = 0;
+	this.force = 0
+	this.f;
 
 	this.a1 = 100;
 	this.a2 = 1;
@@ -23,12 +24,14 @@ function Beam(nodes, index) {
 		n00: null,
 		n11: null,
 		n01: null,
-		n10: null
+		n10: null,
+		full: null
 	};
 	this.k.n00 = math.zeros(3,3);
 	this.k.n11 = math.zeros(3,3);
 	this.k.n01 = math.zeros(3,3);
 	this.k.n10 = math.zeros(3,3);
+	this.k.full = math.zeros(3,3);
 	this.calculate_4ks();
 
 	// BEAMS AS LINES
@@ -169,20 +172,22 @@ Beam.prototype.calculate_4ks = function() {
 	node1 = this.nodes[1];
 	if (!node0.fixed && !node1.fixed) {
 		// K is 6x6
-		var full_k = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
-		this.k.n00 = math.subset(full_k, math.index(math.range(0,3),math.range(0,3)));
-		this.k.n11 = math.subset(full_k, math.index(math.range(3,6),math.range(3,6)));
-		this.k.n01 = math.subset(full_k, math.index(math.range(0,3),math.range(3,6)));
-		this.k.n10 = math.subset(full_k, math.index(math.range(3,6),math.range(0,3)));
+		this.k.full = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.n00 = math.subset(this.k.full, math.index(math.range(0,3),math.range(0,3)));
+		this.k.n11 = math.subset(this.k.full, math.index(math.range(3,6),math.range(3,6)));
+		this.k.n01 = math.subset(this.k.full, math.index(math.range(0,3),math.range(3,6)));
+		this.k.n10 = math.subset(this.k.full, math.index(math.range(3,6),math.range(0,3)));
 	} else if (!node0.fixed) {
 		// only node0 is free, K is 3x3
-		this.k.n00 = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.full = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.n00 = this.k.full
 		this.k.n11 = null;
 		this.k.n01 = null;
 		this.k.n10 = null;
 	} else if (!node1.fixed) {
 		// only node1 is free, K is 3x3
-		this.k.n11 = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.full = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.n11 = this.k.full
 		this.k.n00 = null;
 		this.k.n01 = null;
 		this.k.n10 = null;
@@ -191,7 +196,8 @@ Beam.prototype.calculate_4ks = function() {
 		n00: this.k.n00,
 		n11: this.k.n11,
 		n01: this.k.n01, 
-		n10: this.k.n10
+		n10: this.k.n10,
+		full: this.k.full
 	};
 }
 

@@ -81,36 +81,36 @@ function generateGeometry() {
 				beam_index++;
 			}			
 
-			// // positive slope diagonals
-			// if (j > 0 && i > 0){
-			// 	// var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 	// _beams.push(beam)
-			// 	// beam_index++;
+			// positive slope diagonals
+			if (j > 0 && i > 0){
+				// var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+				// _beams.push(beam)
+				// beam_index++;
 
-			// 	if (j < 2 || j > globals.ntall-2) {
+				if (j < 2 || j > globals.ntall-2) {
+					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+					_beams.push(beam)
+					beam_index++;
+				}
+
+				if (i < 2 || i > globals.nwide-2) {
+					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+					_beams.push(beam)
+					beam_index++;
+				}
+
+			// 	if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
+			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+			// 		_beams.push(beam)
+			// 		beam_index++;
+			// 	}
+			// 	if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
 			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
 			// 		_beams.push(beam)
 			// 		beam_index++;
 			// 	}
 
-			// 	if (i < 2 || i > globals.nwide-2) {
-			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 		_beams.push(beam)
-			// 		beam_index++;
-			// 	}
-
-			// // 	if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
-			// // 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// // 		_beams.push(beam)
-			// // 		beam_index++;
-			// // 	}
-			// // 	if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
-			// // 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// // 		_beams.push(beam)
-			// // 		beam_index++;
-			// // 	}
-
-			// }	
+			}	
 
 			// // negative slope diagonals
 			// if (j < globals.ntall-1 && i > 0){
@@ -153,13 +153,13 @@ function deformGeometry(u) {
 	}
 }
 
-function deformGeometryBending(u,scale=1.0) {
+function deformGeometryBending(u,scale=1.0,angular_scale=1.0) {
 	var index = 0;
 	for (var i = 0; i < geom.nodes.length; i++) {
 		if (!geom.nodes[i].fixed) {
 			geom.nodes[i].setPosition(new THREE.Vector3(geom.nodes[i].x0+scale*u[index],0,geom.nodes[i].z0-scale*u[index+1]));
 			// geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(scale*u[index],0,scale*u[index+1])));
-			geom.nodes[i].theta = u[index+2];
+			geom.nodes[i].theta = angular_scale*u[index+2];
 			index+=3;
 		}
 	}
@@ -167,6 +167,7 @@ function deformGeometryBending(u,scale=1.0) {
 	_.each(geom.beams, function(beam) {
 		beam.updateBeam();
 	});
+	displayForces(geom.beams,globals.beam_forces);
 }
 
 function updateForces(beams,forces) {
@@ -176,7 +177,7 @@ function updateForces(beams,forces) {
 }
 
 function displayForces(beams,forces) {
-	displayMagnitude = true;
+	displayMagnitude = false;
 	if (displayMagnitude) {
 		_.map(forces, function(force) { Math.abs(force) });
 	}

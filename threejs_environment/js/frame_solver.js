@@ -9,7 +9,10 @@ function FrameSolver(nodes, beams, constraints) {
 	this.free_nodes = this.getFreeNodes();
 
 	this.X = math.zeros(num_dofs);
+	this.assemble_X();
+
 	this.Ksys = math.zeros(num_dofs, num_dofs);
+	this.calculate_Ksys();
 
 	this.u = math.zeros(num_dofs);
 	this.f = math.zeros(num_beams);
@@ -41,56 +44,6 @@ FrameSolver.prototype.assemble_X = function() {
 	return this.X;
 }
 
-// FrameSolver.prototype.calculate_Ksys = function() {
-// 	var node_indices = [];
-// 	var array_index = [];
-// 	var sum_sizes = 0;
-// 	_.each(this.beams, function(beam) {
-// 		if (beam.k != null) {
-// 			var self = this;
-// 			var node = beam.nodes[0];
-// 			var othernode = beam.nodes[1];
-// 			if (node.fixed) {
-// 				node = beam.nodes[1];
-// 				othernode = beam.nodes[0];
-// 			}
-// 			if (!node.fixed) {
-
-// 				var rows = beam.k._size[0];
-// 				var cols = beam.k._size[1];
-
-// 				index = _.indexOf(node_indices,node.index);
-// 				if (index == -1) {
-// 					console.log('node index not in stiffness matrix yet');
-// 					node_indices.push(node.index);
-// 					index = node_indices.length-1;
-// 					if (rows > 3) {
-// 						node_indices.push(othernode.index);
-// 						index = sum_sizes;
-// 						sum_sizes += 6;
-// 					} else {
-// 						index = sum_sizes;
-// 						sum_sizes +=3;
-// 					}
-// 				}
-// 				console.log('index = ' + index);
-
-// 				console.log("size k = " + rows + " by " + cols);
-// 				for (var i = 0; i < rows; i++) {
-// 					for (var j = 0; j < cols; j++) {
-// 						addEl(self.Ksys,[index+i,index+j],getEl(beam.k,[i,j]));
-// 					}
-// 				}
-
-// 			}
-// 		}
-
-// 	},this);
-
-
-// 	return this.Ksys
-// }
-
 FrameSolver.prototype.calculate_Ksys = function() {
 	// to generalize this to non-fully constrained nodes,
 	// might add a second array of a cumulative sum of DoF's
@@ -117,7 +70,6 @@ FrameSolver.prototype.calculate_Ksys = function() {
 			
 	},this);
 	
-
 	return this.Ksys
 }
 
@@ -126,24 +78,39 @@ FrameSolver.prototype.calculate_U = function() {
 	return this.u
 }
 
-// FrameSolver.prototype.calculate_f = function() {
-// 	this.f = math.multiply(math.multiply(this.k,math.transpose(this.T)),this.u)
-// 	return this.f
-// }
+FrameSolver.prototype.calculate_beam_forces = function() {
+	_.each(this.beams, function(beam) {
 
-// FrameSolver.prototype.solveForces = function() {
-// 	var debug = true;
-// 	if (debug) {
-// 		// console.log(solver.assemble_T());
-// 		console.log(solver.assemble_k());
-// 		console.log(solver.calculate_K());
-// 		console.log(solver.calculate_U());
-// 		console.log(solver.calculate_f());
-// 	} else {
-// 		solver.assemble_T();
-// 		solver.assemble_k();
-// 		solver.calculate_K();
-// 		solver.calculate_U();
-// 		solver.calculate_f();
-// 	}
-// }
+		var index0 = _.indexOf(this.free_nodes,beam.nodes[0].index);
+		var index1 = _.indexOf(this.free_nodes,beam.nodes[1].index);
+		var f_index = 0;
+
+		var u_nodes = math.matrix([0]);
+
+		if (index0 != -1) {
+			setEl(u_nodes, [f_index,0], getEl(this.u,[index0,0]));
+			setEl(u_nodes, [f_index+1,0], getEl(this.u,[index0+1,0]));
+			setEl(u_nodes, [f_index+2,0], getEl(this.u,[index0+2,0]));
+			f_index += 3;
+		}
+
+		if (index1 != -1) {
+			setEl(u_nodes, [f_index,0], getEl(this.u,[index1,0]));
+			setEl(u_nodes, [f_index+1,0], getEl(this.u,[index1+1,0]));
+			setEl(u_nodes, [f_index+2,0], getEl(this.u,[index1+2,0]));
+		}
+
+		// if both aren't fixed, then get the forces
+		if (index0 != -1 || index1 != -1) {
+			var f = math.multiply(beam.k.full,u_nodes)
+			beam.f = f;
+		} else {
+			beam.f = math.zeros(6);
+		}
+
+	},this);
+}
+
+FrameSolver.prototype.solve = function() {
+	this.calculate_U();
+}

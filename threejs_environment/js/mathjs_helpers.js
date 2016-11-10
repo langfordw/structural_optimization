@@ -6,6 +6,10 @@ function getEl(matrix, index){
 	return matrix.subset(math.index(index[0],index[1]));
 }
 
+function getEl1(matrix, index){
+	return matrix.subset(math.index(index));
+}
+
 function addEl(matrix, index, value){
 	return matrix.subset(math.index(index[0],index[1]),matrix.subset(math.index(index[0],index[1]))+value);
 }
