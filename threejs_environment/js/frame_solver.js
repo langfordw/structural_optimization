@@ -136,7 +136,7 @@ FrameSolver.prototype.assemble_k = function() {
 FrameSolver.prototype.calculate_Ksys = function() {
 	var node_indices = [];
 	var array_index = [];
-	var last_size = 0;
+	var sum_sizes = 0;
 	_.each(this.beams, function(beam) {
 
 		var self = this;
@@ -154,20 +154,21 @@ FrameSolver.prototype.calculate_Ksys = function() {
 
 				index = _.indexOf(node_indices,node.index);
 				if (index == -1) {
+					console.log('node index not in stiffness matrix yet');
 					node_indices.push(node.index);
 					index = node_indices.length-1;
 					if (rows > 3) {
 						node_indices.push(othernode.index);
-						array_index.push(rows/2);
-						array_index.push(rows/2);
+						index = sum_sizes;
+						sum_sizes += 6;
 					} else {
-						array_index.push(rows);
+						index = sum_sizes;
+						sum_sizes +=3;
 					}
 				}
 				console.log('index = ' + index);
 
 				console.log("size k = " + rows + " by " + cols);
-
 				for (var i = 0; i < rows; i++) {
 					for (var j = 0; j < cols; j++) {
 						addEl(self.Ksys,[index+i,index+j],getEl(beam.k,[i,j]));

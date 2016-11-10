@@ -22,14 +22,32 @@ function generateBeamGeometry() {
 	var node = new Node(new THREE.Vector3(_l, 0, 0),3);
 	_nodes.push(node);
 
+	// var node = new Node(new THREE.Vector3(0, 0, 2*_h),4);
+	// _nodes.push(node);
+
+	// var node = new Node(new THREE.Vector3(_l, 0, 2*_h),5);
+	// _nodes.push(node);
+
 	var beam = new Beam([_nodes[0],_nodes[1]],0)
 	_beams.push(beam)
 
-	// var beam = new Beam([_nodes[1],_nodes[2]],1)
+	var beam = new Beam([_nodes[1],_nodes[2]],1)
+	_beams.push(beam)
+
+	var beam = new Beam([_nodes[2],_nodes[3]],2)
+	_beams.push(beam)
+
+	// var beam = new Beam([_nodes[1],_nodes[4]],3)
 	// _beams.push(beam)
 
-	var beam = new Beam([_nodes[2],_nodes[3]],1)
-	_beams.push(beam)
+	// var beam = new Beam([_nodes[4],_nodes[5]],4)
+	// _beams.push(beam)
+
+	// var beam = new Beam([_nodes[5],_nodes[2]],5)
+	// _beams.push(beam)
+
+	// var beam = new Beam([_nodes[2],_nodes[0]],3)
+	// _beams.push(beam)
 
 	return {
 		nodes: _nodes,
@@ -243,12 +261,12 @@ function deformGeometry(u) {
 	}
 }
 
-function deformGeometryBending(u) {
+function deformGeometryBending(u,scale=1.0) {
 	var index = 0;
 	for (var i = 0; i < geom.nodes.length; i++) {
 		if (!geom.nodes[i].fixed) {
-			console.log(u[index])
-			geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index],0,u[index+1])));
+			geom.nodes[i].setPosition(new THREE.Vector3(geom.nodes[i].x0+scale*u[index],0,geom.nodes[i].z0-scale*u[index+1]));
+			// geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(scale*u[index],0,scale*u[index+1])));
 			geom.nodes[i].theta = u[index+2];
 			index+=3;
 		}
@@ -315,7 +333,7 @@ function initLattice() {
 	// prescribe forces and displacements
 	// geom.nodes[globals.ntall-1].addDisplacement( new THREE.Vector3(80,0,0));
 	// geom.nodes[globals.nwide*globals.ntall-1].addDisplacement( new THREE.Vector3(-80,0,0));
-	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(400,0,0));
+	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(40,0,0));
 	// geom.nodes[globals.nwide*globals.ntall-1].addExternalForce( new THREE.Vector3(-100,0,0));
 
 	// setup solve
@@ -331,13 +349,48 @@ function initLattice() {
 	solver = new FrameSolver(geom.nodes,geom.beams,constraints);
 	solver.assemble_X();
 	console.log(solver.X)
+	
+	// var Ksys = []
+	// solver.Ksys.forEach(function (value, index, matrix) {
+ //  		Ksys.push(value);
+	// });
+	console.log("kprime")
+	console.log(geom.beams[0].k_prime)
+	console.log("beam 0: T, k")
+	geom.beams[0].T._data = [[0, 0, 0],
+							 [0, 0, 0],
+							 [0, 0, 0],
+							 [0, 1, 0],
+							 [-1, 0, 0],
+							 [0, 0, 1]];
+	console.log(geom.beams[0].T)
+	console.log(geom.beams[0].calculate_k())
+	console.log("beam 1: T, k")
+	geom.beams[1].T._data = [[1, 0, 0, 0, 0, 0],
+							 [0, 1, 0, 0, 0, 0],
+							 [0, 0, 1, 0, 0, 0],
+							 [0, 0, 0, 1, 0, 0],
+							 [0, 0, 0, 0, 1, 0],
+							 [0, 0, 0, 0, 0, 1]];
+	console.log(geom.beams[1].T)
+	console.log(geom.beams[1].calculate_k())
+	console.log("beam 2: T, k")
+	geom.beams[2].T._data = [[0, -1, 0],
+							 [1, 0, 0],
+							 [0, 0, 1],
+							 [0, 0, 0],
+							 [0, 0, 0],
+							 [0, 0, 0]];
+							 
+	console.log(geom.beams[2].T)
+	console.log(geom.beams[2].calculate_k())
+
 	solver.calculate_Ksys();
-	var Ksys = []
-	solver.Ksys.forEach(function (value, index, matrix) {
-  		Ksys.push(value);
-	});
-	console.log(Ksys)
-	solver.calculate_U();
+	console.log(solver.Ksys)
+	// solver.calculate_U();
+	solver.u = math.multiply(math.inv(solver.Ksys),solver.X)
+
+	console.log(math.multiply(solver.Ksys,solver.u))
 
 	var dt = new Date().getTime() - start;
 	console.log('Solved in ' + dt + 'ms');
@@ -347,7 +400,7 @@ function initLattice() {
   		displacements.push(value);
 	});
 	console.log(displacements)
-	deformGeometryBending(displacements);
+	deformGeometryBending(displacements,3.0);
 
 	console.log(geom);
 	// console.log(_.flatten(solver.u._data))

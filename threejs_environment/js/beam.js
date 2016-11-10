@@ -10,7 +10,7 @@ function Beam(nodes, index) {
 	this.len0 = this.len;
 	this.force = 0;
 
-	this.a1 = 1;
+	this.a1 = 100;
 	this.a2 = 1;
 
 	this.k_prime = math.zeros(6,6);
@@ -62,7 +62,7 @@ Beam.prototype.updateBeam = function() {
 	var l = this.len/3;
 	var dtheta = [this.theta[0]-this.getAngle(this.vertices[0]),this.theta[1]-this.getAngle(this.vertices[1])];
 	var dtheta = [this.theta0[0]-this.theta[0], this.theta0[1]+this.theta[1]];
-	console.log("dtheta = " + dtheta)
+	// console.log("dtheta = " + dtheta)
 	var curve = new THREE.CubicBezierCurve3(
 		this.vertices[0],
 		this.vertices[0].clone().add(new THREE.Vector3( l*Math.cos(dtheta[0]), 0, l*Math.sin(dtheta[0]) )),
@@ -92,8 +92,8 @@ Beam.prototype.assemble_k_prime = function() {
 	this.k_prime.subset(math.index(2,2),4*Math.pow(this.len,2)*this.a2);
 	this.k_prime.subset(math.index(3,3),this.a1);
 	this.k_prime.subset(math.index(4,4),12*this.a2);
-	this.k_prime.subset(math.index(5,4),6*this.len*this.a2);
-	this.k_prime.subset(math.index(4,5),6*this.len*this.a2);
+	this.k_prime.subset(math.index(5,4),-6*this.len*this.a2);
+	this.k_prime.subset(math.index(4,5),-6*this.len*this.a2);
 	this.k_prime.subset(math.index(5,5),4*Math.pow(this.len,2)*this.a2);
 	this.k_prime.subset(math.index(0,3),-this.a1);
 	this.k_prime.subset(math.index(1,4),-12*this.a2);

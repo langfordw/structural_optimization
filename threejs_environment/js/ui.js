@@ -1,7 +1,7 @@
-$('#nwide').on('input', function() { 
+$('#scale').on('input', function() { 
      // get the current value of the input field.
-     globals.nwide = $(this).val();
-     refreshPoints();
+     var scale = $(this).val();
+     deformGeometryBending(displacements,scale);
      // updatePoints();
      // console.log(globals.nwide);
 });
