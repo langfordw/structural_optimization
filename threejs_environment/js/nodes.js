@@ -3,12 +3,6 @@ var nodeGeo = new THREE.SphereGeometry(6,20,20);
 var arrowColor = 0xff0088;
 
 function Node(position, index) {
-
-	// var nodeMat = new THREE.MeshLambertMaterial( { color: 0x0066ff, 
-	// 	envMap: reflectionCube, 
-	// 	combine: THREE.MixOperation, 
-	// 	reflectivity: 0.3 } );
-
 	this.index = index;
 	this.object3D = new THREE.Mesh(nodeGeo, nodeMat);
 	position = position.clone();
@@ -25,7 +19,6 @@ function Node(position, index) {
 	this.displacement = null;
 	this.arrow = null;
 	this.theta = 0;
-	
 }
 
 Node.prototype.addDisplacement = function(displacement_vector) {
@@ -74,7 +67,7 @@ Node.prototype.setFixed = function(fixed,dof_object) {
 	displayFixedTriangle(this);
 	_.each(this.beams, function(beam){
 		beam.assemble_T();
-		beam.calculate_k();
+		beam.calculate_4ks();
 	});
 }
 

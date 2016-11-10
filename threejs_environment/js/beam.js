@@ -19,66 +19,56 @@ function Beam(nodes, index) {
 	this.T = math.matrix([0]);
 	this.assemble_T();
 
-	this.k = math.matrix([0]);
-	this.calculate_k();
+	this.k = {
+		n00: null,
+		n11: null,
+		n01: null,
+		n10: null
+	};
+	this.k.n00 = math.zeros(3,3);
+	this.k.n11 = math.zeros(3,3);
+	this.k.n01 = math.zeros(3,3);
+	this.k.n10 = math.zeros(3,3);
+	this.calculate_4ks();
 
 	// BEAMS AS LINES
-	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
-	var lineGeo = new THREE.Geometry();
-	lineGeo.dynamic = true;
+	// var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
+	// var lineGeo = new THREE.Geometry();
+	// lineGeo.dynamic = true;
 	// lineGeo.vertices = this.vertices;
 	// this.object3D = new THREE.Line(lineGeo, beamMat);
 
 	// BEAMS AS CUBIC BEZIERS
 	var l = this.len/3;
-	var dtheta = [this.theta[0]-this.getAngle(this.vertices[0])+Math.PI/2,this.theta[1]-this.getAngle(this.vertices[1])+Math.PI/2];
-	var curve = new THREE.CubicBezierCurve3(
-		this.vertices[0],
-		this.vertices[0].clone().add(new THREE.Vector3( l*Math.sin(dtheta[0]), 0, l*Math.cos(dtheta[0]) )),
-		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.sin(dtheta[1]), 0, -l*Math.cos(dtheta[1]) )),
-		this.vertices[1]
-	);
-
-	lineGeo.vertices = curve.getPoints( 50 );
-
-	var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
-
-	// Create the final Object3d to add to the scene
-	this.object3D = new THREE.Line( lineGeo, beamMat );
-
-	// BEAMS AS CYLINDERS
-	// this.object3D = drawCylinder(this.vertices[0],this.vertices[1])
-
-	// BEAMS AS PLATES
-	// this.object3D = drawPlate(this.vertices[0],this.vertices[1]);
-	
-	// sceneAdd(this.object3D);
-	sceneAddBeam(this.object3D);
-}
-
-Beam.prototype.updateBeam = function() {
-	this.theta = [-this.nodes[0].theta, -this.nodes[1].theta];
-	
-	var l = this.len/3;
-	var dtheta = [this.theta[0]-this.getAngle(this.vertices[0]),this.theta[1]-this.getAngle(this.vertices[1])];
 	var dtheta = [this.theta0[0]-this.theta[0], this.theta0[1]+this.theta[1]];
-	// console.log("dtheta = " + dtheta)
 	var curve = new THREE.CubicBezierCurve3(
 		this.vertices[0],
 		this.vertices[0].clone().add(new THREE.Vector3( l*Math.cos(dtheta[0]), 0, l*Math.sin(dtheta[0]) )),
 		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.cos(dtheta[1]), 0, -l*Math.sin(dtheta[1]) )),
 		this.vertices[1]
 	);
-
 	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
 	var lineGeo = new THREE.Geometry();
-
 	lineGeo.dynamic = true;
-
 	lineGeo.vertices = curve.getPoints( 50 );
+	this.object3D = new THREE.Line( lineGeo, beamMat );
+}
 
-	var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
-
+Beam.prototype.updateBeam = function() {
+	this.theta = [-this.nodes[0].theta, -this.nodes[1].theta];
+	
+	var l = this.len/3;
+	var dtheta = [this.theta0[0]-this.theta[0], this.theta0[1]+this.theta[1]];
+	var curve = new THREE.CubicBezierCurve3(
+		this.vertices[0],
+		this.vertices[0].clone().add(new THREE.Vector3( l*Math.cos(dtheta[0]), 0, l*Math.sin(dtheta[0]) )),
+		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.cos(dtheta[1]), 0, -l*Math.sin(dtheta[1]) )),
+		this.vertices[1]
+	);
+	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
+	var lineGeo = new THREE.Geometry();
+	lineGeo.dynamic = true;
+	lineGeo.vertices = curve.getPoints( 50 );
 	this.object3D = new THREE.Line( lineGeo, beamMat );
 	
 	sceneAddBeam(this.object3D);
@@ -108,14 +98,9 @@ Beam.prototype.assemble_k_prime = function() {
 	return this.k_prime;
 }
 
-function setEl(matrix, index, value){
-	return matrix.subset(math.index(index[0],index[1]),value);
-}
-
 Beam.prototype.getAngle = function(fromNode) {
 	var node2 = this.vertices[0];
     if (node2.equals(fromNode)) node2 = this.vertices[1];
-	// return Math.atan2(node2.z-fromNode.z, node2.x-fromNode.x);
 	return Math.atan2(fromNode.z-node2.z, fromNode.x-node2.x);
 };
 
@@ -124,10 +109,20 @@ Beam.prototype.assemble_T = function() {
 	var dof_count = 0;
 	this.T = math.matrix([0]);
 	_.each(this.nodes, function(node) {
-		var c = Math.abs(Math.cos(this.getAngle(node.getPosition())));
-		var s = Math.abs(Math.sin(this.getAngle(node.getPosition())));
-		// var c = (this.nodes[0].getPosition().x - this.nodes[1].getPosition().x)/this.len;
-		// var s = (this.nodes[0].getPosition().z - this.nodes[1].getPosition().z)/this.len;
+		// var c = Math.abs(Math.cos(this.getAngle(node.getPosition())));
+		// var s = Math.abs(Math.sin(this.getAngle(node.getPosition())));
+
+		var c = (this.nodes[1].getPosition().x - this.nodes[0].getPosition().x)/this.len;
+		var s = (this.nodes[1].getPosition().z - this.nodes[0].getPosition().z)/this.len;
+
+		// othernode = this.nodes[1]
+		// if (othernode.index == node.index) {
+		// 	othernode = this.nodes[0]
+		// }
+
+		// var c = (othernode.getPosition().x - node.getPosition().x)/this.len;
+		// var s = (othernode.getPosition().z - node.getPosition().z)/this.len;
+		
 		if (!node.fixed_dof.x) {
 			dof_count++;
 			setEl(this.T,[index,dof_count-1],c);
@@ -151,8 +146,53 @@ Beam.prototype.assemble_T = function() {
 }
 
 Beam.prototype.calculate_k = function() {
-	this.k = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
-	return this.k
+	if (this.T._size[1] > 0){
+		if (this.index == -1) {
+			this.k = this.k_prime;
+			return this.k;
+		} else {
+			this.k = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+			return this.k;
+		}
+		
+	} else {
+		return null;
+	}
+}
+
+Beam.prototype.calculate_4ks = function() {
+	// return series of 3x3 matrices:
+		// one for each un-fixed node
+		// and two more for their interaction (0's if one is fixed)
+
+	node0 = this.nodes[0];
+	node1 = this.nodes[1];
+	if (!node0.fixed && !node1.fixed) {
+		// K is 6x6
+		var full_k = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.n00 = math.subset(full_k, math.index(math.range(0,3),math.range(0,3)));
+		this.k.n11 = math.subset(full_k, math.index(math.range(3,6),math.range(3,6)));
+		this.k.n01 = math.subset(full_k, math.index(math.range(0,3),math.range(3,6)));
+		this.k.n10 = math.subset(full_k, math.index(math.range(3,6),math.range(0,3)));
+	} else if (!node0.fixed) {
+		// only node0 is free, K is 3x3
+		this.k.n00 = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.n11 = null;
+		this.k.n01 = null;
+		this.k.n10 = null;
+	} else if (!node1.fixed) {
+		// only node1 is free, K is 3x3
+		this.k.n11 = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.n00 = null;
+		this.k.n01 = null;
+		this.k.n10 = null;
+	}
+	return {
+		n00: this.k.n00,
+		n11: this.k.n11,
+		n01: this.k.n01, 
+		n10: this.k.n10
+	};
 }
 
 Beam.prototype.updatePosition = function(){
@@ -167,7 +207,7 @@ Beam.prototype.updatePosition = function(){
 
 
 Beam.prototype.getPE = function() {
-	return (this.k * Math.pow(this.len-this.len0,2));
+	return (this.a1 * Math.pow(this.len-this.len0,2));
 };
 
 Beam.prototype.getIndex = function() {

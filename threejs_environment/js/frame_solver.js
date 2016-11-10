@@ -6,181 +6,117 @@ function FrameSolver(nodes, beams, constraints) {
 	this.nodes = nodes;
 	this.beams = beams;
 	this.constraints = constraints;
+	this.free_nodes = this.getFreeNodes();
 
-	this.T = math.zeros(3, 6);
 	this.X = math.zeros(num_dofs);
-	this.k_prime = math.zeros(6,6);
-	this.k = math.zeros(num_beams*3, num_beams*6);
 	this.Ksys = math.zeros(num_dofs, num_dofs);
 
 	this.u = math.zeros(num_dofs);
 	this.f = math.zeros(num_beams);
 }
 
-// FrameSolver.prototype.assemble_T = function() {
-// 	var index = 0;
-// 	for (var i = 0; i < this.nodes.length; i++) {
-// 		var node = this.nodes[i];
-// 		if (!node.fixed) {
-// 			for (var j=0; j < node.beams.length; j++) {
-// 				var beam = node.beams[j];
-// 				this.T.subset(math.index(index,beam.index),Math.cos(beam.getAngle(node.getPosition())));
-// 				this.T.subset(math.index(index+1,beam.index),Math.sin(beam.getAngle(node.getPosition())));
-// 				this.T.subset(math.index(index+2,beam.index),1);
-// 			}
-// 			if (node.externalForce != null) {
-// 				this.X.subset(math.index(index),node.externalForce.x);
-// 				this.X.subset(math.index(index+1),node.externalForce.z);
-// 				this.X.subset(math.index(index+2),node.externalMoment);
-// 			}
-// 			index += 3;
-// 		}
-// 	}
-// 	return {
-// 		T: this.T,
-// 		X: this.X
-// 	}
-// }
+FrameSolver.prototype.getFreeNodes = function() {
+	var free_nodes = []
+	_.each(this.nodes, function(node) {
+		if (!node.fixed) {
+			free_nodes.push(node.index);
+		}
+	},this);
+	return free_nodes;
+}
+
 
 FrameSolver.prototype.assemble_X = function() {
 	var index = 0;
-	_.each(this.nodes, function(node) {
+	_.each(this.free_nodes, function(node_index) {
+		node = this.nodes[node_index];
 		if (node.externalForce != null) {
 			this.X.subset(math.index(index),node.externalForce.x);
 			this.X.subset(math.index(index+1),node.externalForce.z);
 			this.X.subset(math.index(index+2),node.externalMoment);
-			index += 3;
-		}	
+		}
+		index += 3;	
 	}, this);
 
 	return this.X;
 }
 
-function elementAdd(matrix, index, value){
-	return matrix.subset(math.index(index[0],index[1]),matrix.subset(math.index(index[0],index[1]))+value);
-}
+// FrameSolver.prototype.calculate_Ksys = function() {
+// 	var node_indices = [];
+// 	var array_index = [];
+// 	var sum_sizes = 0;
+// 	_.each(this.beams, function(beam) {
+// 		if (beam.k != null) {
+// 			var self = this;
+// 			var node = beam.nodes[0];
+// 			var othernode = beam.nodes[1];
+// 			if (node.fixed) {
+// 				node = beam.nodes[1];
+// 				othernode = beam.nodes[0];
+// 			}
+// 			if (!node.fixed) {
 
-function addEl(matrix, index, value){
-	return matrix.subset(math.index(index[0],index[1]),matrix.subset(math.index(index[0],index[1]))+value);
-}
+// 				var rows = beam.k._size[0];
+// 				var cols = beam.k._size[1];
 
-FrameSolver.prototype.assemble_k = function() {
-	// for (var i = 0; i < this.beams.length; i+=3) {
-	// 	var beam = this.beams[i];
-	// 	this.k.subset(math.index(i,i),beam.a1);
-	// 	this.k.subset(math.index(i+1,i+1),12*beam.a2);
-	// 	this.k.subset(math.index(i+2,i+1),6*beam.len*beam.a2);
-	// 	this.k.subset(math.index(i+1,i+2),6*beam.len*beam.a2);
-	// 	this.k.subset(math.index(i+2,i+2),4*Math.pow(beam.len,2)*beam.a2);
-	// }
-	// var k_local = math.multiply(math.multiply(math.transpose(this.T),beam.k_prime),this.T);
+// 				index = _.indexOf(node_indices,node.index);
+// 				if (index == -1) {
+// 					console.log('node index not in stiffness matrix yet');
+// 					node_indices.push(node.index);
+// 					index = node_indices.length-1;
+// 					if (rows > 3) {
+// 						node_indices.push(othernode.index);
+// 						index = sum_sizes;
+// 						sum_sizes += 6;
+// 					} else {
+// 						index = sum_sizes;
+// 						sum_sizes +=3;
+// 					}
+// 				}
+// 				console.log('index = ' + index);
 
-	for (var k = 0; k < this.beams.length; k++) {
-		var beam = this.beams[k];
-		var i = beam.nodes[1].index*3;
-		var j = beam.nodes[0].index*3;
-		console.log("nodes = " + i + ", " + j)
+// 				console.log("size k = " + rows + " by " + cols);
+// 				for (var i = 0; i < rows; i++) {
+// 					for (var j = 0; j < cols; j++) {
+// 						addEl(self.Ksys,[index+i,index+j],getEl(beam.k,[i,j]));
+// 					}
+// 				}
 
-		console.log(beam.nodes)
-		var c1 = Math.cos(beam.getAngle(beam.nodes[0].getPosition()));
-		var c2 = Math.cos(beam.getAngle(beam.nodes[1].getPosition()));
-		var s1 = Math.sin(beam.getAngle(beam.nodes[0].getPosition()));
-		var s2 = Math.sin(beam.getAngle(beam.nodes[1].getPosition()));
+// 			}
+// 		}
 
-		elementAdd(this.k,[i,i],beam.a1);
-		elementAdd(this.k,[i+1,i+1],12*beam.a2);
-		elementAdd(this.k,[i+2,i+1],6*beam.len*beam.a2);
-		elementAdd(this.k,[i+1,i+2],6*beam.len*beam.a2);
-		elementAdd(this.k,[i+2,i+2],4*Math.pow(beam.len,2)*beam.a2);
-
-		// elementAdd(this.k,[j,j],beam.a1);
-		// elementAdd(this.k,[j+1,j+1],12*beam.a2);
-		// elementAdd(this.k,[j+2,j+1],6*beam.len*beam.a2);
-		// elementAdd(this.k,[j+1,j+2],6*beam.len*beam.a2);
-		// elementAdd(this.k,[j+2,j+2],4*Math.pow(beam.len,2)*beam.a2);
-
-		// elementAdd(this.k,[i,j],-beam.a1);
-		// elementAdd(this.k,[i+1,j+1],-12*beam.a2);
-		// elementAdd(this.k,[i+2,j+1],-6*beam.len*beam.a2);
-		// elementAdd(this.k,[i+1,j+2],6*beam.len*beam.a2);
-		// elementAdd(this.k,[i+2,j+2],4*Math.pow(beam.len,2)*beam.a2);
-
-		// elementAdd(this.k,[j,i],-beam.a1);
-		// elementAdd(this.k,[j+1,i+1],-12*beam.a2);
-		// elementAdd(this.k,[j+2,i+1],6*beam.len*beam.a2);
-		// elementAdd(this.k,[j+1,i+2],-6*beam.len*beam.a2);
-		// elementAdd(this.k,[j+2,i+2],4*Math.pow(beam.len,2)*beam.a2);
+// 	},this);
 
 
-		elementAdd(this.T,[i,i],c1);
-		elementAdd(this.T,[i+1,i+1],c1);
-		elementAdd(this.T,[i,i+1],-s1);
-		elementAdd(this.T,[i+1,i],s1);
-		elementAdd(this.T,[i+2,i+2],1);
-
-		// elementAdd(this.T,[j,j],c1);
-		// elementAdd(this.T,[j+1,j+1],c1);
-		// elementAdd(this.T,[j,j+1],-s1);
-		// elementAdd(this.T,[j+1,j],s1);
-		// elementAdd(this.T,[j+2,j+2],1);
-
-		// this.k.subset(math.index(math.range(0,3),math.range(0,6)));
-	}
-
-	return {
-		k: this.k,
-		T: this.T
-	};
-}
+// 	return this.Ksys
+// }
 
 FrameSolver.prototype.calculate_Ksys = function() {
-	var node_indices = [];
-	var array_index = [];
-	var sum_sizes = 0;
+	// to generalize this to non-fully constrained nodes,
+	// might add a second array of a cumulative sum of DoF's
+	// (in getFreeNodes)
+	
 	_.each(this.beams, function(beam) {
+		// first add all the unfixed nodes to the diagonals
+		var index0 = _.indexOf(this.free_nodes,beam.nodes[0].index);
+		var index1 = _.indexOf(this.free_nodes,beam.nodes[1].index);
 
-		var self = this;
-		// _.each(beam.nodes, function(node) {
-			var node = beam.nodes[0];
-			var othernode = beam.nodes[1];
-			if (node.fixed) {
-				node = beam.nodes[1];
-				othernode = beam.nodes[0];
-			}
-			if (!node.fixed) {
+		if (index0 != -1) {
+			add3x3El(this.Ksys,[index0*3,index0*3],beam.k.n00);
+		}
 
-				var rows = beam.k._size[0];
-				var cols = beam.k._size[1];
+		if (index1 != -1) {
+			add3x3El(this.Ksys,[index1*3,index1*3],beam.k.n11);
+		}
 
-				index = _.indexOf(node_indices,node.index);
-				if (index == -1) {
-					console.log('node index not in stiffness matrix yet');
-					node_indices.push(node.index);
-					index = node_indices.length-1;
-					if (rows > 3) {
-						node_indices.push(othernode.index);
-						index = sum_sizes;
-						sum_sizes += 6;
-					} else {
-						index = sum_sizes;
-						sum_sizes +=3;
-					}
-				}
-				console.log('index = ' + index);
-
-				console.log("size k = " + rows + " by " + cols);
-				for (var i = 0; i < rows; i++) {
-					for (var j = 0; j < cols; j++) {
-						addEl(self.Ksys,[index+i,index+j],getEl(beam.k,[i,j]));
-					}
-				}
-
-			}
-
-		// },beam);
-
+		// then add the off diagonals
+		if (index0 != -1 && index1 != -1) {
+			add3x3El(this.Ksys,[index0*3,index1*3],beam.k.n01);
+			add3x3El(this.Ksys,[index1*3,index0*3],beam.k.n10);
+		}
+			
 	},this);
-
+	
 
 	return this.Ksys
 }
@@ -190,24 +126,24 @@ FrameSolver.prototype.calculate_U = function() {
 	return this.u
 }
 
-FrameSolver.prototype.calculate_f = function() {
-	this.f = math.multiply(math.multiply(this.k,math.transpose(this.T)),this.u)
-	return this.f
-}
+// FrameSolver.prototype.calculate_f = function() {
+// 	this.f = math.multiply(math.multiply(this.k,math.transpose(this.T)),this.u)
+// 	return this.f
+// }
 
-FrameSolver.prototype.solveForces = function() {
-	var debug = true;
-	if (debug) {
-		// console.log(solver.assemble_T());
-		console.log(solver.assemble_k());
-		console.log(solver.calculate_K());
-		console.log(solver.calculate_U());
-		console.log(solver.calculate_f());
-	} else {
-		solver.assemble_T();
-		solver.assemble_k();
-		solver.calculate_K();
-		solver.calculate_U();
-		solver.calculate_f();
-	}
-}
+// FrameSolver.prototype.solveForces = function() {
+// 	var debug = true;
+// 	if (debug) {
+// 		// console.log(solver.assemble_T());
+// 		console.log(solver.assemble_k());
+// 		console.log(solver.calculate_K());
+// 		console.log(solver.calculate_U());
+// 		console.log(solver.calculate_f());
+// 	} else {
+// 		solver.assemble_T();
+// 		solver.assemble_k();
+// 		solver.calculate_K();
+// 		solver.calculate_U();
+// 		solver.calculate_f();
+// 	}
+// }
