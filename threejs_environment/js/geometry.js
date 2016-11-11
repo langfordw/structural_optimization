@@ -87,28 +87,28 @@ function generateGeometry() {
 				// _beams.push(beam)
 				// beam_index++;
 
-				if (j < 2 || j > globals.ntall-2) {
+				// if (j < 2 || j > globals.ntall-2) {
+				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+				// 	_beams.push(beam)
+				// 	beam_index++;
+				// }
+
+				// if (i < 2 || i > globals.nwide-2) {
+				// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
+				// 	_beams.push(beam)
+				// 	beam_index++;
+				// }
+
+				if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
 					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
 					_beams.push(beam)
 					beam_index++;
 				}
-
-				if (i < 2 || i > globals.nwide-2) {
+				if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
 					var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
 					_beams.push(beam)
 					beam_index++;
 				}
-
-			// 	if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
-			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 		_beams.push(beam)
-			// 		beam_index++;
-			// 	}
-			// 	if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
-			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 		_beams.push(beam)
-			// 		beam_index++;
-			// 	}
 
 			}	
 
@@ -177,7 +177,7 @@ function updateForces(beams,forces) {
 }
 
 function displayForces(beams,forces) {
-	displayMagnitude = false;
+	displayMagnitude = true;
 	if (displayMagnitude) {
 		_.map(forces, function(force) { Math.abs(force) });
 	}

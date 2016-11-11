@@ -10,6 +10,7 @@ function Beam(nodes, index) {
 	this.len0 = this.len;
 	this.force = 0
 	this.f;
+	this.highlighted = false;
 
 	this.a1 = 100;
 	this.a2 = 1;
@@ -55,6 +56,8 @@ function Beam(nodes, index) {
 	lineGeo.dynamic = true;
 	lineGeo.vertices = curve.getPoints( 50 );
 	this.object3D = new THREE.Line( lineGeo, beamMat );
+	this.lastColor = this.object3D.material.color.clone();
+	this.object3D._myBeam = this;
 }
 
 Beam.prototype.updateBeam = function() {
@@ -73,7 +76,8 @@ Beam.prototype.updateBeam = function() {
 	lineGeo.dynamic = true;
 	lineGeo.vertices = curve.getPoints( 50 );
 	this.object3D = new THREE.Line( lineGeo, beamMat );
-	
+	this.object3D._myBeam = this;
+	this.lastColor = this.object3D.material.color.clone();
 	sceneAddBeam(this.object3D);
 }
 
@@ -210,7 +214,18 @@ Beam.prototype.updatePosition = function(){
     // this.object3D.geometry.computeBoundingSphere(); // this is very expensive (roughly doubles the compute time for an update)
 };
 
+Beam.prototype.highlight = function() {
+	if (!this.highlighted) {
+		this.lastColor = this.object3D.material.color.clone();
+		this.object3D.material.color.set(0xffff00);
+	}
+	this.highlighted = true;
+}
 
+Beam.prototype.unhighlight = function() {
+	this.object3D.material.color.set(this.lastColor);
+	this.highlighted = false;
+}
 
 Beam.prototype.getPE = function() {
 	return (this.a1 * Math.pow(this.len-this.len0,2));
@@ -242,6 +257,7 @@ Beam.prototype.setHSLColor = function(val, max, min){
     var color = new THREE.Color();
     color.setHSL(scaledVal, 1, 0.5);
     this.object3D.material.color.set(color);
+    this.lastColor = this.object3D.material.color.clone();
 };
 
 Beam.prototype.setTensionCompressionColor = function(val, max){
@@ -251,4 +267,5 @@ Beam.prototype.setTensionCompressionColor = function(val, max){
     } else {
         this.object3D.material.color.setRGB(0, 0, scaledVal);
     }
+    this.lastColor = this.object3D.material.color.clone();
 };

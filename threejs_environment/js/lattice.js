@@ -1,6 +1,6 @@
 var globals = {
-	nwide: 7,
-	ntall: 7,
+	nwide: 3,
+	ntall: 3,
 	linear_scale: 1.0,
 	angular_scale: 1.0,
 	beam_forces: []
@@ -13,7 +13,7 @@ function initLattice() {
 
 	// ***** CONSTRAIN NODES *******
 	constraints = [];
-	var bottomleft = globals.ntall*4
+	var bottomleft = 0
 	geom.nodes[bottomleft].setFixed(true,{x:1,z:1,c:1});
 	constraints.push(bottomleft);
 	var bottomright = globals.ntall*(globals.nwide-1);
@@ -26,7 +26,8 @@ function initLattice() {
 	// **** PRESCRIBE FORCES AND DISPLACEMENTS ******
 	// geom.nodes[globals.ntall-1].addDisplacement( new THREE.Vector3(80,0,0));
 	// geom.nodes[globals.nwide*globals.ntall-1].addDisplacement( new THREE.Vector3(-80,0,0));
-	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(0,0,-40));
+	geom.nodes[globals.ntall-1].addExternalForce( new THREE.Vector3(40,0,0));
+	// geom.nodes[globals.ntall*3].addExternalForce( new THREE.Vector3(0,0,40));
 	// geom.nodes[globals.nwide*globals.ntall-1].addExternalForce( new THREE.Vector3(-100,0,0));
 
 	console.log("initial state:")
@@ -69,6 +70,7 @@ function initLattice() {
 
 	_.each(geom.beams, function(beam) {
 		var f = Math.sqrt(Math.pow(beam.f._data[0][0],2) + Math.pow(beam.f._data[1][0],2));
+		// var f = Math.abs(beam.f._data[0][0]);
 		globals.beam_forces.push(f);
 	})
 	displayForces(geom.beams,globals.beam_forces);

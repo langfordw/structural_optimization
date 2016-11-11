@@ -1,10 +1,12 @@
-var nodeMat = new THREE.MeshBasicMaterial({color: 0x259997});
-var nodeGeo = new THREE.SphereGeometry(6,20,20);
 var arrowColor = 0xff0088;
 
 function Node(position, index) {
+	var nodeMat = new THREE.MeshBasicMaterial({color: 0x259997});
+	var nodeGeo = new THREE.SphereGeometry(6,20,20);
+
 	this.index = index;
 	this.object3D = new THREE.Mesh(nodeGeo, nodeMat);
+	this.object3D._myNode = this;
 	position = position.clone();
 	this.object3D.position.set(position.x,position.y,position.z);
 	sceneAdd(this.object3D);
@@ -19,6 +21,8 @@ function Node(position, index) {
 	this.displacement = null;
 	this.arrow = null;
 	this.theta = 0;
+	this.lastColor = this.object3D.material.color.clone();
+	this.highlighted = false;
 }
 
 Node.prototype.addDisplacement = function(displacement_vector) {
@@ -115,4 +119,17 @@ Node.prototype.drawArrow = function(position) {
 Node.prototype.updateArrow = function(deltaPos) {
 	var position = this.arrow.position.add(deltaPos);
 	this.arrow.line.position.set(position);
+}
+
+Node.prototype.highlight = function() {
+	if (!this.highlighted) {
+		this.lastColor = this.object3D.material.color.clone();
+		this.object3D.material.color.set(0x00ffff);
+	}
+	this.highlighted = true;
+}
+
+Node.prototype.unhighlight = function() {
+	this.object3D.material.color.set(this.lastColor);
+	this.highlighted = false;
 }
