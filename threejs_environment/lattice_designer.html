@@ -4,28 +4,28 @@
 		<title>three.js webgl - geometry - catmull spline editor</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<style>
-			body {
-				font-family: Monospace;
-				background-color: #404040;
-				margin: 0px;
-				overflow: hidden;
-			}
-		</style>
-	</head>
-	<body>
+
+		<link rel="stylesheet" type="text/css" href="css/main.css"/>
 
 		<script src="build/three.js"></script>
 		<script src="js/controls/OrbitControls.js"></script>
-<!-- 		// <script src="js/controls/TransformControls.js"></script>
-		// <script src="js/controls/DragControls.js"></script> -->
-		<!-- // <script src="js/cameras/CombinedCamera.js"></script> -->
-
 		<script src="js/libs/stats.min.js"></script>
-		<script src="http://code.jquery.com/jquery-latest.min.js"
-        type="text/javascript"></script>
+		<script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+
+		
+		<!-- <script src="js/Cobyla.js"></script> -->
+	</head>
+
+	<body>
 
 
+
+		<div id="threeDiv"></div>
+		<div id="toolTip"></div>
+		
+
+        
+<!-- 
 		<div align="center" style="width:33%;padding:10px;display:block;margin:auto">
 		 <form role="form" style="background-color: #e0e0e0;padding-bottom:15px;padding-top:10px">
 		  <div class="form-group">
@@ -33,14 +33,22 @@
 		    <input type="range" class="form-control" id="scale" min=0 max=20 step=0.5 default=1>
 		    <span type="text" id="scale_value"></span>
 		  </div>
-<!-- 		  <div class="form-group">
-		    <label for="pitch">Num Tall:</label>
-		    <input type="range" class="form-control" id="ntall" min=1 max=10 step=1 default=5>
-		    <span type="text" id="pitch_value"></span>
-		  </div> -->
+		  <div class="form-group">
+		    <label for="pitch">Angular Scale:</label>
+		    <input type="range" class="form-control" id="angular_scale" min=0 max=20 step=0.5 default=1>
+		    <span type="text" id="angular_scale_value"></span>
+		  </div>
+		  <div class="form-group">
+		    <label for="pitch">Mouse Position:</label>
+		    <span type="text" id="mouse_pos">(12,10)</span>
+		  </div>
 		  </form>
-		 </div>
+		 </div> -->
 
+
+		
+
+		<!-- <canvas id="canvas"></canvas> -->
 
 		<script src="js/underscore-min.js" type="text/javascript"></script>
 		<!-- <script src="js/math/numeric-1.2.6.js" type="text/javascript"></script> -->
@@ -57,14 +65,13 @@
 		<script src="js/direct_stiffness_solver.js"></script>
 		<script src="js/frame_solver.js"></script>
 		<script src="js/ui.js"></script>
-		<!-- <script src="js/Cobyla.js"></script> -->
 		<script type="text/javascript">
 			initThreeJS();
 			initLattice();
 			animate();
 		</script>
 
-		<canvas id="canvas"></canvas>
-
 	</body>
+
+	
 </html>

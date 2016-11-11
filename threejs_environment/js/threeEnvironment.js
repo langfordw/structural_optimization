@@ -8,39 +8,54 @@ var camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.inner
 var wrapper = new THREE.Object3D();//object to set global scale and position
 var beamWrapper = new THREE.Object3D();//object to set global scale and position
 
-var reflectionCube;
-var refractionCube;
+// var reflectionCube;
+// var refractionCube;
 
-function loadCubeMap() { 
-// Define the urls for the cube map textures 
-var path = "textures/cube/SwedishRoyalCastle/";
-var format = '.jpg';
-var urls = [
-		path + 'px' + format, path + 'nx' + format,
-		path + 'py' + format, path + 'ny' + format,
-		path + 'pz' + format, path + 'nz' + format
-	];
-reflectionCube = new THREE.CubeTextureLoader().load( urls );
-reflectionCube.format = THREE.RGBFormat;
+// function loadCubeMap() { 
+// 	// Define the urls for the cube map textures 
+// 	var path = "textures/cube/SwedishRoyalCastle/";
+// 	var format = '.jpg';
+// 	var urls = [
+// 			path + 'px' + format, path + 'nx' + format,
+// 			path + 'py' + format, path + 'ny' + format,
+// 			path + 'pz' + format, path + 'nz' + format
+// 		];
+// 	reflectionCube = new THREE.CubeTextureLoader().load( urls );
+// 	reflectionCube.format = THREE.RGBFormat;
 
-refractionCube = new THREE.CubeTextureLoader().load( urls );
-refractionCube.mapping = THREE.CubeRefractionMapping;
-refractionCube.format = THREE.RGBFormat;
-}
+// 	refractionCube = new THREE.CubeTextureLoader().load( urls );
+// 	refractionCube.mapping = THREE.CubeRefractionMapping;
+// 	refractionCube.format = THREE.RGBFormat;
+// }
 
 function initThreeJS() {
-	container = document.createElement( 'div' );
-	document.body.appendChild( container );
+	// container = document.createElement( 'div' );
+	// container = $("#threeDiv");
+	// console.log(container)
+	
+	var container = document.getElementById("threeDiv")
+	console.log(container)
+	renderer.setSize( window.innerWidth, window.innerHeight );
+	// $("#threeDiv").append(renderer.domElement);
+	// document.body.appendChild( renderer.domElement );
+	container.appendChild(renderer.domElement)
+
+	// renderer.setClearColor( 0x404040 );
+	// renderer.setPixelRatio( window.devicePixelRatio );
+
+	// renderer.shadowMap.enabled = true;
+	// $("#threeDiv").appendChild( renderer.domElement );
+
+	// renderer.setSize( window.innerWidth, window.innerHeight );
+	// container.append(renderer.domElement);
+	scene.background = new THREE.Color(0x404040);
+	
 
 	// top view
 	camera_center = {x:150,z:-150};
 	camera.position.x = camera_center.x;
 	camera.position.z = camera_center.z;
 	camera.position.y = 100;
-	// camera.rotation.x = - Math.PI / 2;
-	// camera.rotation.y = - Math.PI/2;
-	// camera.rotation.z = 0;
-	// camera.lookAt(new THREE.Vector3(100,0,-100))
 	camera.updateProjectionMatrix();
 	scene.add( camera );
 
@@ -50,12 +65,6 @@ function initThreeJS() {
 	helper.material.transparent = true;
 	scene.add( helper );
 	
-	renderer.setClearColor( 0x404040 );
-	renderer.setPixelRatio( window.devicePixelRatio );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	renderer.shadowMap.enabled = true;
-	container.appendChild( renderer.domElement );
-
 	var ambient = new THREE.AmbientLight( 0xffffff );
 	scene.add( ambient );
 
@@ -74,10 +83,10 @@ function initThreeJS() {
 	options.style.width = '100%';
 	options.style.textAlign = 'center';
 
-	container.appendChild( info );
-	container.appendChild( options );
+	// container.appendChild( info );
+	// container.appendChild( options );
 
-	stats = new Stats();
+	// stats = new Stats();
 	// container.appendChild( stats.dom );
 
 	// Controls
@@ -118,6 +127,6 @@ function render(){
 function animate() {
 	requestAnimationFrame( animate );
 	render();
-	stats.update();
+	// stats.update();
 	controls.update();
 }

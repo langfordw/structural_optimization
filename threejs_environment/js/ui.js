@@ -14,7 +14,10 @@ $('#angular_scale').on('input', function() {
      // console.log(globals.nwide);
 });
 
+// var $toolTip = document.getElementById("toolTip");
+var $toolTip = $('#toolTip')
 var raycaster = new THREE.Raycaster();
+raycaster.linePrecision = 8;
 var mouse = new THREE.Vector2();
 
 window.addEventListener( 'mousemove', mouseMove, false );
@@ -34,12 +37,12 @@ function mouseMove(e){
 
     if (intersections.length > 0) {
         _.each(intersections, function (thing) {
-            if (thing.object && thing.object._myBeam) {
-            	thing.object._myBeam.highlight();
-            	highlightedObj = thing.object._myBeam;
-            } else if (thing.object && thing.object._myNode) {
+            if (thing.object && thing.object._myNode) {
             	thing.object._myNode.highlight();
             	highlightedObj = thing.object._myNode;
+            } else if (thing.object && thing.object._myBeam) {
+            	thing.object._myBeam.highlight();
+            	highlightedObj = thing.object._myBeam;
             }
         });
         //         thing.object._myBeam.highlight();
@@ -52,7 +55,15 @@ function mouseMove(e){
     }
 
     if (highlightedObj) {
-
+    	var text = null
+    	if (highlightedObj.beams) {
+    		text = "node " + highlightedObj.index
+    	} else if (highlightedObj.nodes) {
+    		text = "beam " + highlightedObj.index
+    	}
+    	$toolTip.html(text);
+        $toolTip.css({top: e.clientY - 40, left: e.clientX});
+		$toolTip.show();
     } else {
 	    _.each(beamWrapper.children, function (beam) {
 	        beam._myBeam.unhighlight();//todo wrong place?
@@ -62,6 +73,7 @@ function mouseMove(e){
 	    		node._myNode.unhighlight();//todo wrong place?
 	    	}
 	    });
+	    $toolTip.hide();
 	}
 }
     //     if (highlightedObj) {
