@@ -19,6 +19,7 @@ function displayFixedTriangle(node) {
 	var triangle = new THREE.Mesh(fixedGeo, material);
 	triangle.position.add(node.getPosition());
 	sceneAdd(triangle)
+	return triangle;
 }
 
 

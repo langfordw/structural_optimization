@@ -168,6 +168,34 @@ function deformGeometryBending(u,scale=1.0,angular_scale=1.0) {
 		beam.updateBeam();
 	});
 	displayForces(geom.beams,globals.beam_forces);
+	globals.view_mode.deformed = true;
+	// $('#deform_cbox').checked = true;
+	$("#deform_cbox").prop("checked", true);
+}
+
+function undeformGeometryBending() {
+	var index = 0;
+	for (var i = 0; i < geom.nodes.length; i++) {
+		if (!geom.nodes[i].fixed) {
+			geom.nodes[i].setPosition(new THREE.Vector3(geom.nodes[i].x0,0,geom.nodes[i].z0));
+			// geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(scale*u[index],0,scale*u[index+1])));
+			geom.nodes[i].theta = geom.nodes[i].theta0;
+		}
+	}
+	sceneClearBeam();
+	_.each(geom.beams, function(beam) {
+		beam.updateBeam();
+	});
+	resetBeamColor(geom.beams);
+
+	globals.view_mode.deformed = false;
+	$("#deform_cbox").prop("checked", false);
+}
+
+function resetBeamColor(beams) {
+	_.each(beams, function(beam) {
+		beam.object3D.material.color.set(0xCCC91E);
+	});
 }
 
 function updateForces(beams,forces) {

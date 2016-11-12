@@ -23,6 +23,7 @@ function Node(position, index) {
 	this.theta = 0;
 	this.lastColor = this.object3D.material.color.clone();
 	this.highlighted = false;
+	this.fixed_triangle = null;
 }
 
 Node.prototype.addDisplacement = function(displacement_vector) {
@@ -67,12 +68,22 @@ Node.prototype.getIndex = function() {
 
 Node.prototype.setFixed = function(fixed,dof_object) {
 	this.fixed = fixed;
-	this.fixed_dof = dof_object;
-	displayFixedTriangle(this);
-	_.each(this.beams, function(beam){
-		beam.assemble_T();
-		beam.calculate_4ks();
-	});
+	if (this.fixed) {
+		this.fixed_dof = dof_object;
+		this.fixed_triangle = displayFixedTriangle(this);
+		_.each(this.beams, function(beam){
+			beam.assemble_T();
+			beam.calculate_4ks();
+		});
+	} else {
+		this.fixed_dof = {x:0,z:0,c:0};
+		console.log(this.fixed_triangle)
+		wrapper.remove(this.fixed_triangle);
+		_.each(this.beams, function(beam){
+			beam.assemble_T();
+			beam.calculate_4ks();
+		});
+	}
 }
 
 Node.prototype.attachSprings = function() {
