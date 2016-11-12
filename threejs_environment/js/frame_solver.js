@@ -100,7 +100,7 @@ FrameSolver.prototype.calculate_beam_forces = function() {
 			setEl(u_nodes, [f_index+2,0], getEl(this.u,[index1+2,0]));
 		}
 
-		// if both aren't fixed, then get the forces
+		// get the forces
 		if (index0 != -1 || index1 != -1) {
 			var f = math.multiply(beam.k.full,u_nodes)
 			beam.f = f;
