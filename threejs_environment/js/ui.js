@@ -1,35 +1,3 @@
-var control_parameters = function(that, geom) {
-  this.deformGeometry = true;
-  this.force_mode = 'axial';
-  // this.solve = that.solve('frame',geom);
-  this.maxSize = 8;
-  this.deformation_scale = 1;
-  // Define render logic ...
-};
-
-var dg_controls = new control_parameters(this, globals.geom);
-var gui = new dat.GUI();
-var deformation_scale_control = gui.add(dg_controls, 'deformation_scale', 0, 30);
-// var solvebtn = gui.add(controls, 'solve')
-var force_mode_control = gui.add(dg_controls, 'force_mode', [ 'axial', 'shear', 'moment' ] );
-
-deformation_scale_control.onChange(function(value) {
-	globals.linear_scale = value;
-	if (globals.view_mode.deformed) {
- 		deformGeometryBending(globals.geom,displacements,globals.linear_scale,globals.angular_scale);
-	}
-});
-
-force_mode_control.onChange(function(value) {
-	displayBeamForces(globals.geom.beams);
-});
-
-// solvebtn.onChange(function() {
-// 	solve();
-// });
-
-deformation_scale_control.onFinishChange(function(value) {
-});
 
 $('#scale').on('input', function() { 
      // get the current value of the input field.
@@ -80,13 +48,13 @@ window.addEventListener('dblclick',function() {
 		var node = highlightedObj
 		if (!node.fixed) {
 			node.setFixed(true,{x:1,z:1,c:1});
-			constraints.push(node);
+			globals.geom.constraints.push(node);
 		} else {
 			node.setFixed(false);
-			var index = constraints.indexOf(node);
-			constraints.splice(index,1);
+			var index = globals.geom.constraints.indexOf(node);
+			globals.geom.constraints.splice(index,1);
 		}
-		console.log(geom)
+		// console.log(geom)
 		// console.log('fix node ' + highlightedObj.index);
 	}
 }, false);

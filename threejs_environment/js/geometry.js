@@ -237,6 +237,8 @@ function generateGeometry() {
 	// **** PRESCRIBE FORCES AND DISPLACEMENTS ******
 	var force_node = globals.ntall-1;
 	_nodes[force_node].addExternalForce( new THREE.Vector3(100,0,0));
+	var force_node = globals.ntall*globals.nwide-1;
+	_nodes[force_node].addExternalForce( new THREE.Vector3(100,0,0));
 
 	return {
 		nodes: _nodes,
@@ -245,66 +247,52 @@ function generateGeometry() {
 	};
 }
 
-function updatePositions(x) {
-	// this is rather expensive and accounts for ~10% of the running time of the objective function
-	var index = 0;
-	for (var i=0; i < geom.nodes.length; i++) {
-		geom.nodes[i].setPosition(new THREE.Vector3(x[index],0,x[index+1]));
-		index += 2;
-	}
-}
+// function updatePositions(x) {
+// 	// this is rather expensive and accounts for ~10% of the running time of the objective function
+// 	var index = 0;
+// 	for (var i=0; i < geom.nodes.length; i++) {
+// 		geom.nodes[i].setPosition(new THREE.Vector3(x[index],0,x[index+1]));
+// 		index += 2;
+// 	}
+// }
 
 
-function deformGeometry(u) {
-	var index = 0;
-	for (var i = 0; i < geom.nodes.length; i++) {
-		if (!geom.nodes[i].fixed) {
-			geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index],0,u[index+1])));
-			index+=2;
-		}
-	}
-}
+// function deformGeometry(u) {
+// 	var index = 0;
+// 	for (var i = 0; i < geom.nodes.length; i++) {
+// 		if (!geom.nodes[i].fixed) {
+// 			geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index],0,u[index+1])));
+// 			index+=2;
+// 		}
+// 	}
+// }
 
-function deformGeometryBending(geom,u,scale=1.0,angular_scale=1.0) {
-	var index = 0;
-	for (var i = 0; i < geom.nodes.length; i++) {
-		if (!geom.nodes[i].fixed) {
-			geom.nodes[i].setPosition(new THREE.Vector3(geom.nodes[i].x0+scale*u[index],0,geom.nodes[i].z0-scale*u[index+1]));
-			// geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(scale*u[index],0,scale*u[index+1])));
-			// geom.nodes[i].theta = angular_scale*u[index+2];
-			geom.nodes[i].theta = u[index+2];
-			index+=3;
-		}
-	}
+function deformGeometryBending(geom,linear_scale=1.0,angular_scale=1.0) {
+	_.each(geom.nodes, function(node) {
+		node.setPosition(new THREE.Vector3(node.x0+linear_scale*node.u[0],0,node.z0-linear_scale*node.u[1]));
+		node.theta = node.u[2];
+	});
+
 	sceneClearBeam();
 	_.each(geom.beams, function(beam) {
 		beam.angular_deformation_scale = beam.len/2.*angular_scale;
 		beam.updateBeam();
 	});
-	// displayForces(geom.beams,globals.beam_forces);
+
 	displayBeamForces(geom.beams);
-	globals.view_mode.deformed = true;
-	// $('#deform_cbox').checked = true;
-	$("#deform_cbox").prop("checked", true);
 }
 
 function undeformGeometryBending(geom) {
-	var index = 0;
-	for (var i = 0; i < geom.nodes.length; i++) {
-		if (!geom.nodes[i].fixed) {
-			geom.nodes[i].setPosition(new THREE.Vector3(geom.nodes[i].x0,0,geom.nodes[i].z0));
-			// geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(scale*u[index],0,scale*u[index+1])));
-			geom.nodes[i].theta = geom.nodes[i].theta0;
-		}
-	}
+	_.each(geom.nodes, function(node) {
+		node.setPosition(new THREE.Vector3(node.x0,0,node.z0));
+		node.theta = node.theta0;
+	})
+
 	sceneClearBeam();
 	_.each(geom.beams, function(beam) {
 		beam.updateBeam();
 	});
 	resetBeamColor(geom.beams);
-
-	globals.view_mode.deformed = false;
-	$("#deform_cbox").prop("checked", false);
 }
 
 function resetBeamColor(beams) {
@@ -319,46 +307,50 @@ function updateForces(beams,forces) {
 	});	
 }
 
-function displayForces(beams,forces) {
-	displayMagnitude = true;
-	if (displayMagnitude) {
-		_.map(forces, function(force) { Math.abs(force) });
-	}
-	var minf = _.min(forces)
-	var maxf = _.max(forces)
-	_.each(forces, function(force, i) {
-		if (displayMagnitude) {
-			console.log(force)
-			beams[i].setHSLColor(force,minf,maxf);
-		} else {
-			if (force > 0) {
-				beams[i].setTensionCompressionColor(force,maxf)
-			} else {
-				beams[i].setTensionCompressionColor(force,minf)
-			}
-		}
-	});
-}
+// function displayForces(beams,forces) {
+// 	displayMagnitude = true;
+// 	if (displayMagnitude) {
+// 		_.map(forces, function(force) { Math.abs(force) });
+// 	}
+// 	var minf = _.min(forces)
+// 	var maxf = _.max(forces)
+// 	_.each(forces, function(force, i) {
+// 		if (displayMagnitude) {
+// 			console.log(force)
+// 			beams[i].setHSLColor(force,minf,maxf);
+// 		} else {
+// 			if (force > 0) {
+// 				beams[i].setTensionCompressionColor(force,maxf)
+// 			} else {
+// 				beams[i].setTensionCompressionColor(force,minf)
+// 			}
+// 		}
+// 	});
+// }
 
 function displayBeamForces(beams) {
 	var minf = 1000000;
 	var maxf = -10000000;
+	var f_index = 0;
+
+	if (globals.control_parameters.forceMode == "axial") {
+		f_index = 0;
+	} else if (globals.control_parameters.forceMode == "shear") {
+		f_index = 1;
+	} else if (globals.control_parameters.forceMode == "moment") {
+		f_index = 2;
+	}
+
 	_.each(beams, function(beam) {
-		if(beam.f_local._data[0] < minf) {
-			minf = beam.f_local._data[0];
-		} else if (beam.f_local._data[0] > maxf) {
-			maxf = beam.f_local._data[0];
+		if(beam.f_local._data[f_index] < minf) {
+			minf = beam.f_local._data[f_index];
+		} else if (beam.f_local._data[f_index] > maxf) {
+			maxf = beam.f_local._data[f_index];
 		}
 	});
 
 	_.each(beams, function(beam) {
-		if (dg_controls.force_mode == "axial") {
-			beam.setHSLColor(beam.f_local._data[0],minf,maxf);
-		} else if (dg_controls.force_mode == "shear") {
-			beam.setHSLColor(beam.f_local._data[1],minf,maxf);
-		} else if (dg_controls.force_mode == "moment") {
-			beam.setHSLColor(beam.f_local._data[1],minf,maxf);
-		}
+		beam.setHSLColor(beam.f_local._data[f_index],minf,maxf);
 	});
 }
 

@@ -120,13 +120,11 @@ function sceneClearBeam(){
 }
 
 function render(){
-	// updateGeometry();
     renderer.render(scene, camera);
 }
 
 function animate() {
 	requestAnimationFrame( animate );
 	render();
-	// stats.update();
 	controls.update();
 }

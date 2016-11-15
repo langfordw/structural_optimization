@@ -28,7 +28,6 @@ FrameSolver.prototype.getFreeNodes = function() {
 	return free_nodes;
 }
 
-
 FrameSolver.prototype.assemble_X = function() {
 	var index = 0;
 	_.each(this.free_nodes, function(node_index) {
@@ -113,7 +112,7 @@ FrameSolver.prototype.calculate_U = function() {
 
 FrameSolver.prototype.solve = function() {
 	this.calculate_U();
-	
+
 	var index = 0;
 	_.each(this.nodes, function(node) {
 		if (node.fixed) {

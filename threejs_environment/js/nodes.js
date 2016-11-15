@@ -78,7 +78,6 @@ Node.prototype.setFixed = function(fixed,dof_object) {
 		});
 	} else {
 		this.fixed_dof = {x:0,z:0,c:0};
-		console.log(this.fixed_triangle)
 		wrapper.remove(this.fixed_triangle);
 		_.each(this.beams, function(beam){
 			beam.assemble_T();
