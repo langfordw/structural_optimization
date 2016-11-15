@@ -24,6 +24,7 @@ function Node(position, index) {
 	this.lastColor = this.object3D.material.color.clone();
 	this.highlighted = false;
 	this.fixed_triangle = null;
+	this.u = [0,0,0];
 }
 
 Node.prototype.addDisplacement = function(displacement_vector) {

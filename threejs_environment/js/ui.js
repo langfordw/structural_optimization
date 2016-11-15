@@ -1,8 +1,41 @@
+var control_parameters = function(that, geom) {
+  this.deformGeometry = true;
+  this.force_mode = 'axial';
+  // this.solve = that.solve('frame',geom);
+  this.maxSize = 8;
+  this.deformation_scale = 1;
+  // Define render logic ...
+};
+
+var dg_controls = new control_parameters(this, globals.geom);
+var gui = new dat.GUI();
+var deformation_scale_control = gui.add(dg_controls, 'deformation_scale', 0, 30);
+// var solvebtn = gui.add(controls, 'solve')
+var force_mode_control = gui.add(dg_controls, 'force_mode', [ 'axial', 'shear', 'moment' ] );
+
+deformation_scale_control.onChange(function(value) {
+	globals.linear_scale = value;
+	if (globals.view_mode.deformed) {
+ 		deformGeometryBending(globals.geom,displacements,globals.linear_scale,globals.angular_scale);
+	}
+});
+
+force_mode_control.onChange(function(value) {
+	displayBeamForces(globals.geom.beams);
+});
+
+// solvebtn.onChange(function() {
+// 	solve();
+// });
+
+deformation_scale_control.onFinishChange(function(value) {
+});
+
 $('#scale').on('input', function() { 
      // get the current value of the input field.
      globals.linear_scale = $(this).val();
      if (globals.view_mode.deformed) {
-     	deformGeometryBending(displacements,globals.linear_scale,globals.angular_scale);
+     	deformGeometryBending(globals.geom,displacements,globals.linear_scale,globals.angular_scale);
      }
 });
 
@@ -10,7 +43,7 @@ $('#angular_scale').on('input', function() {
      // get the current value of the input field.
      globals.angular_scale = $(this).val();
      if (globals.view_mode.deformed) {
-     	deformGeometryBending(displacements,globals.linear_scale,globals.angular_scale);
+     	deformGeometryBending(globals.geom,displacements,globals.linear_scale,globals.angular_scale);
      }
 });
 
@@ -18,15 +51,15 @@ $('#deform_cbox').change('input', function() {
      // get the current value of the input field.
      if(this.checked) {
      	globals.view_mode.deformed = true;
-     	deformGeometryBending(displacements,globals.linear_scale,globals.angular_scale);
+     	deformGeometryBending(globals.geom,displacements,globals.linear_scale,globals.angular_scale);
      } else {
      	globals.view_mode.deformed = false;
-     	undeformGeometryBending();
+     	undeformGeometryBending(globals.geom);
      }
 });
 
 $('#solve_btn').click(function() { 
-     solve('frame');
+     solve('frame',globals.geom);
 });
 
 var isDragging = false;
@@ -146,31 +179,38 @@ function mouseMove(e){
 	    		text2 = "<p><b>node " + highlightedObj.nodes[1].index + "</b><br>";
 	    		text3 = "<p><b>beam " + highlightedObj.index + "</b><br>";
 
-	    		if (highlightedObj.f != null) {
-	    			var forces = forces2text(highlightedObj.f);
+	    		if (highlightedObj.f_local != null) {
+	    			var forces = forces2text(highlightedObj.f_local);
+
+	    			text1 += forces[0] + "<br>"
+		    		text1 += forces[1] + "<br>"
+		    		text1 += forces[2] + "<br>"
+		    		text2 += forces[3] + "<br>"
+		    		text2 += forces[4] + "<br>"
+		    		text2 += forces[5] + "<br>"
 	    		
-		    		if (!highlightedObj.nodes[0].fixed && !highlightedObj.nodes[1].fixed) {
-			    		text1 += forces[0] + "<br>"
-			    		text1 += forces[1] + "<br>"
-			    		text1 += forces[2] + "<br>"
-			    		text2 += forces[3] + "<br>"
-			    		text2 += forces[4] + "<br>"
-			    		text2 += forces[5] + "<br>"
-		    		} else if (!highlightedObj.nodes[0].fixed) {
-		    			text1 += forces[0] + "<br>"
-			    		text1 += forces[1] + "<br>"
-			    		text1 += forces[2] + "<br>"
-			    		text2 += " --- <br>"
-			    		text2 += " --- <br>"
-			    		text2 += " --- <br>"
-		    		} else if (!highlightedObj.nodes[1].fixed) {
-		    			text1 += " --- <br>"
-			    		text1 += " --- <br>"
-			    		text1 += " --- <br>"
-			    		text2 += forces[0] + "<br>"
-			    		text2 += forces[1] + "<br>"
-			    		text2 += forces[2] + "<br>"
-		    		}
+		    		// if (!highlightedObj.nodes[0].fixed && !highlightedObj.nodes[1].fixed) {
+			    	// 	text1 += forces[0] + "<br>"
+			    	// 	text1 += forces[1] + "<br>"
+			    	// 	text1 += forces[2] + "<br>"
+			    	// 	text2 += forces[3] + "<br>"
+			    	// 	text2 += forces[4] + "<br>"
+			    	// 	text2 += forces[5] + "<br>"
+		    		// } else if (!highlightedObj.nodes[0].fixed) {
+		    		// 	text1 += forces[0] + "<br>"
+			    	// 	text1 += forces[1] + "<br>"
+			    	// 	text1 += forces[2] + "<br>"
+			    	// 	text2 += " --- <br>"
+			    	// 	text2 += " --- <br>"
+			    	// 	text2 += " --- <br>"
+		    		// } else if (!highlightedObj.nodes[1].fixed) {
+		    		// 	text1 += " --- <br>"
+			    	// 	text1 += " --- <br>"
+			    	// 	text1 += " --- <br>"
+			    	// 	text2 += forces[0] + "<br>"
+			    	// 	text2 += forces[1] + "<br>"
+			    	// 	text2 += forces[2] + "<br>"
+		    		// }
 
 	    		}
 	    		

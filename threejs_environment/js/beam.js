@@ -12,14 +12,19 @@ function Beam(nodes, index) {
 	this.f;
 	this.highlighted = false;
 
-	this.a1 = 100;
-	this.a2 = 1;
+	this.a1 = 1000;
+	this.a2 = 10;
 
 	this.k_prime = math.zeros(6,6);
 	this.assemble_k_prime();
 
+	this.full_T = math.zeros(6,6);
+	this.assemble_full_T();
+
 	this.T = math.matrix([0]);
 	this.assemble_T();
+
+	this.angular_deformation_scale = this.len/2.
 
 	this.k = {
 		n00: null,
@@ -35,6 +40,10 @@ function Beam(nodes, index) {
 	this.k.full = math.zeros(3,3);
 	this.calculate_4ks();
 
+	this.u_local = math.zeros(6,1);
+
+	this.f_local = math.zeros(6,1);
+
 	// BEAMS AS LINES
 	// var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
 	// var lineGeo = new THREE.Geometry();
@@ -43,8 +52,8 @@ function Beam(nodes, index) {
 	// this.object3D = new THREE.Line(lineGeo, beamMat);
 
 	// BEAMS AS CUBIC BEZIERS
-	var l = this.len/3;
-	var dtheta = [this.theta0[0]-this.theta[0], this.theta0[1]+this.theta[1]];
+	var l = this.angular_deformation_scale;
+	var dtheta = [this.theta0[0]+this.theta[0], this.theta0[1]+this.theta[1]];
 	var curve = new THREE.CubicBezierCurve3(
 		this.vertices[0],
 		this.vertices[0].clone().add(new THREE.Vector3( l*Math.cos(dtheta[0]), 0, l*Math.sin(dtheta[0]) )),
@@ -63,8 +72,8 @@ function Beam(nodes, index) {
 Beam.prototype.updateBeam = function() {
 	this.theta = [-this.nodes[0].theta, -this.nodes[1].theta];
 	
-	var l = this.len/3;
-	var dtheta = [this.theta0[0]-this.theta[0], this.theta0[1]+this.theta[1]];
+	var l = this.angular_deformation_scale;
+	var dtheta = [this.theta0[0]+this.theta[0], this.theta0[1]+this.theta[1]];
 	var curve = new THREE.CubicBezierCurve3(
 		this.vertices[0],
 		this.vertices[0].clone().add(new THREE.Vector3( l*Math.cos(dtheta[0]), 0, l*Math.sin(dtheta[0]) )),
@@ -110,6 +119,27 @@ Beam.prototype.getAngle = function(fromNode) {
     if (node2.equals(fromNode)) node2 = this.vertices[1];
 	return Math.atan2(fromNode.z-node2.z, fromNode.x-node2.x);
 };
+
+Beam.prototype.assemble_full_T = function() {
+	var c = (this.nodes[1].getPosition().x - this.nodes[0].getPosition().x)/this.len;
+	var s = (this.nodes[1].getPosition().z - this.nodes[0].getPosition().z)/this.len;
+
+	var index = 0;
+	setEl(this.full_T,[index,index],c);
+	setEl(this.full_T,[index+1,index+1],c);
+	setEl(this.full_T,[index,index+1],s);
+	setEl(this.full_T,[index+1,index],-s);
+	setEl(this.full_T,[index+2,index+2],1);
+
+	var index = 3;
+	setEl(this.full_T,[index,index],c);
+	setEl(this.full_T,[index+1,index+1],c);
+	setEl(this.full_T,[index,index+1],s);
+	setEl(this.full_T,[index+1,index],-s);
+	setEl(this.full_T,[index+2,index+2],1);
+
+	return this.full_T;
+}
 
 Beam.prototype.assemble_T = function() {
 	var index = 0;
@@ -203,6 +233,21 @@ Beam.prototype.calculate_4ks = function() {
 		n10: this.k.n10,
 		full: this.k.full
 	};
+}
+
+Beam.prototype.assemble_u_local = function() {
+	var ug1 = this.nodes[0].u;
+	var ug2 = this.nodes[1].u;
+	var u_global = math.flatten(math.matrix([ug1, ug2]));
+	this.u_local = math.multiply(math.transpose(this.full_T),u_global);
+}
+
+Beam.prototype.calculate_local_force = function() {
+	this.f_local = math.multiply(this.k_prime,this.u_local);
+}
+
+Beam.prototype.calculate_global_force = function() {
+	this.f_global = math.multiply(this.full_T,this.f_local);
 }
 
 Beam.prototype.updatePosition = function(){
