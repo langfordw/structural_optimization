@@ -48,21 +48,119 @@ window.addEventListener('mouseup', function(){
         isDragging = false;
         $selectbox.hide();
 
-        _.each(globals.geom.nodes, function(node) {
-    		if (node.x0 < bounds.max.x && node.x0 > bounds.min.x) {
-    			if (node.z0 > bounds.max.z && node.z0 < bounds.min.z) {
-    				node.highlight();
-    				selected_nodes.push(node);
-    			}
-    		}
-		});
+        if (bounds != null) {
+	        _.each(globals.geom.nodes, function(node) {
+	    		if (node.x0 < bounds.max.x && node.x0 > bounds.min.x) {
+	    			if (node.z0 > bounds.max.z && node.z0 < bounds.min.z) {
+	    				node.highlight();
+	    				selected_nodes.push(node);
+	    			}
+	    		}
+			});
+    	}
 
-		console.log(selected_nodes);
+		selectAction(selected_nodes);
 
         // window.addEventListener( 'mousemove', mouseMove, false );
 }, false);
 
 window.addEventListener( 'mousemove', mouseMove, false );
+
+function selectAction(nodes) {
+	if (globals.control_parameters.selectMode == "add_geom") {
+
+
+		return;
+	}
+
+
+	var sub_nodes = [];
+	var sub_beams = [];
+	_.each(nodes, function(node) {
+
+		if (globals.control_parameters.selectMode == "fix") {
+			if (!node.fixed) {
+				node.setFixed(true,{x:1,z:1,c:1});
+				globals.geom.constraints.push(node);
+			}
+			return;
+		}
+		if (globals.control_parameters.selectMode == "un-fix") {
+			if (node.fixed) {
+				node.setFixed(false);
+				var index = globals.geom.constraints.indexOf(node);
+				globals.geom.constraints.splice(index,1);
+			}
+			return;
+		}
+		if (globals.control_parameters.selectMode == "force") {
+			if (!node.fixed && node.externalForce == null) {
+				node.addExternalForce(new THREE.Vector3(100,0,0));
+			}
+			return;
+		}
+		if (globals.control_parameters.selectMode == "un-force") {
+			if (node.externalForce != null) {
+				node.removeExternalForce();
+			}
+			return;
+		}
+		if (globals.control_parameters.selectMode == "sub_geom") {
+			// var index = globals.geom.nodes.indexOf(node);
+			// globals.geom.nodes.splice(index,1);
+			// wrapper.remove(node);	
+			// console.log("node " + node.index);
+			if (!_.contains(sub_nodes,node)) { sub_nodes.push(node) }
+			_.each(node.beams, function(beam) {
+				// get all the beams that are completely contained in the nodes
+				if (_.contains(nodes,beam.nodes[0]) && _.contains(nodes,beam.nodes[1])) {
+					if (!_.contains(sub_beams,beam)) { sub_beams.push(beam) }
+					
+					// beamWrapper.remove(beam);
+					// var index = globals.geom.beams.indexOf(beam);
+					// globals.geom.beams.splice(index,1);
+					// console.log("beam " + beam.index);
+				}
+			})
+
+			return;
+		}
+
+	});
+	if (globals.control_parameters.selectMode == "sub_geom") {
+		console.log(globals.geom)
+		
+
+		var sub_nodes2 = []
+		_.each(sub_nodes, function(node) {
+			var remove = true;
+			_.each(node.beams, function(beam) {
+				if (!_.contains(sub_beams,beam)) {
+					remove = false;
+				}
+			})
+			if (remove) {
+				sub_nodes2.push(node)
+			}
+		})
+
+		var sub_beams2 = []
+		_.each(sub_nodes2, function(node) {
+			wrapper.remove(node.object3D);
+			var index = globals.geom.nodes.indexOf(node);
+			globals.geom.nodes.splice(index,1);
+			_.each(node.beams, function(beam) {
+				sub_beams2.push(beam);
+				beamWrapper.remove(beam.object3D);
+				var index = globals.geom.beams.indexOf(beam);
+				globals.geom.beams.splice(index,1);
+			})
+		})
+		console.log(sub_nodes2)
+		console.log(sub_beams2)
+	}
+	
+}
 
 function getSelectBounds(vertices) {
 	var _min = {x:0, z:0};

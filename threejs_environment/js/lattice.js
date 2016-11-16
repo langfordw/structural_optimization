@@ -1,6 +1,6 @@
 var globals = {
-	nwide: 2,
-	ntall: 2,
+	nwide: 5,
+	ntall: 5,
 	linear_scale: 1.0,
 	angular_scale: 1.0,
 	beam_forces: [],
@@ -30,7 +30,8 @@ var globals = {
 				// render();
 				resetLattice();
 			}
-		}
+		},
+		selectMode: "none"
 	}
 };
 
@@ -67,6 +68,7 @@ gui.add(globals.control_parameters,'deformGeometry').onChange((function(value) {
 	}
 }));
 gui.add(globals.control_parameters,'reset');
+gui.add(globals.control_parameters,'selectMode',[ 'none', 'add_geom', 'sub_geom', 'fix', 'un-fix', 'force', 'un-force' ]);
 
 deformation_scale_control.onChange(function(value) {
 	globals.linear_scale = value;
