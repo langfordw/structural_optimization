@@ -120,9 +120,10 @@ Node.prototype.drawArrow = function(position) {
 	vector.z *= -1;
 	var offsetOrigin = this.externalForce.clone().normalize().multiplyScalar(5);
 	offsetOrigin.z *= -1;
+	offsetOrigin.y -= 10;
 	var arrow = new THREE.ArrowHelper( vector, position.sub(vector).sub(offsetOrigin), 
 									   vector.length(), arrowColor, 10, 20 );
-	arrow.line.material = new THREE.LineBasicMaterial( { color: arrowColor, linewidth: 14});
+	arrow.line.material = new THREE.LineBasicMaterial( { color: arrowColor, linewidth: 5});
 	this.arrow = arrow;
 	sceneAdd(arrow);
 }
@@ -130,6 +131,7 @@ Node.prototype.drawArrow = function(position) {
 Node.prototype.updateArrow = function(deltaPos) {
 	var position = this.arrow.position.add(deltaPos);
 	this.arrow.line.position.set(position);
+	// this.arrow.renderOrder = 0;
 }
 
 Node.prototype.highlight = function() {

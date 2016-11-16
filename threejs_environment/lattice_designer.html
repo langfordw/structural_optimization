@@ -20,7 +20,7 @@
 
 	
 	
-	<div align="center" style="width:33%;padding:10px;display:block;margin:auto;position:absolute;z-index:10;">
+<!-- 	<div align="center" style="width:33%;padding:10px;display:block;margin:auto;position:absolute;z-index:10;">
 		 <form role="form" style="background-color: #e0e0e0;padding-bottom:15px;padding-top:10px;">
 		  <div class="form-group">
 		    <label>Deformation Scale:</label>
@@ -39,11 +39,12 @@
 		    <label><button type="button" id="solve_btn">Solve</label><br>
 		  </div>
 		  </form>
-	</div>
+	</div> -->
 		<div id="threeDiv"></div>
 		<div class="tooltip" id="toolTip"></div>
 		<div class="tooltip" id="toolTip2"></div>
 		<div class="tooltip" id="toolTip3"></div>
+		<div class="selectbox" id="selectbox"></div>
 		
 
 		<!-- <canvas id="canvas"></canvas> -->
@@ -68,7 +69,19 @@
 			initThreeJS();
 			initLattice();
 			animate();
+
+			// globals.control_parameters = function() {
+			//   this.deformGeometry = false;
+			//   this.force_mode = 'axial';
+			//   this.solve = solve('frame');
+			//   this.maxSize = 8;
+			//   this.deformation_scale = 1;
+			//   // Define render logic ...
+			// };
+
+			// var dg_controls = new globals.control_parameters();
 		</script>
+
 	
 
 	</body>

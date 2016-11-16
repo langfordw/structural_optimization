@@ -1,41 +1,15 @@
-
-$('#scale').on('input', function() { 
-     // get the current value of the input field.
-     globals.linear_scale = $(this).val();
-     if (globals.view_mode.deformed) {
-     	deformGeometryBending(globals.geom,displacements,globals.linear_scale,globals.angular_scale);
-     }
-});
-
-$('#angular_scale').on('input', function() { 
-     // get the current value of the input field.
-     globals.angular_scale = $(this).val();
-     if (globals.view_mode.deformed) {
-     	deformGeometryBending(globals.geom,displacements,globals.linear_scale,globals.angular_scale);
-     }
-});
-
-$('#deform_cbox').change('input', function() { 
-     // get the current value of the input field.
-     if(this.checked) {
-     	globals.view_mode.deformed = true;
-     	deformGeometryBending(globals.geom,displacements,globals.linear_scale,globals.angular_scale);
-     } else {
-     	globals.view_mode.deformed = false;
-     	undeformGeometryBending(globals.geom);
-     }
-});
-
-$('#solve_btn').click(function() { 
-     solve('frame',globals.geom);
-});
-
 var isDragging = false;
 var isDraggingArrow = false;
+
+var start_pos = {x:0, z:0};
+var box_vertices = [null,null];
+var selected_nodes = [];
+var bounds;
 
 var $toolTip = $('#toolTip');
 var $toolTip2 = $('#toolTip2');
 var $toolTip3 = $('#toolTip3');
+var $selectbox = $('#selectbox');
 
 var raycaster = new THREE.Raycaster();
 raycaster.linePrecision = 8;
@@ -59,16 +33,70 @@ window.addEventListener('dblclick',function() {
 	}
 }, false);
 
-window.addEventListener('mousedown', function(){
-        isDragging = true;
-        window.removeEventListener( 'mousemove', mouseMove );
-    }, false);
+window.addEventListener('mousedown', function(e){
+    isDragging = true;
+    start_pos.x = ( e.clientX / window.innerWidth ) * 2 - 1;
+    start_pos.z = - ( e.clientY / window.innerHeight ) * 2 + 1;
+    box_vertices[0] = new THREE.Vector3(start_pos.x,start_pos.z,0).unproject(camera);
+	$selectbox.show();
+	$selectbox.css({height:0, width:0});
+	selected_nodes = [];
+
+    // window.removeEventListener( 'mousemove', mouseMove );
+}, false);
 window.addEventListener('mouseup', function(){
         isDragging = false;
-        window.addEventListener( 'mousemove', mouseMove, false );
+        $selectbox.hide();
+
+        _.each(globals.geom.nodes, function(node) {
+    		if (node.x0 < bounds.max.x && node.x0 > bounds.min.x) {
+    			if (node.z0 > bounds.max.z && node.z0 < bounds.min.z) {
+    				node.highlight();
+    				selected_nodes.push(node);
+    			}
+    		}
+		});
+
+		console.log(selected_nodes);
+
+        // window.addEventListener( 'mousemove', mouseMove, false );
 }, false);
 
 window.addEventListener( 'mousemove', mouseMove, false );
+
+function getSelectBounds(vertices) {
+	var _min = {x:0, z:0};
+	var _max = {x:0, z:0};
+
+	if (vertices[1].x < vertices[0].x) {
+		_min.x = vertices[1].x;
+	} else {
+		_min.x = vertices[0].x;
+	}
+
+	if (vertices[1].z < vertices[0].z) {
+		_max.z = vertices[1].z;
+	} else {
+		_max.z = vertices[0].z;
+	}
+
+	if (vertices[1].x > vertices[0].x) {
+		_max.x = vertices[1].x;
+	} else {
+		_max.x = vertices[0].x;
+	}
+
+	if (vertices[1].z > vertices[0].z) {
+		_min.z = vertices[1].z;
+	} else {
+		_min.z = vertices[0].z;
+	}
+
+	return {
+		min: _min,
+		max: _max
+	}
+}
 
 function mouseMove(e){
     e.preventDefault();
@@ -82,7 +110,31 @@ function mouseMove(e){
     // console.log("x: " + mouse.x + "  y: " + mouse.y);
 
     if (isDragging) {
+    	box_vertices[1] = new THREE.Vector3(mouse.x,mouse.y,0).unproject(camera);
+    	// console.log("pos = " + boxGeo.vertices[1].x + " " + boxGeo.vertices[1].z)
+    	bounds = getSelectBounds(box_vertices);
+    	
+    	_.each(globals.geom.nodes, function(node) {
+    		if (node.x0 < bounds.max.x && node.x0 > bounds.min.x) {
+    			if (node.z0 > bounds.max.z && node.z0 < bounds.min.z) {
+    				node.highlight();
+    			} else {
+    				node.unhighlight();
+    			}
+    		} else {
+    			node.unhighlight();
+    		}
+		});
 
+		var tmp1 = new THREE.Vector3(bounds.min.x, 0, bounds.min.z).project( camera );
+		var tmp2 = new THREE.Vector3(bounds.max.x, 0, bounds.max.z).project( camera );
+		var selectbounds = [(tmp1.x+1)/2*window.innerWidth, 
+			   				(-tmp1.y+1)/2*window.innerHeight,
+			   				(tmp2.x+1)/2*window.innerWidth, 
+			   				(-tmp2.y+1)/2*window.innerHeight];
+		$selectbox.css({left:selectbounds[0], top:selectbounds[3]});
+		$selectbox.css({height:selectbounds[1]-selectbounds[3], width:selectbounds[2]-selectbounds[0]});
+    	
     } else {
     	var intersections = raycaster.intersectObjects(wrapper.children.concat(beamWrapper.children));
 	    highlightedObj = null;

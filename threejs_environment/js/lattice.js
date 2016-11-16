@@ -11,6 +11,7 @@ var globals = {
 		deformGeometry: false,
 		forceMode: "axial",
 		deformationScale: 1.0,
+		hideArrows: false,
 		solve: function() {
 			if (globals.geom != null) {
 				setup_solve('frame',globals.geom);
@@ -41,6 +42,21 @@ var gui = new dat.GUI();
 var deformation_scale_control = gui.add(globals.control_parameters, 'deformationScale', 0, 30);
 var force_mode_control = gui.add(globals.control_parameters, 'forceMode', [ 'axial', 'shear', 'moment' ] );
 gui.add(globals.control_parameters,'solve');
+gui.add(globals.control_parameters,'hideArrows').onChange((function(value) {
+	if (!value) {
+		_.each(globals.geom.nodes, function(node) {
+			if(node.arrow != null) {
+				node.arrow.visible = true;
+			}
+		})
+	} else {
+		_.each(globals.geom.nodes, function(node) {
+			if(node.arrow != null) {
+				node.arrow.visible = false;
+			}
+		})
+	}
+}));
 gui.add(globals.control_parameters,'deformGeometry').onChange((function(value) {
 	if (value) {
 		if (globals.solved) {
@@ -62,13 +78,6 @@ deformation_scale_control.onChange(function(value) {
 force_mode_control.onChange(function(value) {
 	displayBeamForces(globals.geom.beams);
 });
-
-// solvebtn.onChange(function() {
-// 	solve();
-// });
-
-// deformation_scale_control.onFinishChange(function(value) {
-// });
 
 function initLattice() {
 	// ******** GENERATE GEOMETRY ********

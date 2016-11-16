@@ -67,6 +67,7 @@ function Beam(nodes, index) {
 	this.object3D = new THREE.Line( lineGeo, beamMat );
 	this.lastColor = this.object3D.material.color.clone();
 	this.object3D._myBeam = this;
+	sceneAddBeam(this.object3D);
 }
 
 Beam.prototype.updateBeam = function() {

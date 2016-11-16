@@ -92,7 +92,7 @@ function initThreeJS() {
 	// Controls
 	controls = new THREE.OrbitControls( camera, renderer.domElement );
 	controls.damping = 0.2;
-	// controls.enableRotate = false;
+	controls.enableRotate = false;
 	controls.addEventListener( 'change', render );
 	controls.target = new THREE.Vector3(camera_center.x,0,camera_center.z);
 	controls.rotateLeft(Math.PI/2);
