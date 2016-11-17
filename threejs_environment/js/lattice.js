@@ -32,7 +32,9 @@ var globals = {
 				resetLattice();
 			}
 		},
-		selectMode: "none"
+		selectMode: "none",
+		fv_x: 100,
+		fv_y: 0
 	}
 };
 
@@ -41,10 +43,27 @@ var displacements = [];
 var solver;
 
 var gui = new dat.GUI();
-var deformation_scale_control = gui.add(globals.control_parameters, 'deformationScale', 0, 30);
-var force_mode_control = gui.add(globals.control_parameters, 'forceMode', [ 'axial', 'shear', 'moment' ] );
-gui.add(globals.control_parameters,'solve');
-gui.add(globals.control_parameters,'hideArrows').onChange((function(value) {
+
+var fv = gui.addFolder('Force Vector');
+fv.add(globals.control_parameters, 'fv_x',-500,500).onChange((function() {
+	updateExternalForce();
+}));
+fv.add(globals.control_parameters, 'fv_y',-500,500).onChange((function() {
+	updateExternalForce()
+}));
+
+var selection = gui.addFolder('Selection');
+selection.add(globals.control_parameters,'selectMode',[ 'none', 'add_geom', 'sub_geom', 'fix', 'un-fix', 'force', 'un-force' ]).name("Function");
+selection.open();
+
+
+var solve_folder = gui.addFolder('Solver');
+solve_folder.add(globals.control_parameters,'reset');
+solve_folder.add(globals.control_parameters,'solve');
+solve_folder.open();
+
+var disp = gui.addFolder('Display');
+disp.add(globals.control_parameters,'hideArrows').onChange((function(value) {
 	if (!value) {
 		_.each(globals.geom.nodes, function(node) {
 			if(node.arrow != null) {
@@ -59,7 +78,7 @@ gui.add(globals.control_parameters,'hideArrows').onChange((function(value) {
 		})
 	}
 }));
-gui.add(globals.control_parameters,'deformGeometry').onChange((function(value) {
+disp.add(globals.control_parameters,'deformGeometry').onChange((function(value) {
 	if (value) {
 		if (globals.solved) {
 			deformGeometryBending(globals.geom,globals.linear_scale,globals.angular_scale);
@@ -68,8 +87,10 @@ gui.add(globals.control_parameters,'deformGeometry').onChange((function(value) {
 		undeformGeometryBending(globals.geom);
 	}
 }));
-gui.add(globals.control_parameters,'reset');
-gui.add(globals.control_parameters,'selectMode',[ 'none', 'add_geom', 'sub_geom', 'fix', 'un-fix', 'force', 'un-force' ]);
+
+var deformation_scale_control = disp.add(globals.control_parameters, 'deformationScale', 0, 30).name("Scale");
+var force_mode_control = disp.add(globals.control_parameters, 'forceMode', [ 'axial', 'shear', 'moment' ] ).name("Display");
+
 
 deformation_scale_control.onChange(function(value) {
 	globals.linear_scale = value;
@@ -99,6 +120,8 @@ function initLattice() {
 
 function resetLattice() {
 	globals.solved = false;
+	disp.close();
+	selection.open();
 	globals.control_parameters.deformGeometry = false;
 	gui.updateDisplay();
 	undeformGeometryBending(globals.geom);
@@ -171,6 +194,8 @@ function solve(type='frame',geom=globals.geom) {
 		var start = new Date().getTime();
 		solver.solve();
 		globals.solved = true;
+		disp.open();
+		selection.close();
 		console.log("solver results:")
 		console.log(solver)
 

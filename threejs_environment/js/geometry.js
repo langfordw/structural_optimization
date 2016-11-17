@@ -236,9 +236,9 @@ function generateGeometry() {
 	
 	// **** PRESCRIBE FORCES AND DISPLACEMENTS ******
 	var force_node = globals.ntall-1;
-	_nodes[force_node].addExternalForce( new THREE.Vector3(0,0,-100));
+	_nodes[force_node].addExternalForce( new THREE.Vector3(globals.control_parameters.fv_x,0,-globals.control_parameters.fv_y));
 	var force_node = globals.ntall*globals.nwide-1;
-	_nodes[force_node].addExternalForce( new THREE.Vector3(0,0,-100));
+	_nodes[force_node].addExternalForce( new THREE.Vector3(globals.control_parameters.fv_x,0,-globals.control_parameters.fv_y));
 
 	return {
 		nodes: _nodes,
@@ -344,8 +344,8 @@ function displayBeamForces(beams) {
 	_.each(beams, function(beam) {
 		// var f = Math.abs(beam.f_local._data[f_index]);
 		var f = Math.abs(beam.f_local._data[f_index]-beam.f_local._data[f_index+3]);
-		console.log(beam.index)
-		console.log(f)
+		// console.log(beam.index)
+		// console.log(f)
 		if(f < minf) {
 			minf = f;
 		} else if (f > maxf) {
@@ -359,7 +359,7 @@ function displayBeamForces(beams) {
 }
 
 function removeBeam(beam,this_node=null) {
-	console.log(beam)
+	// console.log(beam)
 	var node = beam.nodes[0]
 	if (this_node != null) {
 		if (this_node == node) {
@@ -380,7 +380,7 @@ function removeNode(node) {
 	console.log(node.beams)
 	_.each(node.beams, function(beam) {
 		removeBeam(beam,node);
-		console.log('remove beam ' + beam.index)
+		// console.log('remove beam ' + beam.index)
 	})
 	reindex(globals.geom.beams);
 	wrapper.remove(node.object3D);
@@ -388,3 +388,17 @@ function removeNode(node) {
 	globals.geom.nodes.splice(index,1);
 }
 
+function updateExternalForce() {
+	// console.log('here')
+	if (globals.geom != null) {
+		_.each(globals.geom.nodes, function(node) {
+			if (node.externalForce != null) {
+				node.setExternalForce(globals.control_parameters.fv_x,-globals.control_parameters.fv_y);
+				// node.externalForce = 
+				// console.log(node.externalForce.x)
+				// node.removeArrow();
+				// node.drawArrow();
+			}
+		});
+	}
+}

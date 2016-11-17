@@ -144,6 +144,11 @@ Node.prototype.updateArrow = function(deltaPos) {
 	// this.arrow.renderOrder = 0;
 }
 
+Node.prototype.removeArrow = function() {
+	wrapper.remove(this.arrow);
+	this.arrow = null;
+}
+
 Node.prototype.highlight = function() {
 	if (!this.highlighted) {
 		this.lastColor = this.object3D.material.color.clone();
@@ -155,4 +160,10 @@ Node.prototype.highlight = function() {
 Node.prototype.unhighlight = function() {
 	this.object3D.material.color.set(this.lastColor);
 	this.highlighted = false;
+}
+
+Node.prototype.setExternalForce = function(fv_x,fv_y) {
+	this.externalForce = new THREE.Vector3(fv_x,0,-fv_y);
+	this.removeArrow();
+	this.drawArrow();
 }
