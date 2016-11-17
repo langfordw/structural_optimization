@@ -59,17 +59,111 @@ window.addEventListener('mouseup', function(){
 			});
     	}
 
-		selectAction(selected_nodes);
+		selectAction(selected_nodes, bounds);
 
         // window.addEventListener( 'mousemove', mouseMove, false );
 }, false);
 
 window.addEventListener( 'mousemove', mouseMove, false );
 
-function selectAction(nodes) {
+var lattice = {};
+lattice.round = function(number, precision) {
+    var factor = Math.pow(10, precision);
+    var tempNumber = number * factor;
+    var roundedTempNumber = Math.round(tempNumber);
+    return roundedTempNumber / factor;
+};
+
+lattice.roundUp = function(number, precision) {
+    var factor = Math.pow(10, precision);
+    var tempNumber = (number+Math.pow(10,-precision)/2.) * factor;
+    var roundedTempNumber = Math.round(tempNumber);
+    return roundedTempNumber / factor;
+};
+
+lattice.roundDown = function(number, precision) {
+    var factor = Math.pow(10, precision);
+    var tempNumber = (number-Math.pow(10,-precision)/2.) * factor;
+    var roundedTempNumber = Math.round(tempNumber);
+    return roundedTempNumber / factor;
+};
+
+function findNeighborNodes(thisnode) {
+	var neighbors = [];
+	var pos = thisnode.getPosition();
+	_.each(globals.geom.nodes, function(node) {
+		// check N/S
+		if (node.getPosition().x == pos.x) {
+			if (node.getPosition().z == pos.z+100) {
+				neighbors.push(node);
+			} else if (node.getPosition().z == pos.z-100) {
+				neighbors.push(node);
+			}
+		}
+		// check E/W
+		if (node.getPosition().z == pos.z) {
+			if (node.getPosition().x == pos.x+100) {
+				neighbors.push(node);
+			} else if (node.getPosition().x == pos.x-100) {
+				neighbors.push(node);
+			}
+		}
+	})
+
+	return neighbors
+}
+
+function addBeams(thisnode,othernodes) {
+	// don't make redundant beams
+	_.each(othernodes, function(othernode) {
+		var beam_exists = false;
+		_.each(globals.geom.beams, function(beam) {
+			if (_.contains(beam.nodes,thisnode) && _.contains(beam.nodes,thisnode)) {
+				beam_exists = true;
+			}
+		});
+		var beam = new Beam([thisnode,othernode],0)
+		globals.geom.beams.push(beam);
+	})
+	
+}
+
+function selectAction(nodes, bnds=null) {
 	if (globals.control_parameters.selectMode == "add_geom") {
+		var minx = lattice.roundUp(bnds.min.x,-2)
+		var maxx = lattice.roundDown(bnds.max.x,-2)
+		var minz = lattice.roundDown(bnds.min.z,-2)
+		var maxz = lattice.roundUp(bnds.max.z,-2)
 
+		console.log("min: " + minx + " " + minz)
+		console.log("max: " + maxx + " " + maxz)
 
+		for (var i = minx; i <= maxx; i+=100) {
+			for (var j = minz; j >= maxz; j-=100) {
+				var node_exists = false;
+				_.each(globals.geom.nodes, function(node) {
+					if (node.getPosition().x == i && node.getPosition().z == j) {
+						node_exists = true;
+					}
+				})
+				if (!node_exists) {
+					var node = new Node(new THREE.Vector3(i, 0, j),0);
+					globals.geom.nodes.push(node);
+					console.log('placing node');
+					addBeams(node,findNeighborNodes(node));
+				}
+			}
+		}
+		
+
+		// var node = new Node(new THREE.Vector3(0, 0, 0),0);
+		// globals.geom.nodes.push(node);
+
+		// var beam = new Beam([_nodes[5],_nodes[6]],5)
+		// globals.geom.beams.push(beam);
+
+		reindex(globals.geom.nodes)
+		reindex(globals.geom.beams)
 		return;
 	}
 
@@ -110,56 +204,69 @@ function selectAction(nodes) {
 			// globals.geom.nodes.splice(index,1);
 			// wrapper.remove(node);	
 			// console.log("node " + node.index);
-			if (!_.contains(sub_nodes,node)) { sub_nodes.push(node) }
-			_.each(node.beams, function(beam) {
-				// get all the beams that are completely contained in the nodes
-				if (_.contains(nodes,beam.nodes[0]) && _.contains(nodes,beam.nodes[1])) {
-					if (!_.contains(sub_beams,beam)) { sub_beams.push(beam) }
+			removeNode(node);
+			// if (!_.contains(sub_nodes,node)) { sub_nodes.push(node) }
+			// _.each(node.beams, function(beam) {
+			// 	// get all the beams that are completely contained in the nodes
+			// 	if (_.contains(nodes,beam.nodes[0]) && _.contains(nodes,beam.nodes[1])) {
+			// 		if (!_.contains(sub_beams,beam)) { sub_beams.push(beam) }
 					
 					// beamWrapper.remove(beam);
 					// var index = globals.geom.beams.indexOf(beam);
 					// globals.geom.beams.splice(index,1);
 					// console.log("beam " + beam.index);
-				}
-			})
+				// }
+			// })
 
 			return;
 		}
 
 	});
 	if (globals.control_parameters.selectMode == "sub_geom") {
-		console.log(globals.geom)
-		
-
-		var sub_nodes2 = []
-		_.each(sub_nodes, function(node) {
-			var remove = true;
-			_.each(node.beams, function(beam) {
-				if (!_.contains(sub_beams,beam)) {
-					remove = false;
-				}
-			})
-			if (remove) {
-				sub_nodes2.push(node)
-			}
-		})
-
-		var sub_beams2 = []
-		_.each(sub_nodes2, function(node) {
-			wrapper.remove(node.object3D);
-			var index = globals.geom.nodes.indexOf(node);
-			globals.geom.nodes.splice(index,1);
-			_.each(node.beams, function(beam) {
-				sub_beams2.push(beam);
-				beamWrapper.remove(beam.object3D);
-				var index = globals.geom.beams.indexOf(beam);
-				globals.geom.beams.splice(index,1);
-			})
-		})
-		console.log(sub_nodes2)
-		console.log(sub_beams2)
+		reindex(globals.geom.nodes);
 	}
+	// 	console.log(globals.geom)
+	// 	console.log("1...")
+	// 	console.log(sub_nodes)
+	// 	console.log(sub_beams)
+
+	// 	var sub_nodes2 = []
+	// 	_.each(sub_nodes, function(node) {
+	// 		var remove = true;
+	// 		_.each(node.beams, function(beam) {
+	// 			if (!_.contains(sub_beams,beam)) {
+	// 				remove = false;
+	// 			}
+	// 		})
+	// 		if (remove) {
+	// 			sub_nodes2.push(node)
+	// 		}
+	// 	})
+
+	// 	var sub_beams2 = []
+	// 	_.each(sub_nodes2, function(node) {
+	// 		removeNode(node);
+	// 		// wrapper.remove(node.object3D);
+	// 		// var index = globals.geom.nodes.indexOf(node);
+	// 		// globals.geom.nodes.splice(index,1);
+	// 		// _.each(node.beams, function(beam) {
+	// 		// 	sub_beams2.push(beam);
+	// 		// 	removeBeam(beam);
+	// 		// })
+	// 	})
+	// 	console.log("2...")
+	// 	console.log(sub_nodes2)
+	// 	console.log(sub_beams2)
+	// 	reindex(globals.geom.beams);
+	// 	console.log(globals.geom)
+	// }
 	
+}
+
+function reindex(list) {
+	_.each(list, function(item,i) {
+		item.index = i;
+	});
 }
 
 function getSelectBounds(vertices) {
@@ -306,29 +413,6 @@ function mouseMove(e){
 		    		text2 += forces[3] + "<br>"
 		    		text2 += forces[4] + "<br>"
 		    		text2 += forces[5] + "<br>"
-	    		
-		    		// if (!highlightedObj.nodes[0].fixed && !highlightedObj.nodes[1].fixed) {
-			    	// 	text1 += forces[0] + "<br>"
-			    	// 	text1 += forces[1] + "<br>"
-			    	// 	text1 += forces[2] + "<br>"
-			    	// 	text2 += forces[3] + "<br>"
-			    	// 	text2 += forces[4] + "<br>"
-			    	// 	text2 += forces[5] + "<br>"
-		    		// } else if (!highlightedObj.nodes[0].fixed) {
-		    		// 	text1 += forces[0] + "<br>"
-			    	// 	text1 += forces[1] + "<br>"
-			    	// 	text1 += forces[2] + "<br>"
-			    	// 	text2 += " --- <br>"
-			    	// 	text2 += " --- <br>"
-			    	// 	text2 += " --- <br>"
-		    		// } else if (!highlightedObj.nodes[1].fixed) {
-		    		// 	text1 += " --- <br>"
-			    	// 	text1 += " --- <br>"
-			    	// 	text1 += " --- <br>"
-			    	// 	text2 += forces[0] + "<br>"
-			    	// 	text2 += forces[1] + "<br>"
-			    	// 	text2 += forces[2] + "<br>"
-		    		// }
 
 	    		}
 	    		

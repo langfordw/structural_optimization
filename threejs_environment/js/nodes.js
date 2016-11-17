@@ -52,6 +52,11 @@ Node.prototype.addBeam = function(beam) {
 	this.beams.push(beam);
 }
 
+Node.prototype.removeBeam = function(beam) {
+	var index = this.beams.indexOf(beam);
+	this.beams.splice(index,1);
+}
+
 Node.prototype.getPosition = function() {
 	return this.object3D.position;
 }

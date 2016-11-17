@@ -1,6 +1,7 @@
 var globals = {
-	nwide: 5,
-	ntall: 5,
+	nwide: 2,
+	ntall: 3,
+	lattice_pitch: 100,
 	linear_scale: 1.0,
 	angular_scale: 1.0,
 	beam_forces: [],

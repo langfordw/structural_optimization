@@ -31,10 +31,12 @@ FrameSolver.prototype.getFreeNodes = function() {
 FrameSolver.prototype.assemble_X = function() {
 	var index = 0;
 	_.each(this.nodes, function(node) {
-		if (!node.fixed && node.externalForce != null) {
-			this.X.subset(math.index(index),node.externalForce.x);
-			this.X.subset(math.index(index+1),node.externalForce.z);
-			this.X.subset(math.index(index+2),node.externalMoment);
+		if (!node.fixed) {
+			if (node.externalForce != null) {
+				this.X.subset(math.index(index),node.externalForce.x);
+				this.X.subset(math.index(index+1),node.externalForce.z);
+				this.X.subset(math.index(index+2),node.externalMoment);
+			}
 			index += 3;	
 		}	
 	}, this);

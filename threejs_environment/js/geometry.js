@@ -236,9 +236,9 @@ function generateGeometry() {
 	
 	// **** PRESCRIBE FORCES AND DISPLACEMENTS ******
 	var force_node = globals.ntall-1;
-	_nodes[force_node].addExternalForce( new THREE.Vector3(100,0,0));
+	_nodes[force_node].addExternalForce( new THREE.Vector3(0,0,-100));
 	var force_node = globals.ntall*globals.nwide-1;
-	_nodes[force_node].addExternalForce( new THREE.Vector3(100,0,0));
+	_nodes[force_node].addExternalForce( new THREE.Vector3(0,0,-100));
 
 	return {
 		nodes: _nodes,
@@ -342,16 +342,49 @@ function displayBeamForces(beams) {
 	}
 
 	_.each(beams, function(beam) {
-		if(beam.f_local._data[f_index] < minf) {
-			minf = beam.f_local._data[f_index];
-		} else if (beam.f_local._data[f_index] > maxf) {
-			maxf = beam.f_local._data[f_index];
+		// var f = Math.abs(beam.f_local._data[f_index]);
+		var f = Math.abs(beam.f_local._data[f_index]-beam.f_local._data[f_index+3]);
+		console.log(beam.index)
+		console.log(f)
+		if(f < minf) {
+			minf = f;
+		} else if (f > maxf) {
+			maxf = f;
 		}
 	});
 
 	_.each(beams, function(beam) {
-		beam.setHSLColor(beam.f_local._data[f_index],minf,maxf);
+		beam.setHSLColor(Math.abs(beam.f_local._data[f_index]-beam.f_local._data[f_index+3]),minf,maxf);
 	});
 }
 
+function removeBeam(beam,this_node=null) {
+	console.log(beam)
+	var node = beam.nodes[0]
+	if (this_node != null) {
+		if (this_node == node) {
+			node = beam.nodes[1]
+		}
+		node.removeBeam(beam);
+	} else {
+		beam.nodes[0].removeBeam(beam);
+		beam.nodes[1].removeBeam(beam);
+	}
+	
+	beamWrapper.remove(beam.object3D);
+	var index = globals.geom.beams.indexOf(beam);
+	globals.geom.beams.splice(index,1);
+}
+
+function removeNode(node) {
+	console.log(node.beams)
+	_.each(node.beams, function(beam) {
+		removeBeam(beam,node);
+		console.log('remove beam ' + beam.index)
+	})
+	reindex(globals.geom.beams);
+	wrapper.remove(node.object3D);
+	var index = globals.geom.nodes.indexOf(node);
+	globals.geom.nodes.splice(index,1);
+}
 
