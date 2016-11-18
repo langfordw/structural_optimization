@@ -59,7 +59,7 @@ function initThreeJS() {
 	camera.updateProjectionMatrix();
 	scene.add( camera );
 
-	var helper = new THREE.GridHelper( 1000, 100, 0xfffff );
+	var helper = new THREE.GridHelper( 10000, 1000, 0xfffff );
 	helper.position.y = 0;
 	helper.material.opacity = 0.5;
 	helper.material.transparent = true;

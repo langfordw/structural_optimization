@@ -3,6 +3,7 @@ var arrowColor = 0xff0088;
 function Node(position, index) {
 	var nodeMat = new THREE.MeshBasicMaterial({color: 0x259997});
 	var nodeGeo = new THREE.SphereGeometry(6,20,20);
+	// var nodeGeo = new THREE.SphereGeometry(0.1,20,20);
 
 	this.index = index;
 	this.object3D = new THREE.Mesh(nodeGeo, nodeMat);

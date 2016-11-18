@@ -377,7 +377,11 @@ function removeBeam(beam,this_node=null) {
 }
 
 function removeNode(node) {
-	console.log(node.beams)
+	// console.log(node.beams)
+	if (node.externalForce != null) {
+		node.externalForce = null;
+		node.removeArrow();
+	}
 	_.each(node.beams, function(beam) {
 		removeBeam(beam,node);
 		// console.log('remove beam ' + beam.index)
@@ -401,4 +405,37 @@ function updateExternalForce() {
 			}
 		});
 	}
+}
+
+function subdivideBeam(beam) {
+	var node1 = beam.nodes[0];
+	var node4 = beam.nodes[1];
+	var angle = beam.getAngle(node1.getPosition());
+	var x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.25;
+	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.25;
+	var node2 = new Node(new THREE.Vector3(x, 0, z),0);
+	globals.geom.nodes.push(node2)
+	var x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.75;
+	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.75;
+	var node3 = new Node(new THREE.Vector3(x, 0, z),0);
+	globals.geom.nodes.push(node3)
+	removeBeam(beam,node1);
+	console.log('removing beam ' + beam.index);
+	var beam = new Beam([node1,node2],0,[1000, 10])
+	globals.geom.beams.push(beam)
+	var beam = new Beam([node2,node3],0)
+	globals.geom.beams.push(beam)
+	var beam = new Beam([node3,node4],0,[1000, 10])
+	globals.geom.beams.push(beam)
+
+	reindex(globals.geom.beams);
+	reindex(globals.geom.nodes);
+	console.log(globals.geom)
+
+	// beamWrapper.remove(beam);
+	// beam.updateBeam();
+	// sceneClearBeam();
+	// _.each(geom.beams, function(beam) {
+	// 	beam.updateBeam();
+	// });
 }

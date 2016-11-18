@@ -43,6 +43,7 @@ var displacements = [];
 var solver;
 
 var gui = new dat.GUI();
+gui.domElement.id = 'gui'
 
 var fv = gui.addFolder('Force Vector');
 fv.add(globals.control_parameters, 'fv_x',-500,500).onChange((function() {
@@ -51,19 +52,7 @@ fv.add(globals.control_parameters, 'fv_x',-500,500).onChange((function() {
 fv.add(globals.control_parameters, 'fv_y',-500,500).onChange((function() {
 	updateExternalForce()
 }));
-
-var selection = gui.addFolder('Selection');
-selection.add(globals.control_parameters,'selectMode',[ 'none', 'add_geom', 'sub_geom', 'fix', 'un-fix', 'force', 'un-force' ]).name("Function");
-selection.open();
-
-
-var solve_folder = gui.addFolder('Solver');
-solve_folder.add(globals.control_parameters,'reset');
-solve_folder.add(globals.control_parameters,'solve');
-solve_folder.open();
-
-var disp = gui.addFolder('Display');
-disp.add(globals.control_parameters,'hideArrows').onChange((function(value) {
+fv.add(globals.control_parameters,'hideArrows').onChange((function(value) {
 	if (!value) {
 		_.each(globals.geom.nodes, function(node) {
 			if(node.arrow != null) {
@@ -78,6 +67,19 @@ disp.add(globals.control_parameters,'hideArrows').onChange((function(value) {
 		})
 	}
 }));
+
+var selection = gui.addFolder('Selection');
+selection.add(globals.control_parameters,'selectMode',[ 'none', 'add_geom', 'sub_geom', 'fix', 'un-fix', 'force', 'un-force' ]).name("Function");
+selection.open();
+
+
+var solve_folder = gui.addFolder('Solver');
+solve_folder.add(globals.control_parameters,'reset');
+solve_folder.add(globals.control_parameters,'solve');
+solve_folder.open();
+
+var disp = gui.addFolder('Display');
+
 disp.add(globals.control_parameters,'deformGeometry').onChange((function(value) {
 	if (value) {
 		if (globals.solved) {

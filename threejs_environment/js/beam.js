@@ -1,4 +1,4 @@
-function Beam(nodes, index) {
+function Beam(nodes, index, a1a2=[1000,10]) {
 	this.index = index;
 	this.nodes = [nodes[0], nodes[1]];
 	nodes[0].addBeam(this);
@@ -12,8 +12,9 @@ function Beam(nodes, index) {
 	this.f;
 	this.highlighted = false;
 
-	this.a1 = 1000;
-	this.a2 = 10;
+	this.a1 = a1a2[0];
+	this.a2 = a1a2[1];
+	console.log(this.a1)
 
 	this.k_prime = math.zeros(6,6);
 	this.assemble_k_prime();
@@ -60,7 +61,7 @@ function Beam(nodes, index) {
 		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.cos(dtheta[1]), 0, -l*Math.sin(dtheta[1]) )),
 		this.vertices[1]
 	);
-	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
+	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 2+(this.len0/10)});
 	var lineGeo = new THREE.Geometry();
 	lineGeo.dynamic = true;
 	lineGeo.vertices = curve.getPoints( 50 );
@@ -71,6 +72,7 @@ function Beam(nodes, index) {
 }
 
 Beam.prototype.updateBeam = function() {
+	// beamWrapper.remove(this.object3D);
 	this.theta = [-this.nodes[0].theta, -this.nodes[1].theta];
 	
 	var l = this.angular_deformation_scale;
@@ -81,7 +83,7 @@ Beam.prototype.updateBeam = function() {
 		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.cos(dtheta[1]), 0, -l*Math.sin(dtheta[1]) )),
 		this.vertices[1]
 	);
-	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 10});
+	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 2+(this.len0/10)});
 	var lineGeo = new THREE.Geometry();
 	lineGeo.dynamic = true;
 	lineGeo.vertices = curve.getPoints( 50 );
