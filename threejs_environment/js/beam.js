@@ -1,4 +1,4 @@
-function Beam(nodes, index, a1a2=[1000,10]) {
+function Beam(nodes, index, a1a2=[1000000,10000000]) {
 	this.index = index;
 	this.nodes = [nodes[0], nodes[1]];
 	nodes[0].addBeam(this);
@@ -12,12 +12,14 @@ function Beam(nodes, index, a1a2=[1000,10]) {
 	this.f;
 	this.highlighted = false;
 
-	this.a1 = a1a2[0];
-	this.a2 = a1a2[1];
-	console.log(this.a1)
+	this.a1 = a1a2[0]/this.len0; // AE/L
+	this.a2 = a1a2[1]/Math.pow(this.len0,3); // EI/L^3
 
 	this.k_prime = math.zeros(6,6);
 	this.assemble_k_prime();
+
+	this.kp = math.zeros(6,6);
+	this.assemble_kp();
 
 	this.full_T = math.zeros(6,6);
 	this.assemble_full_T();
@@ -25,7 +27,7 @@ function Beam(nodes, index, a1a2=[1000,10]) {
 	this.T = math.matrix([0]);
 	this.assemble_T();
 
-	this.angular_deformation_scale = this.len/2.
+	this.angular_deformation_scale = this.len/4.
 
 	this.k = {
 		n00: null,
@@ -185,45 +187,47 @@ Beam.prototype.assemble_T = function() {
 	return this.T
 }
 
-Beam.prototype.calculate_k = function() {
-	if (this.T._size[1] > 0){
-		if (this.index == -1) {
-			this.k = this.k_prime;
-			return this.k;
-		} else {
-			this.k = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
-			return this.k;
-		}
+// Beam.prototype.calculate_k = function() {
+// 	if (this.T._size[1] > 0){
+// 		if (this.index == -1) {
+// 			this.k = this.k_prime;
+// 			return this.k;
+// 		} else {
+// 			this.k = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+// 			return this.k;
+// 		}
 		
-	} else {
-		return null;
-	}
-}
+// 	} else {
+// 		return null;
+// 	}
+// }
 
 Beam.prototype.calculate_4ks = function() {
 	// return series of 3x3 matrices:
 		// one for each un-fixed node
 		// and two more for their interaction (0's if one is fixed)
+	var k0 = math.add(this.k_prime,this.kp)
+	// var k0 = this.k_prime;
 
 	node0 = this.nodes[0];
 	node1 = this.nodes[1];
 	if (!node0.fixed && !node1.fixed) {
 		// K is 6x6
-		this.k.full = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.full = math.multiply(math.multiply(math.transpose(this.T),k0),this.T);
 		this.k.n00 = math.subset(this.k.full, math.index(math.range(0,3),math.range(0,3)));
 		this.k.n11 = math.subset(this.k.full, math.index(math.range(3,6),math.range(3,6)));
 		this.k.n01 = math.subset(this.k.full, math.index(math.range(0,3),math.range(3,6)));
 		this.k.n10 = math.subset(this.k.full, math.index(math.range(3,6),math.range(0,3)));
 	} else if (!node0.fixed) {
 		// only node0 is free, K is 3x3
-		this.k.full = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.full = math.multiply(math.multiply(math.transpose(this.T),k0),this.T);
 		this.k.n00 = this.k.full
 		this.k.n11 = null;
 		this.k.n01 = null;
 		this.k.n10 = null;
 	} else if (!node1.fixed) {
 		// only node1 is free, K is 3x3
-		this.k.full = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
+		this.k.full = math.multiply(math.multiply(math.transpose(this.T),k0),this.T);
 		this.k.n11 = this.k.full
 		this.k.n00 = null;
 		this.k.n01 = null;
@@ -236,6 +240,42 @@ Beam.prototype.calculate_4ks = function() {
 		n10: this.k.n10,
 		full: this.k.full
 	};
+}
+
+Beam.prototype.assemble_kp = function() {
+	if (this.f_local == null) {
+		this.f_local = math.zeros(6,1);
+	}
+	var p = this.f_local._data[0]-this.f_local._data[3];
+	var l = this.len;
+
+	var i = 0;
+	var j = 0;
+	setEl(this.kp,[i+1,j+1],6*p/(5*l));
+	setEl(this.kp,[i+2,j+1],p/10);
+	setEl(this.kp,[i+1,j+2],p/10);
+	setEl(this.kp,[i+2,j+2],2*p*l/15);
+
+	i = 3;
+	j = 0;
+	setEl(this.kp,[i+1,j+1],-6*p/(5*l));
+	setEl(this.kp,[i+2,j+1],p/10);
+	setEl(this.kp,[i+1,j+2],-p/10);
+	setEl(this.kp,[i+2,j+2],-p*l/30);
+
+	i = 0;
+	j = 3;
+	setEl(this.kp,[i+1,j+1],-6*p/(5*l));
+	setEl(this.kp,[i+2,j+1],-p/10);
+	setEl(this.kp,[i+1,j+2],p/10);
+	setEl(this.kp,[i+2,j+2],-p*l/30);
+
+	i = 3;
+	j = 3;
+	setEl(this.kp,[i+1,j+1],6*p/(5*l));
+	setEl(this.kp,[i+2,j+1],-p/10);
+	setEl(this.kp,[i+1,j+2],-p/10);
+	setEl(this.kp,[i+2,j+2],2*p*l/15);
 }
 
 Beam.prototype.assemble_u_local = function() {

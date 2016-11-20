@@ -270,7 +270,7 @@ function generateGeometry() {
 function deformGeometryBending(geom,linear_scale=1.0,angular_scale=1.0) {
 	_.each(geom.nodes, function(node) {
 		node.setPosition(new THREE.Vector3(node.x0+linear_scale*node.u[0],0,node.z0-linear_scale*node.u[1]));
-		node.theta = node.u[2];
+		node.theta = node.theta0 + node.u[2];
 	});
 
 	sceneClearBeam();
@@ -421,11 +421,11 @@ function subdivideBeam(beam) {
 	globals.geom.nodes.push(node3)
 	removeBeam(beam,node1);
 	console.log('removing beam ' + beam.index);
-	var beam = new Beam([node1,node2],0,[1000, 10])
+	var beam = new Beam([node1,node2],0,[100000,500000])
 	globals.geom.beams.push(beam)
 	var beam = new Beam([node2,node3],0)
 	globals.geom.beams.push(beam)
-	var beam = new Beam([node3,node4],0,[1000, 10])
+	var beam = new Beam([node3,node4],0,[100000,500000]) //[100000,10000000]
 	globals.geom.beams.push(beam)
 
 	reindex(globals.geom.beams);

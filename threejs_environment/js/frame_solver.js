@@ -48,6 +48,8 @@ FrameSolver.prototype.calculate_Ksys = function() {
 	// to generalize this to non-fully constrained nodes,
 	// might add a second array of a cumulative sum of DoF's
 	// (in getFreeNodes)
+
+	this.free_nodes = this.getFreeNodes();
 	
 	_.each(this.beams, function(beam) {
 		// first add all the unfixed nodes to the diagonals

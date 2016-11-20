@@ -34,7 +34,6 @@ function initThreeJS() {
 	// console.log(container)
 	
 	var container = document.getElementById("threeDiv")
-	console.log(container)
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	// $("#threeDiv").append(renderer.domElement);
 	// document.body.appendChild( renderer.domElement );

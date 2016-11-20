@@ -22,6 +22,7 @@ function Node(position, index) {
 	this.displacement = null;
 	this.arrow = null;
 	this.theta = 0;
+	this.theta0 = 0;
 	this.lastColor = this.object3D.material.color.clone();
 	this.highlighted = false;
 	this.fixed_triangle = null;
@@ -129,11 +130,13 @@ Node.prototype.drawArrow = function(position) {
 		return;
 	}
 	vector.z *= -1;
-	var offsetOrigin = this.externalForce.clone().normalize().multiplyScalar(5);
+	var offsetOrigin = vector.clone().normalize().multiplyScalar(5);
 	offsetOrigin.z *= -1;
 	offsetOrigin.y -= 10;
+	var arrow_len = vector.length()
+	if (arrow_len < 20) { arrow_len = 20; }
 	var arrow = new THREE.ArrowHelper( vector, position.sub(vector).sub(offsetOrigin), 
-									   vector.length(), arrowColor, 10, 20 );
+									   arrow_len, arrowColor, 10, 20 );
 	arrow.line.material = new THREE.LineBasicMaterial( { color: arrowColor, linewidth: 5});
 	this.arrow = arrow;
 	sceneAdd(arrow);

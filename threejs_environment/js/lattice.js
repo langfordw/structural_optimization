@@ -32,9 +32,32 @@ var globals = {
 				resetLattice();
 			}
 		},
+		bake: function() {
+			bakeGeometry();
+		},
+		n_iter: 50,
+		solveIterations: function() {
+			for (var i = 0; i < globals.control_parameters.n_iter; i++) {
+				if (globals.geom != null) {
+					setup_solve('frame',globals.geom);
+					solve('frame',globals.geom);
+					this.deformGeometry = true;
+					gui.updateDisplay();
+				}
+				bakeGeometry();
+			}
+			if (globals.geom != null) {
+				setup_solve('frame',globals.geom);
+				solve('frame',globals.geom);
+				this.deformGeometry = true;
+				gui.updateDisplay();
+			}
+		},
 		selectMode: "none",
 		fv_x: 100,
-		fv_y: 0
+		fv_y: 0,
+		displacement_norm: '0',
+		displacement_xyz: '(0, 0, 0)'
 	}
 };
 
@@ -76,6 +99,9 @@ selection.open();
 var solve_folder = gui.addFolder('Solver');
 solve_folder.add(globals.control_parameters,'reset');
 solve_folder.add(globals.control_parameters,'solve');
+solve_folder.add(globals.control_parameters,'bake');
+solve_folder.add(globals.control_parameters,'n_iter',0,100);
+solve_folder.add(globals.control_parameters,'solveIterations');
 solve_folder.open();
 
 var disp = gui.addFolder('Display');
@@ -105,6 +131,9 @@ force_mode_control.onChange(function(value) {
 	displayBeamForces(globals.geom.beams);
 });
 
+disp.add(globals.control_parameters,'displacement_norm').name("umax norm");
+disp.add(globals.control_parameters,'displacement_xyz').name("umax xyz");
+
 function initLattice() {
 	// ******** GENERATE GEOMETRY ********
 	globals.geom = generateGeometry();
@@ -120,10 +149,37 @@ function initLattice() {
 	setup_solve('frame',globals.geom);
 }
 
+function bakeGeometry() {
+	_.each(globals.geom.nodes, function(node) {
+		node.x0 += node.u[0];
+		node.z0 -= node.u[1];
+		console.log(node.u[2])
+		node.theta0 += node.u[2];
+		console.log(node.theta0)
+	})
+
+	_.each(globals.geom.beams, function(beam) {
+		beam.len = Math.sqrt(Math.pow(beam.vertices[1].x-beam.vertices[0].x,2) + Math.pow(beam.vertices[1].z-beam.vertices[0].z,2));
+		beam.assemble_k_prime();
+		beam.assemble_kp();
+		beam.assemble_full_T();
+		beam.assemble_T();
+		beam.calculate_4ks();
+		console.log(beam.kp);
+	});
+
+
+	undeformGeometryBending(globals.geom);
+	console.log("baked geometry:")
+	console.log(globals.geom)
+	setup_solve('frame',globals.geom);
+}
+
 function resetLattice() {
 	globals.solved = false;
 	disp.close();
 	selection.open();
+	$plot.hide();
 	globals.control_parameters.deformGeometry = false;
 	gui.updateDisplay();
 	undeformGeometryBending(globals.geom);
@@ -198,6 +254,9 @@ function solve(type='frame',geom=globals.geom) {
 		globals.solved = true;
 		disp.open();
 		selection.close();
+		$plot.show();
+		plotForces();
+		console.log($plot)
 		console.log("solver results:")
 		console.log(solver)
 
@@ -211,11 +270,28 @@ function solve(type='frame',geom=globals.geom) {
 			globals.beam_forces.push(f);
 		})
 
-		solver.u.forEach(function (value, index, matrix) {
-	  		displacements.push(value);
+		var max_disp_node = null;
+		var max_u_norm = 0;
+		_.each(globals.geom.nodes, function(node) {
+			var u_norm = Math.sqrt(Math.pow(node.u[0],2) + Math.pow(node.u[1],2));
+			if (u_norm > max_u_norm) {
+				max_u_norm = u_norm;
+				max_disp_node = node;
+			}
 		});
 
-	
+		if (max_disp_node == null) {
+			max_disp_node = globals.geom.nodes[0];
+		}
+
+		globals.control_parameters.displacement_norm = '' + max_u_norm.toFixed(2) + 'mm @ node ' + max_disp_node.index;
+		globals.control_parameters.displacement_xyz = "(" + max_disp_node.u[0].toFixed(2) + ", " + max_disp_node.u[1].toFixed(2) + ") mm";
+
+		// solver.u.forEach(function (value, index, matrix) {
+	 //  		displacements.push(value);
+		// });
+
+		
 		deformGeometryBending(geom,globals.linear_scale,globals.angular_scale);
 
 		console.log("end state:")

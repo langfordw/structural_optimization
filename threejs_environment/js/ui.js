@@ -10,6 +10,7 @@ var $toolTip = $('#toolTip');
 var $toolTip2 = $('#toolTip2');
 var $toolTip3 = $('#toolTip3');
 var $selectbox = $('#selectbox');
+var $plot = $('.plot');
 
 var raycaster = new THREE.Raycaster();
 raycaster.linePrecision = 8;
@@ -25,7 +26,6 @@ $('#gui').on('mouseenter', function() {
 $('#gui').on('mouseleave', function() {
 	mouseInEnv = true;
 })
-
 
 window.addEventListener('dblclick',function() {
 	if (mouseInEnv) {
@@ -157,6 +157,7 @@ function selectAction(nodes, bnds=null) {
 
 		// console.log("min: " + minx + " " + minz)
 		// console.log("max: " + maxx + " " + maxz)
+		var added_geom = false;
 
 		for (var i = minx; i <= maxx; i+=100) {
 			for (var j = minz; j >= maxz; j-=100) {
@@ -171,20 +172,15 @@ function selectAction(nodes, bnds=null) {
 					globals.geom.nodes.push(node);
 					// console.log('placing node');
 					addBeams(node,findNeighborNodes(node));
+					added_geom = true;
 				}
 			}
 		}
-		
-
-		// var node = new Node(new THREE.Vector3(0, 0, 0),0);
-		// globals.geom.nodes.push(node);
-
-		// var beam = new Beam([_nodes[5],_nodes[6]],5)
-		// globals.geom.beams.push(beam);
-
-		reindex(globals.geom.nodes)
-		reindex(globals.geom.beams)
-		console.log(globals.geom)
+		if (added_geom) {
+			reindex(globals.geom.nodes)
+			reindex(globals.geom.beams)
+			console.log(globals.geom)
+		}
 		return;
 	}
 
@@ -225,6 +221,14 @@ function selectAction(nodes, bnds=null) {
 			// globals.geom.nodes.splice(index,1);
 			// wrapper.remove(node);	
 			// console.log("node " + node.index);
+			if (node.fixed) {
+				node.setFixed(false);
+				var index = globals.geom.constraints.indexOf(node);
+				globals.geom.constraints.splice(index,1);
+			}
+			if (node.externalForce != null) {
+				node.removeExternalForce();
+			}
 			removeNode(node);
 			// if (!_.contains(sub_nodes,node)) { sub_nodes.push(node) }
 			// _.each(node.beams, function(beam) {
@@ -484,3 +488,10 @@ function forces2text(fmatrix) {
 
 	return output;
 }
+
+
+
+function plotForces() {
+	
+}
+
