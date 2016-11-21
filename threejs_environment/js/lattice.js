@@ -57,11 +57,16 @@ var globals = {
 		fv_x: 100,
 		fv_y: 0,
 		displacement_norm: '0',
-		displacement_xyz: '(0, 0, 0)'
+		displacement_xyz: '(0, 0, 0)',
+		radialStiffness: function() {
+			measureRadialStiffness();
+		}
 	}
 };
 
 var displacements = [];
+var total_max_disp = [0,0];
+var total_max_norm = 0;
 
 var solver;
 
@@ -102,6 +107,7 @@ solve_folder.add(globals.control_parameters,'solve');
 solve_folder.add(globals.control_parameters,'bake');
 solve_folder.add(globals.control_parameters,'n_iter',0,100);
 solve_folder.add(globals.control_parameters,'solveIterations');
+solve_folder.add(globals.control_parameters,'radialStiffness');
 solve_folder.open();
 
 var disp = gui.addFolder('Display');
@@ -184,6 +190,9 @@ function resetLattice() {
 	gui.updateDisplay();
 	undeformGeometryBending(globals.geom);
 
+	total_max_norm = 0;
+	total_max_disp = [0,0];
+
 	var num_dofs = (globals.geom.nodes.length - globals.geom.constraints.length)*3;
 	var num_beams = globals.geom.beams.length;
 
@@ -254,17 +263,16 @@ function solve(type='frame',geom=globals.geom) {
 		globals.solved = true;
 		disp.open();
 		selection.close();
-		$plot.show();
-		plotForces();
-		console.log($plot)
 		console.log("solver results:")
 		console.log(solver)
 
 		var dt = new Date().getTime() - start;
 		console.log('Solved in ' + dt + 'ms');
 
+		
 		// ****** DEFORM / UPDATE GEOMETRY *****
-		_.each(this.beams, function(beam) {
+		globals.beam_forces = [];
+		_.each(globals.geom.beams, function(beam) {
 			// var f = Math.sqrt(Math.pow(beam.f_local._data[0],2) + Math.pow(beam.f_local._data[1],2));
 			var f = Math.abs(beam.f_local._data[0]);
 			globals.beam_forces.push(f);
@@ -280,12 +288,21 @@ function solve(type='frame',geom=globals.geom) {
 			}
 		});
 
+		// console.log(globals.beam_forces)
+		// plotForcesHisto(globals.beam_forces);
+		// $plot.show();
+		
+
 		if (max_disp_node == null) {
 			max_disp_node = globals.geom.nodes[0];
 		}
 
-		globals.control_parameters.displacement_norm = '' + max_u_norm.toFixed(2) + 'mm @ node ' + max_disp_node.index;
-		globals.control_parameters.displacement_xyz = "(" + max_disp_node.u[0].toFixed(2) + ", " + max_disp_node.u[1].toFixed(2) + ") mm";
+		total_max_norm += max_u_norm;
+		total_max_disp[0] += max_disp_node.u[0];
+		total_max_disp[1] += max_disp_node.u[1];
+
+		globals.control_parameters.displacement_norm = '' + total_max_norm.toFixed(2) + 'mm @ node ' + max_disp_node.index;
+		globals.control_parameters.displacement_xyz = "(" + total_max_disp[0].toFixed(2) + ", " + total_max_disp[1].toFixed(2) + ") mm";
 
 		// solver.u.forEach(function (value, index, matrix) {
 	 //  		displacements.push(value);
@@ -295,7 +312,8 @@ function solve(type='frame',geom=globals.geom) {
 		deformGeometryBending(geom,globals.linear_scale,globals.angular_scale);
 
 		console.log("end state:")
-		console.log(geom);	
+		console.log(geom);
+		return max_u_norm;
 	} else if (type == 'axial') {
 		// axial solve
 		// solver = new DirectStiffnessSolver(geom.nodes,geom.beams,geom.constraints);
@@ -307,6 +325,41 @@ function solve(type='frame',geom=globals.geom) {
 		// kinematic solve:
 		// solveEquilibrium(solveNums);
 	}
+}
+
+function measureRadialStiffness() {
+	var deflections = [];
+	for (var i = 0; i <= 360; i+=5) {
+		var angle = i*Math.PI/180;
+		var unit_vector = [100*Math.cos(angle),100*Math.sin(angle)];
+		globals.control_parameters.fv_x = unit_vector[0];
+		globals.control_parameters.fv_y = unit_vector[1];
+		updateExternalForce();
+		resetLattice();
+		setup_solve('frame',globals.geom);
+		deflections.push([angle,Math.pow(solve('frame',globals.geom),0.5)]);
+	}
+	// var index = deflections.length-1;
+	// for (var i = 360; i >0; i-=10) {
+	// 	var angle = i*Math.PI/180;
+	// 	var unit_vector = [10*Math.cos(angle),10*Math.sin(angle)];
+	// 	globals.control_parameters.fv_x = unit_vector[0];
+	// 	globals.control_parameters.fv_y = unit_vector[1];
+	// 	updateExternalForce();
+	// 	resetLattice();
+	// 	setup_solve('frame',globals.geom);
+	// 	deflections[index][1] = (deflections[index][1] + solve('frame',globals.geom))/2
+	// 	index-=1;
+	// }
+
+	// var deflections = [];
+	// for (var i = 0; i < 90; i += 10) {
+	// 	var angle = i*Math.PI/180;
+	// 	deflections.push([angle,1])
+	// }
+	console.log(deflections)
+	radialPlot(deflections);
+	$plot.show();
 }
 
 

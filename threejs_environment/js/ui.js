@@ -488,10 +488,3 @@ function forces2text(fmatrix) {
 
 	return output;
 }
-
-
-
-function plotForces() {
-	
-}
-
