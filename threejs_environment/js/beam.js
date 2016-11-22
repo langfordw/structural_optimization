@@ -11,6 +11,7 @@ function Beam(nodes, index, a1a2=[1000000,10000000]) {
 	this.force = 0
 	this.f;
 	this.highlighted = false;
+	this.type = 'rigid';
 
 	this.a1 = a1a2[0]/this.len0; // AE/L
 	this.a2 = a1a2[1]/Math.pow(this.len0,3); // EI/L^3
@@ -305,7 +306,8 @@ Beam.prototype.updatePosition = function(){
 Beam.prototype.highlight = function() {
 	if (!this.highlighted) {
 		this.lastColor = this.object3D.material.color.clone();
-		this.object3D.material.color.set(0xffff00);
+		// this.object3D.material.color.set(0x7fff00);
+		this.object3D.material.color.set(0xff00ff);
 	}
 	this.highlighted = true;
 }
@@ -357,3 +359,15 @@ Beam.prototype.setTensionCompressionColor = function(val, max){
     }
     this.lastColor = this.object3D.material.color.clone();
 };
+
+Beam.prototype.string = function() {
+	// return '{"index":' + this.index + ',"node1":' + this.nodes[0].index + ',"node2":' + this.nodes[1].index + '}';
+	var string = JSON.stringify({index:this.index,
+						   node1:this.nodes[0].index,
+						   node2:this.nodes[1].index});
+	console.log(string)
+	return string;
+	// return JSON.stringify({index:this.index,
+	// 					   node1:this.nodes[0],
+	// 					   node2:this.nodes[1]})
+}

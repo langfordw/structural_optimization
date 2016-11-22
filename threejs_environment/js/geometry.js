@@ -332,6 +332,7 @@ function displayBeamForces(beams) {
 	var minf = 1000000;
 	var maxf = -10000000;
 	var f_index = 0;
+	var f = 0;
 
 	if (globals.control_parameters.forceMode == "axial") {
 		f_index = 0;
@@ -343,7 +344,14 @@ function displayBeamForces(beams) {
 
 	_.each(beams, function(beam) {
 		// var f = Math.abs(beam.f_local._data[f_index]);
-		var f = Math.abs(beam.f_local._data[f_index]-beam.f_local._data[f_index+3]);
+		
+		if (f_index < 2) {
+			f = Math.abs(beam.f_local._data[f_index]-beam.f_local._data[f_index+3]);
+		} else {
+			// for moment
+			f = Math.abs(beam.f_local._data[f_index])+Math.abs(beam.f_local._data[f_index+3]);
+		}
+		
 		// console.log(beam.index)
 		// console.log(f)
 		if(f < minf) {
@@ -354,7 +362,12 @@ function displayBeamForces(beams) {
 	});
 
 	_.each(beams, function(beam) {
-		beam.setHSLColor(Math.abs(beam.f_local._data[f_index]-beam.f_local._data[f_index+3]),minf,maxf);
+		if (f_index < 2) {
+			beam.setHSLColor(Math.abs(beam.f_local._data[f_index]-beam.f_local._data[f_index+3]),minf,maxf);
+		} else {
+			beam.setHSLColor(Math.abs(beam.f_local._data[f_index])+Math.abs(beam.f_local._data[f_index+3]),minf,maxf);
+		}
+		
 	});
 }
 
@@ -421,12 +434,17 @@ function subdivideBeam(beam) {
 	globals.geom.nodes.push(node3)
 	removeBeam(beam,node1);
 	console.log('removing beam ' + beam.index);
-	var beam = new Beam([node1,node2],0,[100000,500000])
+	var beam = new Beam([node1,node2],0,[100000,500000]);
+	beam.type = 'flex';
+	globals.geom.beams.push(beam);
+	var beam = new Beam([node2,node3],0);
+	beam.type = 'flex';
 	globals.geom.beams.push(beam)
-	var beam = new Beam([node2,node3],0)
-	globals.geom.beams.push(beam)
-	var beam = new Beam([node3,node4],0,[100000,500000]) //[100000,10000000]
-	globals.geom.beams.push(beam)
+	var beam = new Beam([node3,node4],0,[100000,500000]); //[100000,10000000]
+	beam.type = 'flex';
+	globals.geom.beams.push(beam);
+
+
 
 	reindex(globals.geom.beams);
 	reindex(globals.geom.nodes);

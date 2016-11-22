@@ -60,6 +60,20 @@ var globals = {
 		displacement_xyz: '(0, 0, 0)',
 		radialStiffness: function() {
 			measureRadialStiffness();
+		},
+		stressSelectionThreshold: 1000,
+		subdivideSelection: function() {
+			var selected = selectStressed(globals.stressSelectionThreshold);
+			console.log('selected:')
+			console.log(selected)
+			subdivideSelection(selected);
+		},
+		download: function() {
+			var data = stringifyGeometry();
+			download(data, 'geometry.json', 'text/plain');
+		},
+		load: function() {
+			loadGeometry();
 		}
 	}
 };
@@ -102,13 +116,16 @@ selection.open();
 
 
 var solve_folder = gui.addFolder('Solver');
-solve_folder.add(globals.control_parameters,'reset');
-solve_folder.add(globals.control_parameters,'solve');
-solve_folder.add(globals.control_parameters,'bake');
-solve_folder.add(globals.control_parameters,'n_iter',0,100);
-solve_folder.add(globals.control_parameters,'solveIterations');
-solve_folder.add(globals.control_parameters,'radialStiffness');
+solve_folder.add(globals.control_parameters,'reset').name("Reset");
+solve_folder.add(globals.control_parameters,'solve').name("Solve");
+solve_folder.add(globals.control_parameters,'radialStiffness').name("Radial Stiffness");
 solve_folder.open();
+
+var nonlin_solve = gui.addFolder('Nonlinear Solver');
+nonlin_solve.add(globals.control_parameters,'bake');
+nonlin_solve.add(globals.control_parameters,'n_iter',0,100);
+nonlin_solve.add(globals.control_parameters,'solveIterations');
+nonlin_solve.open();
 
 var disp = gui.addFolder('Display');
 
@@ -140,6 +157,23 @@ force_mode_control.onChange(function(value) {
 disp.add(globals.control_parameters,'displacement_norm').name("umax norm");
 disp.add(globals.control_parameters,'displacement_xyz').name("umax xyz");
 
+var filter = gui.addFolder('Selection Filter');
+filter.add(globals.control_parameters,'stressSelectionThreshold',0,10000).name("stress threshold").onChange(function(value) {
+	globals.control_parameters.stressSelectionThreshold = value;
+	selectStressed(value);
+}).onFinishChange(function(value) {
+	var selected = selectStressed(value);
+	console.log('selected:')
+	console.log(selected)
+	resetLattice();
+	subdivideSelection(selected);
+});
+filter.add(globals.control_parameters,'subdivideSelection')
+
+var load_save = gui.addFolder('Save/Load Geometry');
+load_save.add(globals.control_parameters,'download').name("Download");
+load_save.add(globals.control_parameters,'load').name("Load JSON");
+
 function initLattice() {
 	// ******** GENERATE GEOMETRY ********
 	globals.geom = generateGeometry();
@@ -152,6 +186,9 @@ function initLattice() {
 
 	undeformGeometryBending(globals.geom);
 
+	var data = stringifyGeometry();
+	readJSON(data);
+
 	setup_solve('frame',globals.geom);
 }
 
@@ -159,9 +196,7 @@ function bakeGeometry() {
 	_.each(globals.geom.nodes, function(node) {
 		node.x0 += node.u[0];
 		node.z0 -= node.u[1];
-		console.log(node.u[2])
 		node.theta0 += node.u[2];
-		console.log(node.theta0)
 	})
 
 	_.each(globals.geom.beams, function(beam) {
@@ -171,13 +206,12 @@ function bakeGeometry() {
 		beam.assemble_full_T();
 		beam.assemble_T();
 		beam.calculate_4ks();
-		console.log(beam.kp);
 	});
 
 
 	undeformGeometryBending(globals.geom);
-	console.log("baked geometry:")
-	console.log(globals.geom)
+	// console.log("baked geometry:")
+	// console.log(globals.geom)
 	setup_solve('frame',globals.geom);
 }
 
@@ -337,7 +371,7 @@ function measureRadialStiffness() {
 		updateExternalForce();
 		resetLattice();
 		setup_solve('frame',globals.geom);
-		deflections.push([angle,Math.pow(solve('frame',globals.geom),0.5)]);
+		deflections.push([angle,1/Math.pow(solve('frame',globals.geom),0.25)]);
 	}
 	// var index = deflections.length-1;
 	// for (var i = 360; i >0; i-=10) {
@@ -362,6 +396,125 @@ function measureRadialStiffness() {
 	$plot.show();
 }
 
+function selectStressed(thresh) {
+	var selected = [];
+	if (globals.solved) {
+		_.each(globals.geom.beams, function(beam) {
+			if (beam.type == 'rigid') {
+				var m = Math.abs(beam.f_local._data[2]);
+				console.log(m)
+				if (m > thresh) {
+					selected.push(beam);
+					beam.highlight();
+				} else {
+					beam.unhighlight();
+				}
+			}
+		})
+	}
+	console.log(selected);
+	return selected
+}
 
+function subdivideSelection(selected) {
+	_.each(selected, function(beam) {
+		subdivideBeam(beam);
+	})
+}
+
+function stringifyGeometry() {
+	var data = [];
+	_.each(globals.geom.nodes, function(node) {
+		data.push({type:"node",index:node.index,x:node.x0,z:node.z0,fixed:node.fixed,force:node.externalForce});
+	})
+	_.each(globals.geom.beams, function(beam) {
+		data.push({type:"beam",index:beam.index,node1:beam.nodes[0].index,node2:beam.nodes[1].index});
+	})
+	var jsonData = JSON.stringify(data);
+	console.log(jsonData)
+	return jsonData;
+}
+
+function readJSON(jsondata) {
+	var dat = JSON.parse(jsondata);
+	// console.log(dat);
+	// console.log(dat[0]);
+}
+
+function buildJSON(objects) {
+	console.log("building objects...")
+	// sceneClear();
+	var _nodes = [];
+	var _beams = [];
+	var _constraints = [];
+	_.each(objects, function(object) {
+		if (object.type == 'node') {
+			console.log("build node")
+			var node = new Node(new THREE.Vector3(object.x, 0, object.z),object.index);
+			if (object.fixed) { 
+				node.setFixed(true,{x:1,z:1,c:1}) 
+				_constraints.push(node);
+			}
+			if (object.force != null) {
+				node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
+			}
+			_nodes.push(node);
+		} else if (object.type == 'beam') {
+			console.log("build beam")
+			var beam = new Beam([_nodes[object.node1],_nodes[object.node2]],object.index)
+			_beams.push(beam)
+		}
+	})
+
+	console.log(_nodes)
+	console.log(_beams)
+	console.log(_constraints)
+	globals.geom = null;
+	globals.geom = {nodes:_nodes,
+					beams:_beams,
+					constraints:_constraints}
+	console.log(globals.geom)
+	// globals.geom.nodes = _nodes;
+	// globals.geom.beams = _beams;
+	// globals.geom.constraints = _constraints;
+}
+
+function download(text, name, type) {
+    var a = document.createElement("a");
+    var file = new Blob([text], {type: type});
+    a.href = URL.createObjectURL(file);
+    a.download = name;
+    a.click();
+}
+
+function loadGeometry() {
+	var input = $('#load_json');
+	input.click();
+	var reader = new FileReader();
+	var contents;
+	var file = [];
+    
+	document.getElementById('load_json').addEventListener('change', function(evt) {
+		file = evt.target.files[0];
+		reader.addEventListener( 'load', function ( event ) {
+	        contents = event.target.result;
+	        buildJSON(JSON.parse(contents));
+	    }, false );
+		reader.readAsText( file );
+	})
+}
+
+// document.getElementById("importbtn").onchange = function(evt) {
+//           var selectedImage = evt.target.files[0];
+//           var file_reader = new FileReader();
+//           var imgtag = document.getElementById("img");
+//           imgtag.title = selectedImage.name;
+//           file_reader.onload = function(event) {
+//             imgtag.setAttribute('xlink:href',event.target.result);
+//           }
+
+//           file_reader.readAsDataURL(selectedImage);
+//           console.log(selectedImage);
+//         }
 
 
