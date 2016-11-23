@@ -27,6 +27,11 @@ $('#gui').on('mouseleave', function() {
 	mouseInEnv = true;
 })
 
+window.addEventListener('resize', function(){
+        onWindowResizeThree();
+        // if (_nodes) updateNodes(_nodes, _h, _viewMode);
+}, false);
+
 window.addEventListener('dblclick',function() {
 	if (mouseInEnv) {
 		if (highlightedObj != null && highlightedObj.beams) {
