@@ -48,7 +48,7 @@ Node.prototype.addExternalForce = function(force_vector) {
 
 Node.prototype.removeExternalForce = function() {
 	this.externalForce = null;
-	wrapper.remove(this.arrow);
+	this.removeArrow();
 }
 
 Node.prototype.addBeam = function(beam) {

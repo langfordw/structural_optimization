@@ -378,7 +378,6 @@ function displayBeamForces(beams) {
 }
 
 function removeBeam(beam,this_node=null) {
-	// console.log(beam)
 	var node = beam.nodes[0]
 	if (this_node != null) {
 		if (this_node == node) {
@@ -396,15 +395,20 @@ function removeBeam(beam,this_node=null) {
 }
 
 function removeNode(node) {
-	// console.log(node.beams)
 	if (node.externalForce != null) {
-		node.externalForce = null;
-		node.removeArrow();
+		node.removeExternalForce();
 	}
+
+	if (node.fixed) {
+		node.setFixed(false);
+		var index = globals.geom.constraints.indexOf(node);
+		globals.geom.constraints.splice(index,1);
+	}
+
 	_.each(node.beams, function(beam) {
 		removeBeam(beam,node);
-		// console.log('remove beam ' + beam.index)
 	})
+
 	reindex(globals.geom.beams);
 	wrapper.remove(node.object3D);
 	var index = globals.geom.nodes.indexOf(node);
@@ -433,28 +437,185 @@ function subdivideBeam(beam) {
 	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.75;
 	var node3 = new Node(new THREE.Vector3(x, 0, z),0);
 	globals.geom.nodes.push(node3)
-	removeBeam(beam,node1);
-	console.log('removing beam ' + beam.index);
-	var beam = new Beam([node1,node2],0,[100000,500000]);
-	beam.type = 'flex';
+	// removeBeam(beam,node1);
+	removeBeam(beam);
+	console.log('removing beam ' + beam.index + ' wrt node' + node1.index);
+	var beam = new Beam([node1,node2],0,[10000000,500000]);
+	beam.type = '2DoF';
 	globals.geom.beams.push(beam);
 	var beam = new Beam([node2,node3],0);
-	beam.type = 'flex';
+	beam.type = '2DoF';
 	globals.geom.beams.push(beam)
-	var beam = new Beam([node3,node4],0,[100000,500000]); //[100000,10000000]
-	beam.type = 'flex';
+	var beam = new Beam([node3,node4],0,[10000000,500000]);
+	beam.type = '2DoF';
 	globals.geom.beams.push(beam);
-
-
 
 	reindex(globals.geom.beams);
 	reindex(globals.geom.nodes);
 	console.log(globals.geom)
+}
 
-	// beamWrapper.remove(beam);
-	// beam.updateBeam();
-	// sceneClearBeam();
-	// _.each(geom.beams, function(beam) {
-	// 	beam.updateBeam();
+function subdivideBeam1DoF(beam) {
+	var node1 = beam.nodes[0];
+	var node4 = beam.nodes[1];
+	var angle = beam.getAngle(node1.getPosition());
+	var x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.375;
+	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.375;
+	var node2 = new Node(new THREE.Vector3(x, 0, z),0);
+	globals.geom.nodes.push(node2)
+	var x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.625;
+	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.625;
+	var node3 = new Node(new THREE.Vector3(x, 0, z),0);
+	globals.geom.nodes.push(node3)
+	// removeBeam(beam,node1);
+	removeBeam(beam);
+	console.log('removing beam ' + beam.index);
+	var beam = new Beam([node1,node2],0);
+	beam.type = '1DoF';
+	globals.geom.beams.push(beam);
+	var beam = new Beam([node2,node3],0,[10000000,500000]);
+	beam.type = '1DoF';
+	globals.geom.beams.push(beam)
+	var beam = new Beam([node3,node4],0);
+	beam.type = '1DoF';
+	globals.geom.beams.push(beam);
+
+	reindex(globals.geom.beams);
+	reindex(globals.geom.nodes);
+	console.log(globals.geom)
+}
+
+function changePartType(nodes, type) {
+	var shared_beam = null;
+	// _.each(nodes[1].beams, function(beam) {
+	// 	if (_.contains(nodes[0].beams, beam)) {
+	// 		shared_beam = beam;
+	// 	}
 	// });
+	var shared_beams = [];
+	var node_connectivity = [];
+	var node_connections = [];
+	_.each(nodes, function(node) {
+		var count = 0;
+		_.each(node.beams, function(beam) {
+			if (_.contains(nodes,beam.nodes[0]) && _.contains(nodes,beam.nodes[1])) {
+				shared_beams.push(beam);
+				count++;
+			}
+		});
+		node_connectivity.push(count);
+		// node_connections.push({node:node,count:count});
+	});
+	shared_beams = _.uniq(shared_beams);
+	console.log(shared_beams);
+	console.log(node_connectivity)
+
+	var edge_nodes = _.filter(nodes, function(node,i) {
+		console.log(node_connectivity[i]);
+		return node_connectivity[i] == 1;
+	})
+	console.log(edge_nodes);
+
+	// remove old beams and nodes
+	if (shared_beams.length == 0) {
+		console.log("no shared beam");
+		edge_nodes = nodes;
+	} else if (shared_beams.length == 1) {
+		// single rigid beam
+		removeBeam(shared_beams[0]);
+	} else {
+		// a flexible beam with 3 elements... remove inner nodes
+		_.each(node_connectivity, function(beamcount,i) {
+			if (beamcount > 1) {
+				console.log('remove node' + nodes[i].index);
+				removeNode(nodes[i]);
+			}
+		});
+	}
+
+	console.log(nodes)
+	
+	// add new beams/nodes
+	if (type == 'none') {
+		// need to check if we left a node stranded <<<<<<<<<<< -------------  ***** 
+	} else if (type == 'rigid') {
+		var beam = new Beam([edge_nodes[0],edge_nodes[1]],0);
+		globals.geom.beams.push(beam);
+	} else if (type == '2DoF'){
+		var beam = new Beam([edge_nodes[0],edge_nodes[1]],0);
+		globals.geom.beams.push(beam);
+		subdivideBeam(beam);
+	} else if (type == '1DoF'){
+		var beam = new Beam([edge_nodes[0],edge_nodes[1]],0);
+		globals.geom.beams.push(beam);
+		subdivideBeam1DoF(beam);
+	}
+
+	reindex(globals.geom.beams);
+	reindex(globals.geom.nodes);
+
+
+
+	// if (shared_beam == null) {
+	// 	console.log("no shared beam");
+	// 	// no need to remove anything just add new beam types
+	// 	if (type != 'none') {
+	// 		if (type == 'rigid') {
+	// 			var beam = new Beam([nodes[0],nodes[1]],0);
+	// 			globals.geom.beams.push(beam);
+	// 		}
+	// 		else if (type == '2DoF') {
+	// 			var beam = new Beam([nodes[0],nodes[1]],0);
+	// 			subdivideBeam(beam);
+	// 		}
+	// 		else if (type == '1DoF') {
+	// 			var beam = new Beam([nodes[0],nodes[1]],0);
+	// 			subdivideBeam1DoF(beam);
+	// 		}
+	// 	}
+		
+	// 	return;
+	// } else {
+	// 	console.log("shared beam:");
+	// 	console.log(shared_beam);
+
+	// 	// remove beams/nodes
+	// 	if (shared_beam.type == 'rigid') {
+	// 		removeBeam(shared_beam);
+	// 	}
+	// 	reindex(globals.geom.beams);
+	// 	reindex(globals.geom.nodes);
+
+	// 	// add new beams/nodes
+	// 	if (type != 'none') {
+	// 		if (type == 'rigid') {
+	// 			var beam = new Beam([nodes[0],nodes[1]],0);
+	// 			globals.geom.beams.push(beam);
+	// 		} else if (type == '2DoF'){
+	// 			var beam = new Beam([nodes[0],nodes[1]],0);
+	// 			subdivideBeam(beam);
+	// 		}
+	// 		else if (type == '1DoF'){
+	// 			var beam = new Beam([nodes[0],nodes[1]],0);
+	// 			subdivideBeam1DoF(beam);
+	// 		}
+	// 	} else {
+	// 		// need to catch node by itself problem
+	// 	}
+
+	// }
+
+	// reindex(globals.geom.beams);
+	// reindex(globals.geom.nodes);
+	
+	// if (shared_beam.type == type) {
+	// 	console.log("Already " + type);
+	// 	return;
+	// }
+
+	// if (type == 'rigid') {
+
+	// }
+
+
 }

@@ -83,7 +83,7 @@ var globals = {
 		load: function() {
 			loadGeometry();
 		},
-		eps: -1.0
+		eps: 0
 	}
 };
 
@@ -120,7 +120,9 @@ fv.add(globals.control_parameters,'hideArrows').onChange((function(value) {
 }));
 
 var selection = gui.addFolder('Selection');
-selection.add(globals.control_parameters,'selectMode',[ 'none', 'add_geom', 'sub_geom', 'fix', 'un-fix', 'force', 'un-force' ]).name("Function");
+selection.add(globals.control_parameters,'selectMode',
+	[ 'none', 'add_geom', 'sub_geom', 'fix', 'un-fix', 
+	'force', 'un-force', 'make_rigid', 'make_1DoF', 'make_2DoF', 'make_none']).name("Function");
 selection.open();
 
 

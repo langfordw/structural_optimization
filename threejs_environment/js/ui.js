@@ -176,7 +176,6 @@ function selectAction(nodes, bnds=null) {
 				if (!node_exists) {
 					var node = new Node(new THREE.Vector3(i, 0, j),0);
 					globals.geom.nodes.push(node);
-					// console.log('placing node');
 					addBeams(node,findNeighborNodes(node));
 					added_geom = true;
 				}
@@ -190,6 +189,18 @@ function selectAction(nodes, bnds=null) {
 		return;
 	}
 
+	if (globals.control_parameters.selectMode == "make_rigid") {
+		changePartType(nodes,'rigid');
+	}
+	if (globals.control_parameters.selectMode == "make_1DoF") {
+		changePartType(nodes,'1DoF');
+	}
+	if (globals.control_parameters.selectMode == "make_2DoF") {
+		changePartType(nodes,'2DoF');
+	}
+	if (globals.control_parameters.selectMode == "make_none") {
+		changePartType(nodes,'none');
+	}
 
 	var sub_nodes = [];
 	var sub_beams = [];
@@ -223,32 +234,15 @@ function selectAction(nodes, bnds=null) {
 			return;
 		}
 		if (globals.control_parameters.selectMode == "sub_geom") {
-			// var index = globals.geom.nodes.indexOf(node);
-			// globals.geom.nodes.splice(index,1);
-			// wrapper.remove(node);	
-			// console.log("node " + node.index);
-			if (node.fixed) {
-				node.setFixed(false);
-				var index = globals.geom.constraints.indexOf(node);
-				globals.geom.constraints.splice(index,1);
-			}
-			if (node.externalForce != null) {
-				node.removeExternalForce();
-			}
+			// if (node.fixed) {
+			// 	node.setFixed(false);
+			// 	var index = globals.geom.constraints.indexOf(node);
+			// 	globals.geom.constraints.splice(index,1);
+			// }
+			// if (node.externalForce != null) {
+			// 	node.removeExternalForce();
+			// }
 			removeNode(node);
-			// if (!_.contains(sub_nodes,node)) { sub_nodes.push(node) }
-			// _.each(node.beams, function(beam) {
-			// 	// get all the beams that are completely contained in the nodes
-			// 	if (_.contains(nodes,beam.nodes[0]) && _.contains(nodes,beam.nodes[1])) {
-			// 		if (!_.contains(sub_beams,beam)) { sub_beams.push(beam) }
-					
-					// beamWrapper.remove(beam);
-					// var index = globals.geom.beams.indexOf(beam);
-					// globals.geom.beams.splice(index,1);
-					// console.log("beam " + beam.index);
-				// }
-			// })
-
 			return;
 		}
 
@@ -256,42 +250,6 @@ function selectAction(nodes, bnds=null) {
 	if (globals.control_parameters.selectMode == "sub_geom") {
 		reindex(globals.geom.nodes);
 	}
-	// 	console.log(globals.geom)
-	// 	console.log("1...")
-	// 	console.log(sub_nodes)
-	// 	console.log(sub_beams)
-
-	// 	var sub_nodes2 = []
-	// 	_.each(sub_nodes, function(node) {
-	// 		var remove = true;
-	// 		_.each(node.beams, function(beam) {
-	// 			if (!_.contains(sub_beams,beam)) {
-	// 				remove = false;
-	// 			}
-	// 		})
-	// 		if (remove) {
-	// 			sub_nodes2.push(node)
-	// 		}
-	// 	})
-
-	// 	var sub_beams2 = []
-	// 	_.each(sub_nodes2, function(node) {
-	// 		removeNode(node);
-	// 		// wrapper.remove(node.object3D);
-	// 		// var index = globals.geom.nodes.indexOf(node);
-	// 		// globals.geom.nodes.splice(index,1);
-	// 		// _.each(node.beams, function(beam) {
-	// 		// 	sub_beams2.push(beam);
-	// 		// 	removeBeam(beam);
-	// 		// })
-	// 	})
-	// 	console.log("2...")
-	// 	console.log(sub_nodes2)
-	// 	console.log(sub_beams2)
-	// 	reindex(globals.geom.beams);
-	// 	console.log(globals.geom)
-	// }
-	
 }
 
 function reindex(list) {
@@ -337,18 +295,12 @@ function getSelectBounds(vertices) {
 function mouseMove(e){
 	if (mouseInEnv) {
 	    e.preventDefault();
-	    // mouse.x = ( e.clientX / renderer.domElement.width ) * 2 - 1;
-	    // mouse.y = - ( e.clientY / renderer.domElement.height ) * 2 + 1;
 	    mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
 	    mouse.y = - ( e.clientY / window.innerHeight ) * 2 + 1;
 	    raycaster.setFromCamera(mouse, camera);
-	    // mouse_text = ("x: " + mouse.x + "  y: " + mouse.y);
-	    // console.log("x: " + e.clientX + "  y: " + e.clientY);
-	    // console.log("x: " + mouse.x + "  y: " + mouse.y);
 
 	    if (isDragging) {
 	    	box_vertices[1] = new THREE.Vector3(mouse.x,mouse.y,0).unproject(camera);
-	    	// console.log("pos = " + boxGeo.vertices[1].x + " " + boxGeo.vertices[1].z)
 	    	bounds = getSelectBounds(box_vertices);
 	    	
 	    	_.each(globals.geom.nodes, function(node) {
