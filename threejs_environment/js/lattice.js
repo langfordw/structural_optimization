@@ -16,42 +16,50 @@ var globals = {
 		solve: function() {
 			if (globals.geom != null) {
 				setup_solve('frame',globals.geom);
-				solve('frame',globals.geom);
+				var umax = solve('frame',globals.geom);
+				globals.control_parameters.displacement_norm = "" + umax.toFixed(2) + "mm";
 				this.deformGeometry = true;
 				gui.updateDisplay();
+				deformGeometryBending(globals.geom,globals.linear_scale);
 			}
 		},
 		reset: function() {
 			if (globals.geom != null) {
-				// sceneClear();
-				// sceneAdd(beamWrapper);
-				// sceneClearBeam();
-				// globals.geom = null;
-				// initLattice();
-				// render();
 				resetLattice();
 			}
 		},
 		bake: function() {
 			bakeGeometry();
 		},
-		n_iter: 50,
+		n_iter: '50',
 		solveIterations: function() {
-			for (var i = 0; i < globals.control_parameters.n_iter; i++) {
-				if (globals.geom != null) {
-					setup_solve('frame',globals.geom);
-					solve('frame',globals.geom);
-					this.deformGeometry = true;
-					gui.updateDisplay();
-				}
-				bakeGeometry();
-			}
+			var fv = [globals.control_parameters.fv_x, globals.control_parameters.fv_y];
+			displayMessage("solving");
+			render();
+			solve_linear_incremental(fv,Math.pow(10,globals.control_parameters.eps));
+			// for (var i = 0; i < globals.control_parameters.n_iter; i++) {
+			// 	if (globals.geom != null) {
+			// 		setup_solve('frame',globals.geom);
+			// 		solve('frame',globals.geom);
+			// 		this.deformGeometry = true;
+			// 		gui.updateDisplay();
+			// 	}
+			// 	bakeGeometry();
+			// }
+			// if (globals.geom != null) {
+			// 	setup_solve('frame',globals.geom);
+			// 	solve('frame',globals.geom);
+			// 	this.deformGeometry = true;
+			// 	gui.updateDisplay();
+			// }
+			globals.control_parameters.deformGeometry = true;
+			gui.updateDisplay();
+		},
+		reset_nonlin: function() {
 			if (globals.geom != null) {
-				setup_solve('frame',globals.geom);
-				solve('frame',globals.geom);
-				this.deformGeometry = true;
-				gui.updateDisplay();
+				resetNonlinearSolve();
 			}
+
 		},
 		selectMode: "none",
 		fv_x: 100,
@@ -74,7 +82,8 @@ var globals = {
 		},
 		load: function() {
 			loadGeometry();
-		}
+		},
+		eps: -1.0
 	}
 };
 
@@ -89,10 +98,10 @@ gui.domElement.id = 'gui'
 
 var fv = gui.addFolder('Force Vector');
 fv.add(globals.control_parameters, 'fv_x',-500,500).onChange((function() {
-	updateExternalForce();
+	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y);
 }));
 fv.add(globals.control_parameters, 'fv_y',-500,500).onChange((function() {
-	updateExternalForce()
+	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y)
 }));
 fv.add(globals.control_parameters,'hideArrows').onChange((function(value) {
 	if (!value) {
@@ -115,16 +124,16 @@ selection.add(globals.control_parameters,'selectMode',[ 'none', 'add_geom', 'sub
 selection.open();
 
 
-var solve_folder = gui.addFolder('Solver');
+var solve_folder = gui.addFolder('Linear Solver');
 solve_folder.add(globals.control_parameters,'reset').name("Reset");
 solve_folder.add(globals.control_parameters,'solve').name("Solve");
 solve_folder.add(globals.control_parameters,'radialStiffness').name("Radial Stiffness");
 solve_folder.open();
 
 var nonlin_solve = gui.addFolder('Nonlinear Solver');
-nonlin_solve.add(globals.control_parameters,'bake');
-nonlin_solve.add(globals.control_parameters,'n_iter',0,100);
-nonlin_solve.add(globals.control_parameters,'solveIterations');
+nonlin_solve.add(globals.control_parameters,'eps',-5,1);
+nonlin_solve.add(globals.control_parameters,'reset_nonlin').name("Reset");
+nonlin_solve.add(globals.control_parameters,'solveIterations').name("Solve (incremental)");
 nonlin_solve.open();
 
 var disp = gui.addFolder('Display');
@@ -132,21 +141,21 @@ var disp = gui.addFolder('Display');
 disp.add(globals.control_parameters,'deformGeometry').onChange((function(value) {
 	if (value) {
 		if (globals.solved) {
-			deformGeometryBending(globals.geom,globals.linear_scale,globals.angular_scale);
+			deformGeometryBending(globals.geom,globals.linear_scale);
 		}
 	} else {
 		undeformGeometryBending(globals.geom);
 	}
 }));
 
-var deformation_scale_control = disp.add(globals.control_parameters, 'deformationScale', 0, 30).name("Scale");
+var deformation_scale_control = disp.add(globals.control_parameters, 'deformationScale', 0, 2).name("Scale");
 var force_mode_control = disp.add(globals.control_parameters, 'forceMode', [ 'axial', 'shear', 'moment' ] ).name("Display");
 
 
 deformation_scale_control.onChange(function(value) {
 	globals.linear_scale = value;
 	if (globals.control_parameters.deformGeometry) {
- 		deformGeometryBending(globals.geom,globals.linear_scale,globals.angular_scale);
+ 		deformGeometryBending(globals.geom,globals.linear_scale);
 	}
 });
 
@@ -154,6 +163,7 @@ force_mode_control.onChange(function(value) {
 	displayBeamForces(globals.geom.beams);
 });
 
+disp.add(globals.control_parameters,'n_iter').name("Iterations");
 disp.add(globals.control_parameters,'displacement_norm').name("umax norm");
 disp.add(globals.control_parameters,'displacement_xyz').name("umax xyz");
 
@@ -186,17 +196,17 @@ function initLattice() {
 
 	undeformGeometryBending(globals.geom);
 
-	var data = stringifyGeometry();
-	readJSON(data);
-
 	setup_solve('frame',globals.geom);
 }
 
 function bakeGeometry() {
 	_.each(globals.geom.nodes, function(node) {
-		node.x0 += node.u[0];
-		node.z0 -= node.u[1];
-		node.theta0 += node.u[2];
+		if (node.u_cumulative == null) {
+			node.u_cumulative = [0,0,0];
+		}
+		node.u_cumulative[0] += node.u[0];
+		node.u_cumulative[1] += node.u[1];
+		node.u_cumulative[2] += node.u[2];
 	})
 
 	_.each(globals.geom.beams, function(beam) {
@@ -208,11 +218,9 @@ function bakeGeometry() {
 		beam.calculate_4ks();
 	});
 
+	// undeformGeometryBending(globals.geom);
 
-	undeformGeometryBending(globals.geom);
-	// console.log("baked geometry:")
-	// console.log(globals.geom)
-	setup_solve('frame',globals.geom);
+	// setup_solve('frame',globals.geom);
 }
 
 function resetLattice() {
@@ -268,11 +276,13 @@ function resetLattice() {
 	});
 }
 
-function setup_solve(type='frame',geom) {
+function setup_solve(type='frame',geom,debug=false) {
 	if (type == 'frame') {
 		solver = new FrameSolver(geom.nodes,geom.beams,geom.constraints);
-		console.log("solver setup:")
-		console.log(solver)
+		if (debug) {
+			console.log("solver setup:");
+			console.log(solver);
+		}
 	} else if (type == 'axial') {
 		// axial solve
 		// solver = new DirectStiffnessSolver(geom.nodes,geom.beams,geom.constraints);
@@ -289,7 +299,7 @@ function setup_solve(type='frame',geom) {
 	}
 }
 
-function solve(type='frame',geom=globals.geom) {
+function solve(type='frame',geom=globals.geom,debug=false) {
 	if (type == 'frame') {
 		// ****** SOLVE ******
 		var start = new Date().getTime();
@@ -297,13 +307,14 @@ function solve(type='frame',geom=globals.geom) {
 		globals.solved = true;
 		disp.open();
 		selection.close();
-		console.log("solver results:")
-		console.log(solver)
+		if (debug) {
+			console.log("solver results:")
+			console.log(solver)
+		}
 
 		var dt = new Date().getTime() - start;
-		console.log('Solved in ' + dt + 'ms');
+		if (debug) { console.log('Solved in ' + dt + 'ms'); }
 
-		
 		// ****** DEFORM / UPDATE GEOMETRY *****
 		globals.beam_forces = [];
 		_.each(globals.geom.beams, function(beam) {
@@ -322,31 +333,23 @@ function solve(type='frame',geom=globals.geom) {
 			}
 		});
 
-		// console.log(globals.beam_forces)
-		// plotForcesHisto(globals.beam_forces);
-		// $plot.show();
-		
-
 		if (max_disp_node == null) {
 			max_disp_node = globals.geom.nodes[0];
 		}
 
-		total_max_norm += max_u_norm;
-		total_max_disp[0] += max_disp_node.u[0];
-		total_max_disp[1] += max_disp_node.u[1];
+		// total_max_norm += max_u_norm;
+		// total_max_disp[0] += max_disp_node.u[0];
+		// total_max_disp[1] += max_disp_node.u[1];
 
-		globals.control_parameters.displacement_norm = '' + total_max_norm.toFixed(2) + 'mm @ node ' + max_disp_node.index;
-		globals.control_parameters.displacement_xyz = "(" + total_max_disp[0].toFixed(2) + ", " + total_max_disp[1].toFixed(2) + ") mm";
+		// globals.control_parameters.displacement_norm = '' + total_max_norm.toFixed(2) + 'mm @ node ' + max_disp_node.index;
+		// globals.control_parameters.displacement_xyz = "(" + total_max_disp[0].toFixed(2) + ", " + total_max_disp[1].toFixed(2) + ") mm";
 
-		// solver.u.forEach(function (value, index, matrix) {
-	 //  		displacements.push(value);
-		// });
+		// deformGeometryBending(geom,globals.linear_scale,globals.angular_scale);
 
-		
-		deformGeometryBending(geom,globals.linear_scale,globals.angular_scale);
-
-		console.log("end state:")
-		console.log(geom);
+		if (debug) {
+			console.log("end state:")
+			console.log(geom);
+		}
 		return max_u_norm;
 	} else if (type == 'axial') {
 		// axial solve
@@ -366,31 +369,12 @@ function measureRadialStiffness() {
 	for (var i = 0; i <= 360; i+=5) {
 		var angle = i*Math.PI/180;
 		var unit_vector = [100*Math.cos(angle),100*Math.sin(angle)];
-		globals.control_parameters.fv_x = unit_vector[0];
-		globals.control_parameters.fv_y = unit_vector[1];
-		updateExternalForce();
+		updateExternalForce(unit_vector[0],unit_vector[1]);
 		resetLattice();
 		setup_solve('frame',globals.geom);
 		deflections.push([angle,1/Math.pow(solve('frame',globals.geom),0.25)]);
 	}
-	// var index = deflections.length-1;
-	// for (var i = 360; i >0; i-=10) {
-	// 	var angle = i*Math.PI/180;
-	// 	var unit_vector = [10*Math.cos(angle),10*Math.sin(angle)];
-	// 	globals.control_parameters.fv_x = unit_vector[0];
-	// 	globals.control_parameters.fv_y = unit_vector[1];
-	// 	updateExternalForce();
-	// 	resetLattice();
-	// 	setup_solve('frame',globals.geom);
-	// 	deflections[index][1] = (deflections[index][1] + solve('frame',globals.geom))/2
-	// 	index-=1;
-	// }
 
-	// var deflections = [];
-	// for (var i = 0; i < 90; i += 10) {
-	// 	var angle = i*Math.PI/180;
-	// 	deflections.push([angle,1])
-	// }
 	console.log(deflections)
 	radialPlot(deflections);
 	$plot.show();
@@ -431,14 +415,7 @@ function stringifyGeometry() {
 		data.push({type:"beam",index:beam.index,node1:beam.nodes[0].index,node2:beam.nodes[1].index});
 	})
 	var jsonData = JSON.stringify(data);
-	console.log(jsonData)
 	return jsonData;
-}
-
-function readJSON(jsondata) {
-	var dat = JSON.parse(jsondata);
-	// console.log(dat);
-	// console.log(dat[0]);
 }
 
 function buildJSON(objects) {
@@ -474,9 +451,6 @@ function buildJSON(objects) {
 					beams:_beams,
 					constraints:_constraints}
 	console.log(globals.geom)
-	// globals.geom.nodes = _nodes;
-	// globals.geom.beams = _beams;
-	// globals.geom.constraints = _constraints;
 }
 
 function download(text, name, type) {
@@ -503,18 +477,3 @@ function loadGeometry() {
 		reader.readAsText( file );
 	})
 }
-
-// document.getElementById("importbtn").onchange = function(evt) {
-//           var selectedImage = evt.target.files[0];
-//           var file_reader = new FileReader();
-//           var imgtag = document.getElementById("img");
-//           imgtag.title = selectedImage.name;
-//           file_reader.onload = function(event) {
-//             imgtag.setAttribute('xlink:href',event.target.result);
-//           }
-
-//           file_reader.readAsDataURL(selectedImage);
-//           console.log(selectedImage);
-//         }
-
-

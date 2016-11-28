@@ -27,6 +27,7 @@ function Node(position, index) {
 	this.highlighted = false;
 	this.fixed_triangle = null;
 	this.u = [0,0,0];
+	this.u_cumulative = null;
 }
 
 Node.prototype.addDisplacement = function(displacement_vector) {
@@ -65,11 +66,30 @@ Node.prototype.getPosition = function() {
 
 Node.prototype.setPosition = function(position){
 	// this routine is expensive
-	var deltaPos = (new THREE.Vector3(0,0,0)).subVectors(position,this.object3D.position);
+	var deltaPos = this.getPosition().clone().sub(position).negate();
     this.object3D.position.set(position.x, position.y, position.z);
+
+    // this may or may not be necessary...
+    // for (i=0; i < this.beams.length; i++) {
+    //     this.beams[i].updatePosition();
+    // }
+
+    if (this.arrow != null) {
+    	this.updateArrow(deltaPos);
+	}
+}
+
+Node.prototype.moveBy = function(vector) {
+	var currentPos = this.getPosition().clone();
+	var deltaPos = new THREE.Vector3(vector[0],vector[1],vector[2]);
+    this.object3D.position.set(currentPos.add(deltaPos));
     for (i=0; i < this.beams.length; i++) {
         this.beams[i].updatePosition();
     }
+
+    this.u_cumulative[0] += vector[0];
+    this.u_cumulative[1] -= vector[1];
+    this.u_cumulative[2] += vector[2];
     if (this.arrow != null) {
     	this.updateArrow(deltaPos);
 	}

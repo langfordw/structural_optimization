@@ -267,15 +267,21 @@ function generateGeometry() {
 // 	}
 // }
 
-function deformGeometryBending(geom,linear_scale=1.0,angular_scale=1.0) {
+function deformGeometryBending(geom,linear_scale=1.0) {
 	_.each(geom.nodes, function(node) {
-		node.setPosition(new THREE.Vector3(node.x0+linear_scale*node.u[0],0,node.z0-linear_scale*node.u[1]));
-		node.theta = node.theta0 + node.u[2];
+		if (node.u_cumulative == null) {
+			_.each(globals.geom.nodes, function(node) {
+				node.u_cumulative = node.u;
+			});	
+		}
+		node.setPosition(new THREE.Vector3(node.x0+linear_scale*node.u_cumulative[0],0,node.z0-linear_scale*node.u_cumulative[1]));
+		node.theta = node.theta0 + linear_scale*node.u_cumulative[2];
+		// node.moveBy(linear_scale*node.u[0],linear_scale*node.u[1],node.u[2]);
+		// node.theta = node.theta0 + node.u[2];
 	});
 
 	sceneClearBeam();
 	_.each(geom.beams, function(beam) {
-		beam.angular_deformation_scale = beam.len/2.*angular_scale;
 		beam.updateBeam();
 	});
 
@@ -405,16 +411,11 @@ function removeNode(node) {
 	globals.geom.nodes.splice(index,1);
 }
 
-function updateExternalForce() {
-	// console.log('here')
+function updateExternalForce(fx, fy) {
 	if (globals.geom != null) {
 		_.each(globals.geom.nodes, function(node) {
 			if (node.externalForce != null) {
-				node.setExternalForce(globals.control_parameters.fv_x,-globals.control_parameters.fv_y);
-				// node.externalForce = 
-				// console.log(node.externalForce.x)
-				// node.removeArrow();
-				// node.drawArrow();
+				node.setExternalForce(fx,-fy);
 			}
 		});
 	}

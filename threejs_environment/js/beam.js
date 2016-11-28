@@ -1,4 +1,4 @@
-function Beam(nodes, index, a1a2=[1000000,10000000]) {
+function Beam(nodes, index, a1a2=[10000000,10000000]) {
 	this.index = index;
 	this.nodes = [nodes[0], nodes[1]];
 	nodes[0].addBeam(this);

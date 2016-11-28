@@ -80,39 +80,6 @@ FrameSolver.prototype.calculate_U = function() {
 	return this.u
 }
 
-// FrameSolver.prototype.calculate_beam_forces = function() {
-// 	_.each(this.beams, function(beam) {
-
-// 		var index0 = _.indexOf(this.free_nodes,beam.nodes[0].index);
-// 		var index1 = _.indexOf(this.free_nodes,beam.nodes[1].index);
-// 		var f_index = 0;
-
-// 		var u_nodes = math.matrix([0]);
-
-// 		if (index0 != -1) {
-// 			setEl(u_nodes, [f_index,0], getEl(this.u,[index0,0]));
-// 			setEl(u_nodes, [f_index+1,0], getEl(this.u,[index0+1,0]));
-// 			setEl(u_nodes, [f_index+2,0], getEl(this.u,[index0+2,0]));
-// 			f_index += 3;
-// 		}
-
-// 		if (index1 != -1) {
-// 			setEl(u_nodes, [f_index,0], getEl(this.u,[index1,0]));
-// 			setEl(u_nodes, [f_index+1,0], getEl(this.u,[index1+1,0]));
-// 			setEl(u_nodes, [f_index+2,0], getEl(this.u,[index1+2,0]));
-// 		}
-// 		console.log(u_nodes)
-// 		// get the forces
-// 		if (index0 != -1 || index1 != -1) {
-// 			var f = math.multiply(beam.k.full,u_nodes)
-// 			beam.f = f;
-// 		} else {
-// 			beam.f = math.zeros(6);
-// 		}
-
-// 	},this);
-// }
-
 FrameSolver.prototype.solve = function() {
 	this.calculate_U();
 

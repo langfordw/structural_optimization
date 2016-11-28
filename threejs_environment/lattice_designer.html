@@ -45,13 +45,18 @@
 		<div class="tooltip" id="toolTip2"></div>
 		<div class="tooltip" id="toolTip3"></div>
 		<div class="selectbox" id="selectbox"></div>
+		<div class="infobox" id="infobox"></div>
 
-		<div class="plot" ><svg class="chart"></svg></div>
+		<input id="load_json" type="file" style="visibility:hidden" />
+
+		<div class="plot" ><svg class="radial"></svg></div>
+		<!-- <div class="plot" ><svg class="chart"></svg></div> -->
 		
 
 		<!-- <canvas id="canvas"></canvas> -->
 
-		<script src="https://d3js.org/d3.v4.min.js"></script>
+		<!-- // <script src="https://d3js.org/d3.v4.min.js"></script> -->
+		<script src="js/d3.min.js"></script>
 		<script type="text/javascript" src="js/dat.gui.js"></script>
 		<script src="js/underscore-min.js" type="text/javascript"></script>
 		<!-- <script src="js/math/numeric-1.2.6.js" type="text/javascript"></script> -->
@@ -67,6 +72,7 @@
 		<script src="js/spring.js"></script>
 		<script src="js/direct_stiffness_solver.js"></script>
 		<script src="js/frame_solver.js"></script>
+		<script src="js/nonlinear_solver.js"></script>
 		<script src="js/plotting.js"></script>
 		<script src="js/ui.js"></script>
 		<script type="text/javascript">

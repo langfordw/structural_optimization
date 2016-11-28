@@ -11,6 +11,7 @@ var $toolTip2 = $('#toolTip2');
 var $toolTip3 = $('#toolTip3');
 var $selectbox = $('#selectbox');
 var $plot = $('.plot');
+var $infobox = $('#infobox');
 
 var raycaster = new THREE.Raycaster();
 raycaster.linePrecision = 8;
@@ -492,4 +493,24 @@ function forces2text(fmatrix) {
 	});
 
 	return output;
+}
+
+function displayMessage(message) {
+	$infobox.html("<p><b>"+message+"</b></p>");
+	console.log($infobox)
+	$infobox.show();
+	$infobox.hide();
+	$infobox.show();
+}
+
+function hideMessage() {
+	// $infobox.css({display:none});
+	$infobox.hide();
+	console.log($infobox)
+}
+
+function forceRedraw(el) {
+  var t = el.ownerDocument.createTextNode(' ');
+  el.appendChild(t);
+  setTimeout(function() { el.removeChild(t); }, 0);
 }
