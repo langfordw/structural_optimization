@@ -114,8 +114,6 @@ lattice.roundDown = function(number, precision) {
     return roundedTempNumber / factor;
 };
 
-
-
 function selectAction(nodes, bnds=null) {
 	if (globals.control_parameters.selectMode == "add_geom") {
 		var minx = lattice.roundUp(bnds.min.x,-2)
@@ -152,11 +150,18 @@ function selectAction(nodes, bnds=null) {
 	}
 
 	if (globals.control_parameters.selectMode == "make_rigid") {
-		getParts(nodes);
+		var parts = getParts(nodes);
+		_.each(parts, function(part) {
+			part.changeType('rigid');
+		});
+		// ripupPart(parts[0]);
 		// changePartType(nodes,'rigid');
 	}
 	if (globals.control_parameters.selectMode == "make_1DoF") {
-		changePartType(nodes,'1DoF');
+		var parts = getParts(nodes);
+		_.each(parts, function(part) {
+			part.changeType('1DoF');
+		});
 	}
 	if (globals.control_parameters.selectMode == "make_2DoF") {
 		changePartType(nodes,'2DoF');
@@ -164,6 +169,17 @@ function selectAction(nodes, bnds=null) {
 	if (globals.control_parameters.selectMode == "make_none") {
 		changePartType(nodes,'none');
 	}
+
+	if (globals.control_parameters.selectMode == "sub_geom") {
+		var parts = getParts(nodes);
+		console.log("remove parts:")
+		console.log(parts)
+		_.each(parts, function(part) {
+			part.ripupBeams();
+		})
+		console.log(globals.geom);
+	}
+
 
 	var sub_nodes = [];
 	var sub_beams = [];
@@ -196,29 +212,24 @@ function selectAction(nodes, bnds=null) {
 			}
 			return;
 		}
-		if (globals.control_parameters.selectMode == "sub_geom") {
-			// if (node.fixed) {
-			// 	node.setFixed(false);
-			// 	var index = globals.geom.constraints.indexOf(node);
-			// 	globals.geom.constraints.splice(index,1);
-			// }
-			// if (node.externalForce != null) {
-			// 	node.removeExternalForce();
-			// }
-			removeNode(node);
-			return;
-		}
+		// if (globals.control_parameters.selectMode == "sub_geom") {
+		// 	// if (node.fixed) {
+		// 	// 	node.setFixed(false);
+		// 	// 	var index = globals.geom.constraints.indexOf(node);
+		// 	// 	globals.geom.constraints.splice(index,1);
+		// 	// }
+		// 	// if (node.externalForce != null) {
+		// 	// 	node.removeExternalForce();
+		// 	// }
+		// 	// removeNode(node);
+		// 	// node.destroy();
+		// 	return;
+		// }
 
 	});
-	if (globals.control_parameters.selectMode == "sub_geom") {
-		reindex(globals.geom.nodes);
-	}
-}
-
-function reindex(list) {
-	_.each(list, function(item,i) {
-		item.index = i;
-	});
+	// if (globals.control_parameters.selectMode == "sub_geom") {
+	// 	reindex(globals.geom.nodes);
+	// }
 }
 
 function getSelectBounds(vertices) {

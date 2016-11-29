@@ -340,43 +340,51 @@ function displayBeamForces(beams) {
 	});
 }
 
-function removeBeam(beam,this_node=null) {
-	var node = beam.nodes[0]
-	if (this_node != null) {
-		if (this_node == node) {
-			node = beam.nodes[1]
-		}
-		node.removeBeam(beam);
-	} else {
-		beam.nodes[0].removeBeam(beam);
-		beam.nodes[1].removeBeam(beam);
-	}
+// function removeBeam(beam,this_node=null) {
+// 	var node = beam.nodes[0]
+
+// 	if (this_node != null) {
+// 		// remove beam reference from other node
+// 		if (this_node == node) {
+// 			node = beam.nodes[1]
+// 		}
+// 		node.removeBeam(beam);
+// 	} else {
+// 		// remove beam reference from both nodes
+// 		beam.nodes[0].removeBeam(beam);
+// 		beam.nodes[1].removeBeam(beam);
+// 	}
 	
-	beamWrapper.remove(beam.object3D);
-	var index = globals.geom.beams.indexOf(beam);
-	globals.geom.beams.splice(index,1);
-}
+// 	beamWrapper.remove(beam.object3D);
+// 	var index = globals.geom.beams.indexOf(beam);
+// 	globals.geom.beams.splice(index,1);
+// }
 
-function removeNode(node) {
-	if (node.externalForce != null) {
-		node.removeExternalForce();
-	}
+// function removeNode(node) {
+// 	if (node.externalForce != null) {
+// 		node.removeExternalForce();
+// 	}
 
-	if (node.fixed) {
-		node.setFixed(false);
-		var index = globals.geom.constraints.indexOf(node);
-		globals.geom.constraints.splice(index,1);
-	}
+// 	if (node.fixed) {
+// 		node.setFixed(false);
+// 		var index = globals.geom.constraints.indexOf(node);
+// 		globals.geom.constraints.splice(index,1);
+// 	}
 
-	_.each(node.beams, function(beam) {
-		removeBeam(beam,node);
-	})
+// 	// _.each(node.beams, function(beam) {
+// 	// 	removeBeam(beam,node);
+// 	// })
 
-	reindex(globals.geom.beams);
-	wrapper.remove(node.object3D);
-	var index = globals.geom.nodes.indexOf(node);
-	globals.geom.nodes.splice(index,1);
-}
+// 	_.times(node.beams.length, function() {
+// 		console.log(node.beams[0])
+// 		node.beams[0].destroy();
+// 	})
+
+// 	reindex(globals.geom.beams);
+// 	wrapper.remove(node.object3D);
+// 	var index = globals.geom.nodes.indexOf(node);
+// 	globals.geom.nodes.splice(index,1);
+// }
 
 function updateExternalForce(fx, fy) {
 	if (globals.geom != null) {
@@ -389,29 +397,42 @@ function updateExternalForce(fx, fy) {
 }
 
 function subdivideBeam(beam) {
+	var part = beam.part;
 	var node1 = beam.nodes[0];
 	var node4 = beam.nodes[1];
 	var angle = beam.getAngle(node1.getPosition());
-	var x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.25;
-	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.25;
+
+	x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.25;
+	z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.25;
 	var node2 = new Node(new THREE.Vector3(x, 0, z),0);
+	node2.internal = true;
 	globals.geom.nodes.push(node2)
+
 	var x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.75;
 	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.75;
 	var node3 = new Node(new THREE.Vector3(x, 0, z),0);
+	node3.internal = true;
 	globals.geom.nodes.push(node3)
-	// removeBeam(beam,node1);
-	removeBeam(beam);
-	console.log('removing beam ' + beam.index + ' wrt node' + node1.index);
+
+	// part.ripup();
+	part.dissociate();
+	// removeBeam(beam);
+	beam.destroy();
+	console.log('removing beam ' + beam.index);
+
 	var beam = new Beam([node1,node2],0,[10000000,500000]);
 	beam.type = '2DoF';
+	beam.addPart(part);
 	globals.geom.beams.push(beam);
 	var beam = new Beam([node2,node3],0);
 	beam.type = '2DoF';
+	beam.addPart(part);
 	globals.geom.beams.push(beam)
 	var beam = new Beam([node3,node4],0,[10000000,500000]);
 	beam.type = '2DoF';
+	beam.addPart(part);
 	globals.geom.beams.push(beam);
+	part.type = '2DoF'
 
 	reindex(globals.geom.beams);
 	reindex(globals.geom.nodes);
@@ -422,17 +443,23 @@ function subdivideBeam1DoF(beam) {
 	var node1 = beam.nodes[0];
 	var node4 = beam.nodes[1];
 	var angle = beam.getAngle(node1.getPosition());
+
 	var x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.375;
 	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.375;
 	var node2 = new Node(new THREE.Vector3(x, 0, z),0);
+	node2.internal = true;
 	globals.geom.nodes.push(node2)
-	var x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.625;
-	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.625;
+
+	x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.625;
+	z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.625;
 	var node3 = new Node(new THREE.Vector3(x, 0, z),0);
+	node2.internal = true;
 	globals.geom.nodes.push(node3)
-	// removeBeam(beam,node1);
-	removeBeam(beam);
+
+	// removeBeam(beam);
+	beam.destroy();
 	console.log('removing beam ' + beam.index);
+
 	var beam = new Beam([node1,node2],0);
 	beam.type = '1DoF';
 	globals.geom.beams.push(beam);
@@ -446,6 +473,12 @@ function subdivideBeam1DoF(beam) {
 	reindex(globals.geom.beams);
 	reindex(globals.geom.nodes);
 	console.log(globals.geom)
+}
+
+function reindex(list) {
+	_.each(list, function(item,i) {
+		item.index = i;
+	});
 }
 
 function getParts(nodes) {
@@ -467,6 +500,41 @@ function getParts(nodes) {
 
 	console.log(parts);
 	return parts;
+}
+
+// function ripupPart(part,parts=globals.geom.parts) {
+
+
+
+// 	// // _.each(part.beams, function(beam) {
+// 	// // 	removeBeam(beam);
+// 	// // });
+// 	// var parts = _.difference(parts,part);
+// 	// console.log(part);
+// 	// var nodes = _.filter(part.nodes, function(node) {
+// 	// 	// if the node is only contained in this part, then delete it
+// 	// 	// console.log(node)
+// 	// 	return !_.some(parts, function(p) {
+// 	// 		return _.contains(p.nodes,node);
+// 	// 	})
+// 	// })
+
+// 	// console.log(nodes);
+// }
+
+function changePartType(part, toType) {
+	if (part.type != toType) {
+		// remove part
+		// part.ripup();
+
+		// replace part
+		if (toType == 'rigid') {
+
+		}
+
+	} else {
+		// do nothing
+	}
 }
 
 function changePartType(nodes, type) {

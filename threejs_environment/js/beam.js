@@ -377,4 +377,70 @@ Beam.prototype.addPart = function(part) {
 	this.part = part;
 	this.nodes[0].addPart(part);
 	this.nodes[1].addPart(part);
+	part.addBeam(this);
 }
+
+Beam.prototype.attachToPart = function(part) {
+	this.part = part;
+}
+
+Beam.prototype.create = function() {
+	globals.geom.beams.push(this);
+}
+
+// Beam.prototype.detachPart = function() {
+// 	// need to detach the part from the beam and the beam's nodes
+// 	var index = this.part.beams.indexOf(this);
+// 	this.part.beams.splice(index,1);
+// }
+
+Beam.prototype.destroy = function() {
+	console.log("destroy beam " + this.index)
+	this.nodes[0].detachBeam(this);
+	this.nodes[1].detachBeam(this);
+
+	// detachFromPart?
+	// this.detachPart();
+
+	beamWrapper.remove(this.object3D);
+	var index = globals.geom.beams.indexOf(this);
+	globals.geom.beams.splice(index,1);
+}
+
+Beam.prototype.subdivide = function() {
+
+}
+
+// Beam.prototype.destroy = function(reindex=false) {
+// 	// modes:
+// 		// normal: remove beam from geometry list, remove from wrapper, remove reference from part,
+// 		//			remove unconnected nodes, ( remove reference from other node (not this_node) ? ),
+// 		// standalone: all of the above + reindex nodes and beams
+
+// 	// var node = beam.nodes[0]
+
+// 	// if (this_node != null) {
+// 	// 	// remove beam reference from other node
+// 	// 	if (this_node == node) {
+// 	// 		node = beam.nodes[1]
+// 	// 	}
+// 	// 	node.removeBeam(beam);
+// 	// } else {
+// 	// 	// remove beam reference from both nodes
+// 	// 	beam.nodes[0].removeBeam(beam);
+// 	// 	beam.nodes[1].removeBeam(beam);
+// 	// }
+	
+// 	this.nodes[0].removeBeamRef(this);
+// 	this.nodes[1].removeBeamRef(this);
+// 	this.part.removeBeamRef();
+
+// 	beamWrapper.remove(this.object3D);
+// 	var index = globals.geom.beams.indexOf(this);
+// 	globals.geom.beams.splice(index,1);
+	
+// 	if (reindex) {
+// 		reindex(globals.geom.nodes);
+// 		reindex(globals.geom.beams);
+// 	}
+// }

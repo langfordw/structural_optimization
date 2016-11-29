@@ -29,6 +29,7 @@ function Node(position, index) {
 	this.fixed_triangle = null;
 	this.u = [0,0,0];
 	this.u_cumulative = null;
+	this.internal = false; // internal to part
 }
 
 Node.prototype.addDisplacement = function(displacement_vector) {
@@ -60,9 +61,20 @@ Node.prototype.addPart = function(part) {
 	this.parts.push(part);
 }
 
-Node.prototype.removeBeam = function(beam) {
+Node.prototype.removeBeamRef = function(beam) {
+	console.log("here")
 	var index = this.beams.indexOf(beam);
 	this.beams.splice(index,1);
+
+	if (this.beams.length == 0) {
+		this.deallocate();
+	}
+}
+
+Node.prototype.deallocate = function() {
+	console.log('deallocating node')
+	var index = globals.geom.nodes.indexOf(this);
+	globals.geom.nodes.splice(index,1);
 }
 
 Node.prototype.getPosition = function() {
@@ -195,4 +207,68 @@ Node.prototype.setExternalForce = function(fv_x,fv_y) {
 	this.externalForce = new THREE.Vector3(fv_x,0,-fv_y);
 	this.removeArrow();
 	this.drawArrow();
+}
+
+// Node.prototype.destroy = function() {
+// 	if (this.externalForce != null) {
+// 		this.removeExternalForce();
+// 	}
+
+// 	if (this.fixed) {
+// 		this.setFixed(false);
+// 		var index = globals.geom.constraints.indexOf(this);
+// 		globals.geom.constraints.splice(index,1);
+// 	}
+
+// 	// _.each(node.beams, function(beam) {
+// 	// 	removeBeam(beam,node);
+// 	// })
+
+// 	// ripup all attached beams
+// 	_.times(this.beams.length, function() {
+// 		this.beams[0].destroy();
+// 	},this);
+// 	reindex(globals.geom.beams);
+
+// 	// dissociated from parts
+// 	_.each(this.parts, function(part) {
+// 		part.removeNodeRef(this);
+// 	},this)
+	
+// 	// remove from wrappers
+// 	wrapper.remove(this.object3D);
+// 	var index = globals.geom.nodes.indexOf(this);
+// 	globals.geom.nodes.splice(index,1);
+// }
+
+Node.prototype.detachBeam = function(beam) {
+	var index = this.beams.indexOf(beam);
+	this.beams.splice(index,1);
+
+	console.log("node " + this.index)
+	console.log(this.beams)
+	if (this.beams.length == 0) {
+		console.log("destroy node" + this.index);
+		this.destroy();
+	}
+}
+
+Node.prototype.destroy = function() {
+	console.log("to be destroyed:")
+	console.log(this);
+
+	if (this.externalForce != null) {
+		this.removeExternalForce();
+	}
+
+	if (this.fixed) {
+		this.setFixed(false);
+		var index = globals.geom.constraints.indexOf(this);
+		globals.geom.constraints.splice(index,1);
+	}
+
+	// remove from wrappers
+	wrapper.remove(this.object3D);
+	var index = globals.geom.nodes.indexOf(this);
+	globals.geom.nodes.splice(index,1);
 }
