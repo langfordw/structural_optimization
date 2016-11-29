@@ -114,45 +114,7 @@ lattice.roundDown = function(number, precision) {
     return roundedTempNumber / factor;
 };
 
-function findNeighborNodes(thisnode) {
-	var neighbors = [];
-	var pos = thisnode.getPosition();
-	_.each(globals.geom.nodes, function(node) {
-		// check N/S
-		if (node.getPosition().x == pos.x) {
-			if (node.getPosition().z == pos.z+100) {
-				neighbors.push(node);
-			} else if (node.getPosition().z == pos.z-100) {
-				neighbors.push(node);
-			}
-		}
-		// check E/W
-		if (node.getPosition().z == pos.z) {
-			if (node.getPosition().x == pos.x+100) {
-				neighbors.push(node);
-			} else if (node.getPosition().x == pos.x-100) {
-				neighbors.push(node);
-			}
-		}
-	})
 
-	return neighbors
-}
-
-function addBeams(thisnode,othernodes) {
-	// don't make redundant beams
-	_.each(othernodes, function(othernode) {
-		var beam_exists = false;
-		_.each(globals.geom.beams, function(beam) {
-			if (_.contains(beam.nodes,thisnode) && _.contains(beam.nodes,thisnode)) {
-				beam_exists = true;
-			}
-		});
-		var beam = new Beam([thisnode,othernode],0)
-		globals.geom.beams.push(beam);
-	})
-	
-}
 
 function selectAction(nodes, bnds=null) {
 	if (globals.control_parameters.selectMode == "add_geom") {
@@ -190,7 +152,8 @@ function selectAction(nodes, bnds=null) {
 	}
 
 	if (globals.control_parameters.selectMode == "make_rigid") {
-		changePartType(nodes,'rigid');
+		getParts(nodes);
+		// changePartType(nodes,'rigid');
 	}
 	if (globals.control_parameters.selectMode == "make_1DoF") {
 		changePartType(nodes,'1DoF');

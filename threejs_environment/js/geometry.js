@@ -152,6 +152,7 @@ function generateGeometry() {
 	var _nodes = [];
 	var _beams = [];
 	var _constraints = [];
+	var _parts = [];
 	var _h = -100;
 	var _l = 100;
 
@@ -168,6 +169,7 @@ function generateGeometry() {
 			if (i > 0){
 				var beam = new Beam([_nodes[index],_nodes[index-globals.ntall]],beam_index)
 				_beams.push(beam)
+				_parts.push(new Part(beam,'rigid'))
 				beam_index++;
 			}
 
@@ -175,6 +177,7 @@ function generateGeometry() {
 			if (j > 0){
 				var beam = new Beam([_nodes[index],_nodes[index-1]],beam_index)
 				_beams.push(beam)
+				_parts.push(new Part(beam,'rigid'))
 				beam_index++;
 			}			
 
@@ -240,32 +243,15 @@ function generateGeometry() {
 	var force_node = globals.ntall*globals.nwide-1;
 	_nodes[force_node].addExternalForce( new THREE.Vector3(globals.control_parameters.fv_x,0,-globals.control_parameters.fv_y));
 
+	// var _parts = makeParts(_beams);
+
 	return {
 		nodes: _nodes,
 		beams: _beams,
-		constraints: _constraints 
+		constraints: _constraints,
+		parts: _parts 
 	};
 }
-
-// function updatePositions(x) {
-// 	// this is rather expensive and accounts for ~10% of the running time of the objective function
-// 	var index = 0;
-// 	for (var i=0; i < geom.nodes.length; i++) {
-// 		geom.nodes[i].setPosition(new THREE.Vector3(x[index],0,x[index+1]));
-// 		index += 2;
-// 	}
-// }
-
-
-// function deformGeometry(u) {
-// 	var index = 0;
-// 	for (var i = 0; i < geom.nodes.length; i++) {
-// 		if (!geom.nodes[i].fixed) {
-// 			geom.nodes[i].setPosition(geom.nodes[i].getPosition().clone().add(new THREE.Vector3(u[index],0,u[index+1])));
-// 			index+=2;
-// 		}
-// 	}
-// }
 
 function deformGeometryBending(geom,linear_scale=1.0) {
 	_.each(geom.nodes, function(node) {
@@ -313,27 +299,6 @@ function updateForces(beams,forces) {
 	});	
 }
 
-// function displayForces(beams,forces) {
-// 	displayMagnitude = true;
-// 	if (displayMagnitude) {
-// 		_.map(forces, function(force) { Math.abs(force) });
-// 	}
-// 	var minf = _.min(forces)
-// 	var maxf = _.max(forces)
-// 	_.each(forces, function(force, i) {
-// 		if (displayMagnitude) {
-// 			console.log(force)
-// 			beams[i].setHSLColor(force,minf,maxf);
-// 		} else {
-// 			if (force > 0) {
-// 				beams[i].setTensionCompressionColor(force,maxf)
-// 			} else {
-// 				beams[i].setTensionCompressionColor(force,minf)
-// 			}
-// 		}
-// 	});
-// }
-
 function displayBeamForces(beams) {
 	var minf = 1000000;
 	var maxf = -10000000;
@@ -358,8 +323,6 @@ function displayBeamForces(beams) {
 			f = Math.abs(beam.f_local._data[f_index])+Math.abs(beam.f_local._data[f_index+3]);
 		}
 		
-		// console.log(beam.index)
-		// console.log(f)
 		if(f < minf) {
 			minf = f;
 		} else if (f > maxf) {
@@ -485,13 +448,30 @@ function subdivideBeam1DoF(beam) {
 	console.log(globals.geom)
 }
 
+function getParts(nodes) {
+	// select the parts that are fully defined by the nodes
+	var parts = [];
+	_.each(nodes, function(node) {
+		_.each(node.parts, function(part) {
+			parts.push(part);
+		})
+	})
+
+	parts = _.uniq(parts);
+
+	parts = _.filter(parts, function(part) {
+		return _.every(part.nodes, function(node) {
+			return _.contains(nodes, node);
+		})
+	});
+
+	console.log(parts);
+	return parts;
+}
+
 function changePartType(nodes, type) {
+	// this assumes nodes is 2 or 4 which encompase a full part
 	var shared_beam = null;
-	// _.each(nodes[1].beams, function(beam) {
-	// 	if (_.contains(nodes[0].beams, beam)) {
-	// 		shared_beam = beam;
-	// 	}
-	// });
 	var shared_beams = [];
 	var node_connectivity = [];
 	var node_connections = [];
@@ -553,69 +533,54 @@ function changePartType(nodes, type) {
 
 	reindex(globals.geom.beams);
 	reindex(globals.geom.nodes);
+}
 
+function makeParts(beams) {
+	var _parts = [];
+	var index = 0;
+	_.each(beams, function(beam) {
+		var part = new Part(beam,'rigid')
+		_parts.push(part);
+	});
+	return _parts;
+}
 
+function findNeighborNodes(thisnode) {
+	var neighbors = [];
+	var pos = thisnode.getPosition();
+	_.each(globals.geom.nodes, function(node) {
+		// check N/S
+		if (node.getPosition().x == pos.x) {
+			if (node.getPosition().z == pos.z+100) {
+				neighbors.push(node);
+			} else if (node.getPosition().z == pos.z-100) {
+				neighbors.push(node);
+			}
+		}
+		// check E/W
+		if (node.getPosition().z == pos.z) {
+			if (node.getPosition().x == pos.x+100) {
+				neighbors.push(node);
+			} else if (node.getPosition().x == pos.x-100) {
+				neighbors.push(node);
+			}
+		}
+	})
 
-	// if (shared_beam == null) {
-	// 	console.log("no shared beam");
-	// 	// no need to remove anything just add new beam types
-	// 	if (type != 'none') {
-	// 		if (type == 'rigid') {
-	// 			var beam = new Beam([nodes[0],nodes[1]],0);
-	// 			globals.geom.beams.push(beam);
-	// 		}
-	// 		else if (type == '2DoF') {
-	// 			var beam = new Beam([nodes[0],nodes[1]],0);
-	// 			subdivideBeam(beam);
-	// 		}
-	// 		else if (type == '1DoF') {
-	// 			var beam = new Beam([nodes[0],nodes[1]],0);
-	// 			subdivideBeam1DoF(beam);
-	// 		}
-	// 	}
-		
-	// 	return;
-	// } else {
-	// 	console.log("shared beam:");
-	// 	console.log(shared_beam);
+	return neighbors
+}
 
-	// 	// remove beams/nodes
-	// 	if (shared_beam.type == 'rigid') {
-	// 		removeBeam(shared_beam);
-	// 	}
-	// 	reindex(globals.geom.beams);
-	// 	reindex(globals.geom.nodes);
-
-	// 	// add new beams/nodes
-	// 	if (type != 'none') {
-	// 		if (type == 'rigid') {
-	// 			var beam = new Beam([nodes[0],nodes[1]],0);
-	// 			globals.geom.beams.push(beam);
-	// 		} else if (type == '2DoF'){
-	// 			var beam = new Beam([nodes[0],nodes[1]],0);
-	// 			subdivideBeam(beam);
-	// 		}
-	// 		else if (type == '1DoF'){
-	// 			var beam = new Beam([nodes[0],nodes[1]],0);
-	// 			subdivideBeam1DoF(beam);
-	// 		}
-	// 	} else {
-	// 		// need to catch node by itself problem
-	// 	}
-
-	// }
-
-	// reindex(globals.geom.beams);
-	// reindex(globals.geom.nodes);
-	
-	// if (shared_beam.type == type) {
-	// 	console.log("Already " + type);
-	// 	return;
-	// }
-
-	// if (type == 'rigid') {
-
-	// }
-
-
+function addBeams(thisnode,othernodes) {
+	// don't make redundant beams
+	_.each(othernodes, function(othernode) {
+		var beam_exists = false;
+		_.each(globals.geom.beams, function(beam) {
+			if (_.contains(beam.nodes,thisnode) && _.contains(beam.nodes,thisnode)) {
+				beam_exists = true;
+			}
+		});
+		var beam = new Beam([thisnode,othernode],0)
+		globals.geom.beams.push(beam);
+		globals.geom.parts.push(new Part(beam));
+	})
 }

@@ -51,21 +51,6 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=2000,debug=false) {
 			}
 			
 		}
-		
-
-		// } else {
-			
-		// 	console.log("magnitude = " + magnitude);
-		// 	console.log("force sum = " + force_sum);
-
-		// 	updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
-		// 	setup_solve('frame',globals.geom);
-		// 	var u_max = solve('frame',globals.geom);
-
-		// 	force_sum += magnitude;	
-		// }
-		// console.log("endloop")
-		// console.log("force sum = " + force_sum);
 
 	}
 
@@ -99,27 +84,3 @@ function resetNonlinearSolve() {
 	});
 	console.log(globals.geom);
 }
-	
-
-	// if (u_max < eps) {
-	// 	// we're all good and done
-	// 	this.deformGeometry = true;
-	// 	gui.updateDisplay();
-	// 	return;
-	// }
-
-	// for (var i = 0; i < n_iter; i++) {
-	// 	if (globals.geom != null) {
-	// 		setup_solve('frame',globals.geom);
-	// 		solve('frame',globals.geom);
-	// 		this.deformGeometry = true;
-	// 		gui.updateDisplay();
-	// 	}
-	// 	bakeGeometry();
-	// }
-	// if (globals.geom != null) {
-	// 	setup_solve('frame',globals.geom);
-	// 	solve('frame',globals.geom);
-	// 	this.deformGeometry = true;
-	// 	gui.updateDisplay();
-	// }

@@ -12,6 +12,7 @@ function Node(position, index) {
 	this.object3D.position.set(position.x,position.y,position.z);
 	sceneAdd(this.object3D);
 	this.beams = [];
+	this.parts = [];
 	this.fixed = false;
 	this.fixed_dof = {x:0,z:0,c:0};
 	this.externalForce = null;
@@ -53,6 +54,10 @@ Node.prototype.removeExternalForce = function() {
 
 Node.prototype.addBeam = function(beam) {
 	this.beams.push(beam);
+}
+
+Node.prototype.addPart = function(part) {
+	this.parts.push(part);
 }
 
 Node.prototype.removeBeam = function(beam) {

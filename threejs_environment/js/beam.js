@@ -1,5 +1,6 @@
 function Beam(nodes, index, a1a2=[10000000,10000000]) {
 	this.index = index;
+	this.part = null;
 	this.nodes = [nodes[0], nodes[1]];
 	nodes[0].addBeam(this);
 	nodes[1].addBeam(this);
@@ -370,4 +371,10 @@ Beam.prototype.string = function() {
 	// return JSON.stringify({index:this.index,
 	// 					   node1:this.nodes[0],
 	// 					   node2:this.nodes[1]})
+}
+
+Beam.prototype.addPart = function(part) {
+	this.part = part;
+	this.nodes[0].addPart(part);
+	this.nodes[1].addPart(part);
 }
