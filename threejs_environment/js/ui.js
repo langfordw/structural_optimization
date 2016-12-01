@@ -121,6 +121,7 @@ function selectAction(nodes, bnds=null) {
 		var minz = lattice.roundDown(bnds.min.z,-2)
 		var maxz = lattice.roundUp(bnds.max.z,-2)
 
+		var parts = getParts(nodes);
 		addGeometry(minx,maxx,minz,maxz);
 		return;
 	}

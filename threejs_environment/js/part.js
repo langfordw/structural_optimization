@@ -53,10 +53,35 @@ Part.prototype.removeNodeRef = function(node) {
 	}
 }
 
+Part.prototype.detachNode = function(node) {
+	console.log("detaching from node " + node.index);
+	var index = node.parts.indexOf(this);
+	node.parts.splice(index,1);
+}
+
+Part.prototype.detachBeam = function(beam) {
+	console.log("detaching from beam " + beam.index);
+	beam.part = null;
+}
+
 Part.prototype.destroy = function() {
 	var index = globals.geom.parts.indexOf(this);
 	globals.geom.parts.splice(index,1);
 	wrapper.remove(this.object3D);
+
+	_.each(this.nodes, function(node) {
+		this.detachNode(node);
+	},this);
+	_.each(this.beams, function(beam) {
+		this.detachBeam(beam);
+	},this);
+
+	this.beams = [];
+	this.internal_nodes = [];
+	this.nodes = [];
+	this.edge_nodes = [];
+	this.object3D = null;
+	this.type = null;
 }
 
 Part.prototype.pushNodes = function(nodes) {
@@ -70,6 +95,7 @@ Part.prototype.pushNodes = function(nodes) {
 		}
 	},this);
 }
+
 
 // Part.prototype.ripup = function() {
 // 	// this.beams = [];

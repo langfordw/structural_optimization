@@ -434,23 +434,26 @@ function makeParts(beams) {
 function findNeighborNodes(thisnode) {
 	var neighbors = [];
 	var pos = thisnode.getPosition();
-	_.each(globals.geom.nodes, function(node) {
-		// check N/S
-		if (node.getPosition().x == pos.x) {
-			if (node.getPosition().z == pos.z+100) {
-				neighbors.push(node);
-			} else if (node.getPosition().z == pos.z-100) {
-				neighbors.push(node);
+	// _.each(globals.geom.nodes, function(node) {
+	_.each(globals.geom.parts, function(part) {
+		_.each(part.nodes, function(node) {
+			// check N/S
+			if (node.getPosition().x == pos.x) {
+				if (node.getPosition().z == pos.z+100) {
+					neighbors.push(node);
+				} else if (node.getPosition().z == pos.z-100) {
+					neighbors.push(node);
+				}
 			}
-		}
-		// check E/W
-		if (node.getPosition().z == pos.z) {
-			if (node.getPosition().x == pos.x+100) {
-				neighbors.push(node);
-			} else if (node.getPosition().x == pos.x-100) {
-				neighbors.push(node);
+			// check E/W
+			if (node.getPosition().z == pos.z) {
+				if (node.getPosition().x == pos.x+100) {
+					neighbors.push(node);
+				} else if (node.getPosition().x == pos.x-100) {
+					neighbors.push(node);
+				}
 			}
-		}
+		})
 	})
 
 	return neighbors
@@ -458,16 +461,27 @@ function findNeighborNodes(thisnode) {
 
 function addBeams(thisnode,othernodes) {
 	// don't make redundant beams
+	console.log(othernodes)
 	_.each(othernodes, function(othernode) {
 		var beam_exists = false;
-		_.each(globals.geom.beams, function(beam) {
-			if (_.contains(beam.nodes,thisnode) && _.contains(beam.nodes,thisnode)) {
+		if (othernode.beams.length == 0) {
+			globals.geom.nodes.push(othernode);
+			sceneAdd(othernode.object3D);
+		}
+		// _.each(globals.geom.beams, function(beam) {
+		_.each(globals.geom.parts, function(part) {
+			if (_.contains(part.nodes,thisnode) && _.contains(part.nodes,othernode)) {
 				beam_exists = true;
+				console.log("part exists")
+				console.log(thisnode)
+				console.log(othernode)
 			}
 		});
-		var beam = new Beam([thisnode,othernode],0)
-		globals.geom.beams.push(beam);
-		globals.geom.parts.push(new Part(beam));
+		if (!beam_exists) {
+			var beam = new Beam([thisnode,othernode],0)
+			globals.geom.beams.push(beam);
+			globals.geom.parts.push(new Part(beam));
+		}
 	})
 }
 
@@ -477,10 +491,12 @@ function addGeometry(minx,maxx,minz,maxz) {
 	for (var i = minx; i <= maxx; i+=100) {
 		for (var j = minz; j >= maxz; j-=100) {
 			var node_exists = false;
-			_.each(globals.geom.nodes, function(node) {
-				if (node.getPosition().x == i && node.getPosition().z == j) {
-					node_exists = true;
-				}
+			_.each(globals.geom.parts, function(part) {
+				_.each(part.nodes, function(node) {
+					if (node.getPosition().x == i && node.getPosition().z == j) {
+						node_exists = true;
+					}
+				})
 			})
 			if (!node_exists) {
 				var node = new Node(new THREE.Vector3(i, 0, j),0);
@@ -496,3 +512,29 @@ function addGeometry(minx,maxx,minz,maxz) {
 		console.log(globals.geom)
 	}
 }
+
+// function addGeometry(minx,maxx,minz,maxz) {
+// 	var added_geom = false;
+
+// 	for (var i = minx; i <= maxx; i+=100) {
+// 		for (var j = minz; j >= maxz; j-=100) {
+// 			var node_exists = false;
+// 			_.each(globals.geom.nodes, function(node) {
+// 				if (node.getPosition().x == i && node.getPosition().z == j) {
+// 					node_exists = true;
+// 				}
+// 			})
+// 			if (!node_exists) {
+// 				var node = new Node(new THREE.Vector3(i, 0, j),0);
+// 				globals.geom.nodes.push(node);
+// 				addBeams(node,findNeighborNodes(node));
+// 				added_geom = true;
+// 			}
+// 		}
+// 	}
+// 	if (added_geom) {
+// 		reindex(globals.geom.nodes)
+// 		reindex(globals.geom.beams)
+// 		console.log(globals.geom)
+// 	}
+// }
