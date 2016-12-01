@@ -49,6 +49,7 @@ var globals = {
 			selection.close();
 		},
 		reset_nonlin: function() {
+			tracer.clearTraces();
 			if (globals.geom != null) {
 				resetNonlinearSolve();
 			}
@@ -90,10 +91,10 @@ var gui = new dat.GUI();
 gui.domElement.id = 'gui'
 
 var fv = gui.addFolder('Force Vector');
-fv.add(globals.control_parameters, 'fv_x',-500,500).onChange((function() {
+fv.add(globals.control_parameters, 'fv_x',-5000,5000).onChange((function() {
 	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y);
 }));
-fv.add(globals.control_parameters, 'fv_y',-500,500).onChange((function() {
+fv.add(globals.control_parameters, 'fv_y',-5000,5000).onChange((function() {
 	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y)
 }));
 fv.add(globals.control_parameters,'hideArrows').onChange((function(value) {
@@ -114,8 +115,9 @@ fv.add(globals.control_parameters,'hideArrows').onChange((function(value) {
 
 var selection = gui.addFolder('Selection');
 selection.add(globals.control_parameters,'selectMode',
-	[ 'none', 'add_geom', 'sub_geom', 'fix', 'un-fix', 
-	'force', 'un-force', 'make_rigid', 'make_1DoF', 'make_2DoF', 'make_none']).name("Function");
+	[ 'none', 'add_geom', 'sub_geom', 'fix', 'un-fix', 'force', 'un-force', 
+	'trace','un-trace',
+	'make_rigid', 'make_1DoF', 'make_2DoF', 'make_none']).name("Function");
 selection.open();
 
 

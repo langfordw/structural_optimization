@@ -6,6 +6,8 @@ var box_vertices = [null,null];
 var selected_nodes = [];
 var bounds;
 
+var tracer = new Tracer();
+
 var $toolTip = $('#toolTip');
 var $toolTip2 = $('#toolTip2');
 var $toolTip3 = $('#toolTip3');
@@ -194,6 +196,14 @@ function selectAction(nodes, bnds=null) {
 			if (node.externalForce != null) {
 				node.removeExternalForce();
 			}
+			return;
+		}
+		if (globals.control_parameters.selectMode == "trace") {
+			tracer.traceNode(node);
+			return;
+		}
+		if (globals.control_parameters.selectMode == "un-trace") {
+			tracer.removeNode(node);
 			return;
 		}
 		// if (globals.control_parameters.selectMode == "sub_geom") {
@@ -423,3 +433,4 @@ function forceRedraw(el) {
   el.appendChild(t);
   setTimeout(function() { el.removeChild(t); }, 0);
 }
+
