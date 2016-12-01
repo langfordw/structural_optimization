@@ -35,25 +35,15 @@ var globals = {
 		solveIterations: function() {
 			var fv = [globals.control_parameters.fv_x, globals.control_parameters.fv_y];
 			displayMessage("solving");
-			render();
+			var start = new Date().getTime();
 			solve_linear_incremental(fv,Math.pow(10,globals.control_parameters.eps));
-			// for (var i = 0; i < globals.control_parameters.n_iter; i++) {
-			// 	if (globals.geom != null) {
-			// 		setup_solve('frame',globals.geom);
-			// 		solve('frame',globals.geom);
-			// 		this.deformGeometry = true;
-			// 		gui.updateDisplay();
-			// 	}
-			// 	bakeGeometry();
-			// }
-			// if (globals.geom != null) {
-			// 	setup_solve('frame',globals.geom);
-			// 	solve('frame',globals.geom);
-			// 	this.deformGeometry = true;
-			// 	gui.updateDisplay();
-			// }
+			var dt = new Date().getTime() - start;
+			console.log('Solved in ' + dt + 'ms');
+			deformGeometryBending(globals.geom,1.0)
 			globals.control_parameters.deformGeometry = true;
 			gui.updateDisplay();
+			disp.open();
+			selection.close();
 		},
 		reset_nonlin: function() {
 			if (globals.geom != null) {
@@ -187,11 +177,8 @@ load_save.add(globals.control_parameters,'download').name("Download");
 load_save.add(globals.control_parameters,'load').name("Load JSON");
 
 function initLattice() {
-	// ******** GENERATE GEOMETRY ********
+	// ******** GENERATE BASE GEOMETRY ********
 	globals.geom = generateGeometry();
-	// geom = generateBeamGeometry();
-	// geom = generateBeamGeometry2();
-	// geom = angled_cantilever();
 
 	console.log("initial state:")
 	console.log(globals.geom)
@@ -202,22 +189,25 @@ function initLattice() {
 }
 
 function bakeGeometry() {
-	_.each(globals.geom.nodes, function(node) {
-		if (node.u_cumulative == null) {
-			node.u_cumulative = [0,0,0];
-		}
-		node.u_cumulative[0] += node.u[0];
-		node.u_cumulative[1] += node.u[1];
-		node.u_cumulative[2] += node.u[2];
-	})
+	// _.each(globals.geom.nodes, function(node) {
+	// 	if (node.u_cumulative == null) {
+	// 		node.u_cumulative = [0,0,0];
+	// 	}
+	// 	node.u_cumulative[0] += node.u[0];
+	// 	node.u_cumulative[1] += node.u[1];
+	// 	node.u_cumulative[2] += node.u[2];
+	// })
 
 	_.each(globals.geom.beams, function(beam) {
+	// for (var i=0; i < globals.geom.beams.length; i++) {
+		// var beam = globals.geom.beams[i];
 		beam.len = Math.sqrt(Math.pow(beam.vertices[1].x-beam.vertices[0].x,2) + Math.pow(beam.vertices[1].z-beam.vertices[0].z,2));
-		beam.assemble_k_prime();
+		// beam.assemble_k_prime();
 		beam.assemble_kp();
 		beam.assemble_full_T();
 		beam.assemble_T();
 		beam.calculate_4ks();
+	// }
 	});
 
 	// undeformGeometryBending(globals.geom);
@@ -420,7 +410,7 @@ function stringifyGeometry() {
 	return jsonData;
 }
 
-function buildJSON(objects) {
+function buildFromJSON(objects) {
 	console.log("building objects...")
 	// sceneClear();
 	var _nodes = [];
@@ -474,7 +464,7 @@ function loadGeometry() {
 		file = evt.target.files[0];
 		reader.addEventListener( 'load', function ( event ) {
 	        contents = event.target.result;
-	        buildJSON(JSON.parse(contents));
+	        buildFromJSON(JSON.parse(contents));
 	    }, false );
 		reader.readAsText( file );
 	})

@@ -1,4 +1,4 @@
-function solve_linear_incremental(full_force,eps=1.0,maxiter=2000,debug=false) {
+function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 	// first, do a linear solve with the full force and check max displacement
 	var magnitude = Math.sqrt(Math.pow(full_force[0],2) + Math.pow(full_force[1],2));
 	var full_magnitude = magnitude;
@@ -10,8 +10,9 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=2000,debug=false) {
 	var u_total = 0;
 
 	updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
-	setup_solve('frame',globals.geom);
-	var u_max = solve('frame',globals.geom);
+	// setup_solve('frame',globals.geom);
+	var solver = new FrameSolver(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+	var u_max = solver.solve();
 
 	setTimeout(displayMessage("test"),1000);
 
@@ -29,15 +30,27 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=2000,debug=false) {
 				magnitude *= 0.5;
 
 				updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
-				setup_solve('frame',globals.geom);
-				u_max = solve('frame',globals.geom);
+				// setup_solve('frame',globals.geom);
+				solver.assemble_X();
+				// solver.Ksys = math.zeros(solver.num_dofs, solver.num_dofs);
+				// solver.calculate_Ksys();
+				// solver.beams = globals.geom.beams;
+				// solver.nodes = globals.geom.nodes;
+				// u_max = solve('frame',globals.geom);
+				u_max = solver.solve();
 				iter_count++;
 			}
 		} else {
 			bakeGeometry();
-			setup_solve('frame',globals.geom);
-			u_max = solve('frame',globals.geom);
-			deformGeometryBending(globals.geom,1.0);
+			// setup_solve('frame',globals.geom);
+
+			solver.Ksys = math.zeros(solver.num_dofs, solver.num_dofs);
+			solver.calculate_Ksys();
+			solver.beams = globals.geom.beams;
+			solver.nodes = globals.geom.nodes;
+			u_max = solver.solve();
+			// deformGeometryBending(globals.geom,1.0);
+			deformGeometryFast(globals.geom);
 			iter_count++;
 
 			force_sum += magnitude;	
@@ -61,7 +74,6 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=2000,debug=false) {
 	// total_max_norm += max_u_norm;
 	// total_max_disp[0] += max_disp_node.u[0];
 	// total_max_disp[1] += max_disp_node.u[1];
-	console.log(iter_count);
 	globals.control_parameters.n_iter = "" + iter_count;
 	globals.control_parameters.displacement_norm = "" + u_total.toFixed(2) + "mm";
 	gui.updateDisplay();

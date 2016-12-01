@@ -28,7 +28,7 @@ function Node(position, index) {
 	this.highlighted = false;
 	this.fixed_triangle = null;
 	this.u = [0,0,0];
-	this.u_cumulative = null;
+	this.u_cumulative = [0,0,0];
 	this.internal = false; // internal to part
 }
 

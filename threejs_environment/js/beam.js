@@ -1,4 +1,4 @@
-function Beam(nodes, index, a1a2=[10000000,10000000]) {
+function Beam(nodes, index, a1a2=[10000000,10000000],type='rigid') {
 	this.index = index;
 	this.part = null;
 	this.nodes = [nodes[0], nodes[1]];
@@ -12,7 +12,7 @@ function Beam(nodes, index, a1a2=[10000000,10000000]) {
 	this.force = 0
 	this.f;
 	this.highlighted = false;
-	this.type = 'rigid';
+	this.type = type;
 
 	this.a1 = a1a2[0]/this.len0; // AE/L
 	this.a2 = a1a2[1]/Math.pow(this.len0,3); // EI/L^3
@@ -65,7 +65,11 @@ function Beam(nodes, index, a1a2=[10000000,10000000]) {
 		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.cos(dtheta[1]), 0, -l*Math.sin(dtheta[1]) )),
 		this.vertices[1]
 	);
-	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 2+(this.len0/10)});
+	var thickness = null;
+	if (this.type == 'rigid') { thickness = 10; }
+	else { thickness = 3; }
+
+	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: thickness});
 	var lineGeo = new THREE.Geometry();
 	lineGeo.dynamic = true;
 	lineGeo.vertices = curve.getPoints( 50 );
@@ -87,7 +91,11 @@ Beam.prototype.updateBeam = function() {
 		this.vertices[1].clone().add(new THREE.Vector3( -l*Math.cos(dtheta[1]), 0, -l*Math.sin(dtheta[1]) )),
 		this.vertices[1]
 	);
-	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: 2+(this.len0/10)});
+	var thickness = null;
+	if (this.type == 'rigid') { thickness = 10; }
+	else { thickness = 3; }
+
+	var beamMat = new THREE.LineBasicMaterial({color: 0xCCC91E, linewidth: thickness}); //2+(this.len0/10)
 	var lineGeo = new THREE.Geometry();
 	lineGeo.dynamic = true;
 	lineGeo.vertices = curve.getPoints( 50 );

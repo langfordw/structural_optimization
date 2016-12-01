@@ -121,31 +121,7 @@ function selectAction(nodes, bnds=null) {
 		var minz = lattice.roundDown(bnds.min.z,-2)
 		var maxz = lattice.roundUp(bnds.max.z,-2)
 
-		// console.log("min: " + minx + " " + minz)
-		// console.log("max: " + maxx + " " + maxz)
-		var added_geom = false;
-
-		for (var i = minx; i <= maxx; i+=100) {
-			for (var j = minz; j >= maxz; j-=100) {
-				var node_exists = false;
-				_.each(globals.geom.nodes, function(node) {
-					if (node.getPosition().x == i && node.getPosition().z == j) {
-						node_exists = true;
-					}
-				})
-				if (!node_exists) {
-					var node = new Node(new THREE.Vector3(i, 0, j),0);
-					globals.geom.nodes.push(node);
-					addBeams(node,findNeighborNodes(node));
-					added_geom = true;
-				}
-			}
-		}
-		if (added_geom) {
-			reindex(globals.geom.nodes)
-			reindex(globals.geom.beams)
-			console.log(globals.geom)
-		}
+		addGeometry(minx,maxx,minz,maxz);
 		return;
 	}
 
@@ -167,7 +143,10 @@ function selectAction(nodes, bnds=null) {
 		changePartType(nodes,'2DoF');
 	}
 	if (globals.control_parameters.selectMode == "make_none") {
-		changePartType(nodes,'none');
+		var parts = getParts(nodes);
+		_.each(parts, function(part) {
+			part.changeType('none');
+		});
 	}
 
 	if (globals.control_parameters.selectMode == "sub_geom") {
@@ -176,7 +155,10 @@ function selectAction(nodes, bnds=null) {
 		console.log(parts)
 		_.each(parts, function(part) {
 			part.ripupBeams();
+			part.destroy();
 		})
+		reindex(globals.geom.nodes);
+		reindex(globals.geom.beams);
 		console.log(globals.geom);
 	}
 
@@ -374,7 +356,6 @@ function mouseMove(e){
 
 		    		}
 		    		
-
 		    		text1 += "</p>"
 		    		text2 += "</p>"
 
@@ -423,7 +404,7 @@ function forces2text(fmatrix) {
 
 function displayMessage(message) {
 	$infobox.html("<p><b>"+message+"</b></p>");
-	console.log($infobox)
+	// console.log($infobox)
 	$infobox.show();
 	$infobox.hide();
 	$infobox.show();
@@ -432,7 +413,7 @@ function displayMessage(message) {
 function hideMessage() {
 	// $infobox.css({display:none});
 	$infobox.hide();
-	console.log($infobox)
+	// console.log($infobox)
 }
 
 function forceRedraw(el) {

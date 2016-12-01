@@ -1,153 +1,3 @@
-function generateBeamGeometry() {
-	var _nodes = [];
-	var _beams = [];
-	var _constraints = [];
-	var _h = -100;
-	var _l = 100;
-
-	var node = new Node(new THREE.Vector3(0, 0, 0),0);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(0, 0, _h),1);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(_l, 0, _h),2);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(_l, 0, 0),3);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(0, 0, 2*_h),4);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(_l, 0, 2*_h),5);
-	_nodes.push(node);
-
-	var beam = new Beam([_nodes[0],_nodes[1]],0)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[2],_nodes[1]],1)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[3],_nodes[2]],2)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[3],_nodes[0]],3)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[1],_nodes[4]],3)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[4],_nodes[5]],4)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[5],_nodes[2]],5)
-	_beams.push(beam)
-
-	// var beam = new Beam([_nodes[2],_nodes[0]],3)
-	// _beams.push(beam)
-
-	// ***** CONSTRAIN NODES *******
-	var bottomleft = 0
-	var bottomright = globals.ntall*(globals.nwide-1);
-
-	_nodes[bottomleft].setFixed(true,{x:1,z:1,c:1});
-	_constraints.push(_nodes[bottomright]);
-	
-	_nodes[bottomright].setFixed(true,{x:1,z:1,c:1});
-	_constraints.push(_nodes[bottomright]);
-	
-	// **** PRESCRIBE FORCES AND DISPLACEMENTS ******
-	var force_node = globals.ntall-1;
-	_nodes[force_node].addExternalForce( new THREE.Vector3(100,0,0));
-
-	return {
-		nodes: _nodes,
-		beams: _beams,
-		constraints: _constraints 
-	};
-}
-
-function angled_cantilever() {
-	_nodes = [];
-	_beams = [];
-	_h = -100;
-	_l = 100;
-	var angle = Math.PI/4;
-
-	var node = new Node(new THREE.Vector3(0, 0, 0),0);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(-_h*Math.sin(angle), 0, _h*Math.cos(angle)),1);
-	_nodes.push(node);
-
-
-	var beam = new Beam([_nodes[0],_nodes[1]],0)
-	_beams.push(beam)
-
-	// var beam = new Beam([_nodes[2],_nodes[0]],3)
-	// _beams.push(beam)
-
-	return {
-		nodes: _nodes,
-		beams: _beams 
-	};
-}
-
-function generateBeamGeometry2() {
-	_nodes = [];
-	_beams = [];
-	_h = -100;
-	_l = 100;
-
-	var node = new Node(new THREE.Vector3(0, 0, 0),0);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(0, 0, _h),1);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(0, 0, 2*_h),2);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(_l, 0, 2*_h),3);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(2*_l, 0, 2*_h),4);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(2*_l, 0, _h),5);
-	_nodes.push(node);
-
-	var node = new Node(new THREE.Vector3(2*_l, 0, 0),6);
-	_nodes.push(node);
-
-	var beam = new Beam([_nodes[0],_nodes[1]],0)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[1],_nodes[2]],1)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[2],_nodes[3]],2)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[3],_nodes[4]],3)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[4],_nodes[5]],4)
-	_beams.push(beam)
-
-	var beam = new Beam([_nodes[5],_nodes[6]],5)
-	_beams.push(beam)
-
-	// var beam = new Beam([_nodes[2],_nodes[0]],3)
-	// _beams.push(beam)
-
-	return {
-		nodes: _nodes,
-		beams: _beams 
-	};
-}
-
 function generateGeometry() {
 	var _nodes = [];
 	var _beams = [];
@@ -181,50 +31,8 @@ function generateGeometry() {
 				beam_index++;
 			}			
 
-			// // positive slope diagonals
-			// if (j > 0 && i > 0){
-			// 	// var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 	// _beams.push(beam)
-			// 	// beam_index++;
-
-			// 	// if (j < 2 || j > globals.ntall-2) {
-			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 	// 	_beams.push(beam)
-			// 	// 	beam_index++;
-			// 	// }
-
-			// 	// if (i < 2 || i > globals.nwide-2) {
-			// 	// 	var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 	// 	_beams.push(beam)
-			// 	// 	beam_index++;
-			// 	// }
-
-			// 	if ((i == 1 || i == globals.nwide-1) && j != 1 && j != globals.ntall-1){
-			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 		_beams.push(beam)
-			// 		beam_index++;
-			// 	}
-			// 	if ((j == 1 || j == globals.ntall-1) && i !=1 && i != globals.nwide-1){
-			// 		var beam = new Beam([_nodes[index],_nodes[index-1-globals.ntall]],beam_index)
-			// 		_beams.push(beam)
-			// 		beam_index++;
-			// 	}
-
-			// }	
-
-			// // negative slope diagonals
-			// if (j < globals.ntall-1 && i > 0){
-			// 	var beam = new Beam([_nodes[index],_nodes[index-globals.ntall+1]],beam_index)
-			// 	_beams.push(beam)
-			// 	beam_index++;
-			// }
-
 			index = index +1;
 		}
-	}
-
-	for (var i=0; i < _nodes.length; i++) {
-		_nodes[i].attachSprings();
 	}
 
 	// ***** CONSTRAIN NODES *******
@@ -242,8 +50,6 @@ function generateGeometry() {
 	_nodes[force_node].addExternalForce( new THREE.Vector3(globals.control_parameters.fv_x,0,-globals.control_parameters.fv_y));
 	var force_node = globals.ntall*globals.nwide-1;
 	_nodes[force_node].addExternalForce( new THREE.Vector3(globals.control_parameters.fv_x,0,-globals.control_parameters.fv_y));
-
-	// var _parts = makeParts(_beams);
 
 	return {
 		nodes: _nodes,
@@ -272,6 +78,18 @@ function deformGeometryBending(geom,linear_scale=1.0) {
 	});
 
 	displayBeamForces(geom.beams);
+}
+
+function deformGeometryFast(geom) {
+	_.each(geom.nodes, function(node) {
+		if (node.u_cumulative == null) {
+			_.each(globals.geom.nodes, function(node) {
+				node.u_cumulative = node.u;
+			});	
+		}
+		node.setPosition(new THREE.Vector3(node.x0+node.u_cumulative[0],0,node.z0-node.u_cumulative[1]));
+		node.theta = node.theta0 + node.u_cumulative[2];
+	});
 }
 
 function undeformGeometryBending(geom) {
@@ -651,4 +469,30 @@ function addBeams(thisnode,othernodes) {
 		globals.geom.beams.push(beam);
 		globals.geom.parts.push(new Part(beam));
 	})
+}
+
+function addGeometry(minx,maxx,minz,maxz) {
+	var added_geom = false;
+
+	for (var i = minx; i <= maxx; i+=100) {
+		for (var j = minz; j >= maxz; j-=100) {
+			var node_exists = false;
+			_.each(globals.geom.nodes, function(node) {
+				if (node.getPosition().x == i && node.getPosition().z == j) {
+					node_exists = true;
+				}
+			})
+			if (!node_exists) {
+				var node = new Node(new THREE.Vector3(i, 0, j),0);
+				globals.geom.nodes.push(node);
+				addBeams(node,findNeighborNodes(node));
+				added_geom = true;
+			}
+		}
+	}
+	if (added_geom) {
+		reindex(globals.geom.nodes)
+		reindex(globals.geom.beams)
+		console.log(globals.geom)
+	}
 }

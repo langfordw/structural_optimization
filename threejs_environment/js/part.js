@@ -10,6 +10,16 @@ function Part(beam,type='rigid') {
 		beam.addPart(this);
 		this.pushNodes(beam.nodes)
 	},this);
+
+	var partMat = new THREE.LineDashedMaterial({color: 0xff0000, linewidth: 2, dashSize: 8, gapSize: 5});
+	var lineGeo = new THREE.Geometry();
+	lineGeo.dynamic = true;
+	var offset = new THREE.Vector3(0,10,0);
+	lineGeo.vertices = [this.edge_nodes[0].getPosition().clone().sub(offset), 
+						this.edge_nodes[1].getPosition().clone().sub(offset)];
+	lineGeo.computeLineDistances();
+	this.object3D = new THREE.Line(lineGeo, partMat);
+	sceneAdd(this.object3D);
 }
 
 Part.prototype.addBeam = function(beam) {
@@ -46,6 +56,7 @@ Part.prototype.removeNodeRef = function(node) {
 Part.prototype.destroy = function() {
 	var index = globals.geom.parts.indexOf(this);
 	globals.geom.parts.splice(index,1);
+	wrapper.remove(this.object3D);
 }
 
 Part.prototype.pushNodes = function(nodes) {
@@ -137,17 +148,17 @@ Part.prototype.make1DOF = function(nodes) {
 
 	beam.destroy();
 
-	var beam = new Beam([node1,node2],0);
+	var beam = new Beam([node1,node2],0,undefined,'rigid');
 	beam.part = this;
 	globals.geom.beams.push(beam);
 	this.beams.push(beam);
 
-	var beam = new Beam([node2,node3],0,[10000000,500000]);
+	var beam = new Beam([node2,node3],0,[10000000,50000],'flex');
 	beam.part = this;
 	globals.geom.beams.push(beam);
 	this.beams.push(beam);
 
-	var beam = new Beam([node3,node4],0);
+	var beam = new Beam([node3,node4],0,undefined,'rigid');
 	beam.part = this;
 	globals.geom.beams.push(beam);
 	this.beams.push(beam);
@@ -162,7 +173,6 @@ Part.prototype.changeType = function(toType) {
 		this.ripupBeams();
 		if (toType == 'rigid') {
 			console.log("change to rigid")
-			return;
 			var beam = new Beam(this.edge_nodes,0)
 			beam.addPart(this);
 			beam.create();
@@ -170,6 +180,9 @@ Part.prototype.changeType = function(toType) {
 		} else if (toType == '1DoF') {
 			console.log("change to 1DoF")
 			this.make1DOF(this.edge_nodes);
+			this.type = toType;
+		} else if (toType == 'none') {
+			console.log("change to none")
 			this.type = toType;
 		}
 	} else {

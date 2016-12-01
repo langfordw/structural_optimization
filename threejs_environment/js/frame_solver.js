@@ -52,6 +52,8 @@ FrameSolver.prototype.calculate_Ksys = function() {
 	this.free_nodes = this.getFreeNodes();
 	
 	_.each(this.beams, function(beam) {
+	// for (var i=0; i < this.beams.length; i++) {
+		// var beam = this.beams[i];
 		// first add all the unfixed nodes to the diagonals
 		var index0 = _.indexOf(this.free_nodes,beam.nodes[0].index);
 		var index1 = _.indexOf(this.free_nodes,beam.nodes[1].index);
@@ -70,6 +72,7 @@ FrameSolver.prototype.calculate_Ksys = function() {
 			add3x3El(this.Ksys,[index1*3,index0*3],beam.k.n10);
 		}
 			
+	// }
 	},this);
 	
 	return this.Ksys
@@ -84,7 +87,10 @@ FrameSolver.prototype.solve = function() {
 	this.calculate_U();
 
 	var index = 0;
+	var max_u_norm = 0;
 	_.each(this.nodes, function(node) {
+	// for (var i=0; i < this.nodes.length; i++) {
+		// var node = this.nodes[i];
 		if (node.fixed) {
 			node.u = [0, 0, 0];
 		} else {
@@ -92,12 +98,25 @@ FrameSolver.prototype.solve = function() {
 				      getEl(this.u,[index+1,0]),
 				      getEl(this.u,[index+2,0])];
 			index+=3;
+
+			node.u_cumulative[0] += node.u[0];
+			node.u_cumulative[1] += node.u[1];
+			node.u_cumulative[2] += node.u[2];
+
+			var u_norm = Math.sqrt(Math.pow(node.u[0],2) + Math.pow(node.u[1],2));
+			if (u_norm > max_u_norm) { max_u_norm = u_norm; }
 		}
+	// }
 	},this);
 
 	_.each(this.beams, function(beam) {
+	// for (var i=0; i < this.beams.length; i++) {
+		// var beam = this.beams[i];
 		beam.assemble_u_local();
 		beam.calculate_local_force();
 		beam.calculate_global_force();
+	// }
 	});
+
+	return max_u_norm;
 }
