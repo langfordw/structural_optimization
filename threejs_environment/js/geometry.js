@@ -461,7 +461,6 @@ function findNeighborNodes(thisnode) {
 
 function addBeams(thisnode,othernodes) {
 	// don't make redundant beams
-	console.log(othernodes)
 	_.each(othernodes, function(othernode) {
 		var beam_exists = false;
 		if (othernode.beams.length == 0) {
@@ -472,9 +471,9 @@ function addBeams(thisnode,othernodes) {
 		_.each(globals.geom.parts, function(part) {
 			if (_.contains(part.nodes,thisnode) && _.contains(part.nodes,othernode)) {
 				beam_exists = true;
-				console.log("part exists")
-				console.log(thisnode)
-				console.log(othernode)
+				// console.log("part exists")
+				// console.log(thisnode)
+				// console.log(othernode)
 			}
 		});
 		if (!beam_exists) {
