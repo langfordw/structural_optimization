@@ -385,7 +385,7 @@ Beam.prototype.addPart = function(part) {
 	this.part = part;
 	this.nodes[0].addPart(part);
 	this.nodes[1].addPart(part);
-	part.addBeam(this);
+	// part.addBeam(this);
 }
 
 Beam.prototype.attachToPart = function(part) {

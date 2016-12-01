@@ -71,31 +71,31 @@ Part.prototype.pushNodes = function(nodes) {
 	},this);
 }
 
-Part.prototype.ripup = function() {
-	// this.beams = [];
-	// this.internal_nodes = [];
-	// this.nodes = [];
-	// this.edge_nodes = [];
+// Part.prototype.ripup = function() {
+// 	// this.beams = [];
+// 	// this.internal_nodes = [];
+// 	// this.nodes = [];
+// 	// this.edge_nodes = [];
 
-	_.times(this.beams.length, function() {
-		this.beams[0].destroy();
-	},this);
-	reindex(globals.geom.beams);
+// 	_.times(this.beams.length, function() {
+// 		this.beams[0].destroy();
+// 	},this);
+// 	reindex(globals.geom.beams);
 	
-	// if (this.internal_nodes.length > 0) {
-	// 	_.times(this.internal_nodes.length, function() {
-	// 		// removeNode(node);
-	// 		this.internal_nodes[0].destroy();
-	// 	},this);
-	// } else {
-	// 	// should be a rigid part (should only be one beam) but just in case..
-	// 	_.each(this.beams, function(beam) {
-	// 		// removeBeam(beam);
-	// 		beam.destroy();
-	// 	});
-	// }
+// 	// if (this.internal_nodes.length > 0) {
+// 	// 	_.times(this.internal_nodes.length, function() {
+// 	// 		// removeNode(node);
+// 	// 		this.internal_nodes[0].destroy();
+// 	// 	},this);
+// 	// } else {
+// 	// 	// should be a rigid part (should only be one beam) but just in case..
+// 	// 	_.each(this.beams, function(beam) {
+// 	// 		// removeBeam(beam);
+// 	// 		beam.destroy();
+// 	// 	});
+// 	// }
 	
-}
+// }
 
 // Part.prototype.detachBeam = function(beam) {
 // 	var index = this.beams.indexOf(beam);
@@ -117,13 +117,6 @@ Part.prototype.dissociate = function() {
 	this.nodes = [];
 	this.edge_nodes = [];
 }
-
-// Part.prototype.create = function(type) {
-// 	if (type == 'rigid') {
-// 		var beam = new Beam([this.edge_nodes[0],this.edge_nodes[1]],0);
-// 		globals.geom.beams.push(beam);
-// 	}
-// }
 
 Part.prototype.make1DOF = function(nodes) {
 	var beam = new Beam(nodes,0)
@@ -168,6 +161,49 @@ Part.prototype.make1DOF = function(nodes) {
 	console.log(globals.geom)
 }
 
+Part.prototype.make2DOF = function(nodes) {
+	var beam = new Beam(nodes,0)
+	beam.addPart(this);
+	beam.create();
+
+	var node1 = beam.nodes[0];
+	var node4 = beam.nodes[1];
+	var angle = beam.getAngle(node1.getPosition());
+
+	var x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.25;
+	var z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.25;
+	var node2 = new Node(new THREE.Vector3(x, 0, z),0);
+	node2.internal = true;
+	globals.geom.nodes.push(node2)
+
+	x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.75;
+	z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.75;
+	var node3 = new Node(new THREE.Vector3(x, 0, z),0);
+	node2.internal = true;
+	globals.geom.nodes.push(node3)
+
+	beam.destroy();
+
+	var beam = new Beam([node1,node2],0,[10000000,50000],'flex');
+	beam.part = this;
+	globals.geom.beams.push(beam);
+	this.beams.push(beam);
+
+	var beam = new Beam([node2,node3],0,undefined,'rigid');
+	beam.part = this;
+	globals.geom.beams.push(beam);
+	this.beams.push(beam);
+
+	var beam = new Beam([node3,node4],0,[10000000,50000],'flex');
+	beam.part = this;
+	globals.geom.beams.push(beam);
+	this.beams.push(beam);
+
+	reindex(globals.geom.beams);
+	reindex(globals.geom.nodes);
+	console.log(globals.geom)
+}
+
 Part.prototype.changeType = function(toType) {
 	if (this.type != toType) {
 		this.ripupBeams();
@@ -180,6 +216,10 @@ Part.prototype.changeType = function(toType) {
 		} else if (toType == '1DoF') {
 			console.log("change to 1DoF")
 			this.make1DOF(this.edge_nodes);
+			this.type = toType;
+		} else if (toType == '2DoF') {
+			console.log("change to 2DoF")
+			this.make2DOF(this.edge_nodes);
 			this.type = toType;
 		} else if (toType == 'none') {
 			console.log("change to none")

@@ -48,6 +48,7 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 			solver.calculate_Ksys();
 			solver.beams = globals.geom.beams;
 			solver.nodes = globals.geom.nodes;
+			console.log(solver)
 			u_max = solver.solve();
 			// deformGeometryBending(globals.geom,1.0);
 			deformGeometryFast(globals.geom);

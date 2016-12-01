@@ -24,6 +24,9 @@ var globals = {
 			}
 		},
 		reset: function() {
+			_.each(globals.geom.nodes, function(node) {
+				node.u_cumulative = [0,0,0];
+			});
 			if (globals.geom != null) {
 				resetLattice();
 			}
@@ -199,15 +202,12 @@ function bakeGeometry() {
 	// })
 
 	_.each(globals.geom.beams, function(beam) {
-	// for (var i=0; i < globals.geom.beams.length; i++) {
-		// var beam = globals.geom.beams[i];
 		beam.len = Math.sqrt(Math.pow(beam.vertices[1].x-beam.vertices[0].x,2) + Math.pow(beam.vertices[1].z-beam.vertices[0].z,2));
 		// beam.assemble_k_prime();
 		beam.assemble_kp();
 		beam.assemble_full_T();
 		beam.assemble_T();
 		beam.calculate_4ks();
-	// }
 	});
 
 	// undeformGeometryBending(globals.geom);
@@ -268,7 +268,7 @@ function resetLattice() {
 	});
 }
 
-function setup_solve(type='frame',geom,debug=false) {
+function setup_solve(type='frame',geom,debug=true) {
 	if (type == 'frame') {
 		solver = new FrameSolver(geom.nodes,geom.beams,geom.constraints);
 		if (debug) {
@@ -291,7 +291,7 @@ function setup_solve(type='frame',geom,debug=false) {
 	}
 }
 
-function solve(type='frame',geom=globals.geom,debug=false) {
+function solve(type='frame',geom=globals.geom,debug=true) {
 	if (type == 'frame') {
 		// ****** SOLVE ******
 		var start = new Date().getTime();

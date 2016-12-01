@@ -130,8 +130,6 @@ function selectAction(nodes, bnds=null) {
 		_.each(parts, function(part) {
 			part.changeType('rigid');
 		});
-		// ripupPart(parts[0]);
-		// changePartType(nodes,'rigid');
 	}
 	if (globals.control_parameters.selectMode == "make_1DoF") {
 		var parts = getParts(nodes);
@@ -140,7 +138,10 @@ function selectAction(nodes, bnds=null) {
 		});
 	}
 	if (globals.control_parameters.selectMode == "make_2DoF") {
-		changePartType(nodes,'2DoF');
+		var parts = getParts(nodes);
+		_.each(parts, function(part) {
+			part.changeType('2DoF');
+		});
 	}
 	if (globals.control_parameters.selectMode == "make_none") {
 		var parts = getParts(nodes);

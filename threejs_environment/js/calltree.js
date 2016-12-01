@@ -13,44 +13,44 @@ updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
 bakeGeometry();
 
 	function bakeGeometry() {
-		_.each(globals.geom.nodes, function(node) {
-			if (node.u_cumulative == null) {
-				node.u_cumulative = [0,0,0];
-			}
-			node.u_cumulative[0] += node.u[0];
-			node.u_cumulative[1] += node.u[1];
-			node.u_cumulative[2] += node.u[2];
-		})
+		// _.each(globals.geom.nodes, function(node) {
+		// 	if (node.u_cumulative == null) {
+		// 		node.u_cumulative = [0,0,0];
+		// 	}
+		// 	node.u_cumulative[0] += node.u[0];
+		// 	node.u_cumulative[1] += node.u[1];
+		// 	node.u_cumulative[2] += node.u[2];
+		// })
 
 		_.each(globals.geom.beams, function(beam) {
 
 			beam.len = Math.sqrt(Math.pow(beam.vertices[1].x-beam.vertices[0].x,2) + Math.pow(beam.vertices[1].z-beam.vertices[0].z,2));
 			
-			beam.assemble_k_prime();
+			// beam.assemble_k_prime();
 
-				Beam.prototype.assemble_k_prime = function() {
-					this.k_prime.subset(math.index(0,0),this.a1);
-					this.k_prime.subset(math.index(1,1),12*this.a2);
-					this.k_prime.subset(math.index(2,1),6*this.len*this.a2);
-					this.k_prime.subset(math.index(1,2),6*this.len*this.a2);
-					this.k_prime.subset(math.index(2,2),4*Math.pow(this.len,2)*this.a2);
-					this.k_prime.subset(math.index(3,3),this.a1);
-					this.k_prime.subset(math.index(4,4),12*this.a2);
-					this.k_prime.subset(math.index(5,4),-6*this.len*this.a2);
-					this.k_prime.subset(math.index(4,5),-6*this.len*this.a2);
-					this.k_prime.subset(math.index(5,5),4*Math.pow(this.len,2)*this.a2);
-					this.k_prime.subset(math.index(0,3),-this.a1);
-					this.k_prime.subset(math.index(1,4),-12*this.a2);
-					this.k_prime.subset(math.index(2,4),-6*this.len*this.a2);
-					this.k_prime.subset(math.index(1,5),6*this.len*this.a2);
-					this.k_prime.subset(math.index(2,5),2*Math.pow(this.len,2)*this.a2);
-					this.k_prime.subset(math.index(3,0),-this.a1);
-					this.k_prime.subset(math.index(4,1),-12*this.a2);
-					this.k_prime.subset(math.index(5,1),6*this.len*this.a2);
-					this.k_prime.subset(math.index(4,2),-6*this.len*this.a2);
-					this.k_prime.subset(math.index(5,2),2*Math.pow(this.len,2)*this.a2);
-					return this.k_prime;
-				}
+			// 	Beam.prototype.assemble_k_prime = function() {
+			// 		this.k_prime.subset(math.index(0,0),this.a1);
+			// 		this.k_prime.subset(math.index(1,1),12*this.a2);
+			// 		this.k_prime.subset(math.index(2,1),6*this.len*this.a2);
+			// 		this.k_prime.subset(math.index(1,2),6*this.len*this.a2);
+			// 		this.k_prime.subset(math.index(2,2),4*Math.pow(this.len,2)*this.a2);
+			// 		this.k_prime.subset(math.index(3,3),this.a1);
+			// 		this.k_prime.subset(math.index(4,4),12*this.a2);
+			// 		this.k_prime.subset(math.index(5,4),-6*this.len*this.a2);
+			// 		this.k_prime.subset(math.index(4,5),-6*this.len*this.a2);
+			// 		this.k_prime.subset(math.index(5,5),4*Math.pow(this.len,2)*this.a2);
+			// 		this.k_prime.subset(math.index(0,3),-this.a1);
+			// 		this.k_prime.subset(math.index(1,4),-12*this.a2);
+			// 		this.k_prime.subset(math.index(2,4),-6*this.len*this.a2);
+			// 		this.k_prime.subset(math.index(1,5),6*this.len*this.a2);
+			// 		this.k_prime.subset(math.index(2,5),2*Math.pow(this.len,2)*this.a2);
+			// 		this.k_prime.subset(math.index(3,0),-this.a1);
+			// 		this.k_prime.subset(math.index(4,1),-12*this.a2);
+			// 		this.k_prime.subset(math.index(5,1),6*this.len*this.a2);
+			// 		this.k_prime.subset(math.index(4,2),-6*this.len*this.a2);
+			// 		this.k_prime.subset(math.index(5,2),2*Math.pow(this.len,2)*this.a2);
+			// 		return this.k_prime;
+			// 	}
 
 			beam.assemble_kp();
 
@@ -185,146 +185,161 @@ bakeGeometry();
 		});
 	}
 
-setup_solve('frame',globals.geom);
+// setup_solve('frame',globals.geom);
 
-	solver = new FrameSolver(geom.nodes,geom.beams,geom.constraints);
+// 	solver = new FrameSolver(geom.nodes,geom.beams,geom.constraints);
 
-		function FrameSolver(nodes, beams, constraints) {
-			var num_dofs = (nodes.length - constraints.length)*3;
-			var num_beams = beams.length;
-			this.num_dofs = num_dofs
-			this.num_beams = num_beams
-			this.nodes = nodes;
-			this.beams = beams;
-			this.constraints = constraints;
-			this.free_nodes = this.getFreeNodes();
+// 		function FrameSolver(nodes, beams, constraints) {
+// 			var num_dofs = (nodes.length - constraints.length)*3;
+// 			var num_beams = beams.length;
+// 			this.num_dofs = num_dofs
+// 			this.num_beams = num_beams
+// 			this.nodes = nodes;
+// 			this.beams = beams;
+// 			this.constraints = constraints;
+// 			this.free_nodes = this.getFreeNodes();
 
-			this.X = math.zeros(num_dofs);
-			this.assemble_X();
+// 			this.X = math.zeros(num_dofs);
+// 			this.assemble_X();
 
-				FrameSolver.prototype.assemble_X = function() {
-					var index = 0;
-					_.each(this.nodes, function(node) {
-						if (!node.fixed) {
-							if (node.externalForce != null) {
-								this.X.subset(math.index(index),node.externalForce.x);
-								this.X.subset(math.index(index+1),node.externalForce.z);
-								this.X.subset(math.index(index+2),node.externalMoment);
-							}
-							index += 3;	
-						}	
-					}, this);
+// 				FrameSolver.prototype.assemble_X = function() {
+// 					var index = 0;
+// 					_.each(this.nodes, function(node) {
+// 						if (!node.fixed) {
+// 							if (node.externalForce != null) {
+// 								this.X.subset(math.index(index),node.externalForce.x);
+// 								this.X.subset(math.index(index+1),node.externalForce.z);
+// 								this.X.subset(math.index(index+2),node.externalMoment);
+// 							}
+// 							index += 3;	
+// 						}	
+// 					}, this);
 
-					return this.X;
-				}
+// 					return this.X;
+// 				}
 
-			this.Ksys = math.zeros(num_dofs, num_dofs);
-			this.calculate_Ksys();
+// 			this.Ksys = math.zeros(num_dofs, num_dofs);
+// 			this.calculate_Ksys();
 
-				FrameSolver.prototype.calculate_Ksys = function() {
-					// to generalize this to non-fully constrained nodes,
-					// might add a second array of a cumulative sum of DoF's
-					// (in getFreeNodes)
+solver.Ksys = math.zeros(solver.num_dofs, solver.num_dofs);
+solver.calculate_Ksys();
 
-					this.free_nodes = this.getFreeNodes();
-					
-					_.each(this.beams, function(beam) {
-						// first add all the unfixed nodes to the diagonals
-						var index0 = _.indexOf(this.free_nodes,beam.nodes[0].index);
-						var index1 = _.indexOf(this.free_nodes,beam.nodes[1].index);
+	FrameSolver.prototype.calculate_Ksys = function() {
+		// to generalize this to non-fully constrained nodes,
+		// might add a second array of a cumulative sum of DoF's
+		// (in getFreeNodes)
 
-						if (index0 != -1) {
-							add3x3El(this.Ksys,[index0*3,index0*3],beam.k.n00);
-						}
+		this.free_nodes = this.getFreeNodes();
+		
+		_.each(this.beams, function(beam) {
+			// first add all the unfixed nodes to the diagonals
+			var index0 = _.indexOf(this.free_nodes,beam.nodes[0].index);
+			var index1 = _.indexOf(this.free_nodes,beam.nodes[1].index);
 
-						if (index1 != -1) {
-							add3x3El(this.Ksys,[index1*3,index1*3],beam.k.n11);
-						}
-
-						// then add the off diagonals
-						if (index0 != -1 && index1 != -1) {
-							add3x3El(this.Ksys,[index0*3,index1*3],beam.k.n01);
-							add3x3El(this.Ksys,[index1*3,index0*3],beam.k.n10);
-						}
-							
-					},this);
-					
-					return this.Ksys
-				}
-
-			this.u = math.zeros(num_dofs);
-			this.f = math.zeros(num_beams);
-		}
-
-u_max = solve('frame',globals.geom);
-
-	function solve(type='frame',geom=globals.geom,debug=false) {
-		solver.solve();
-
-			FrameSolver.prototype.solve = function() {
-			this.calculate_U();
-
-			FrameSolver.prototype.calculate_U = function() {	
-				this.u = math.lusolve(this.Ksys,this.X);
-				return this.u
+			if (index0 != -1) {
+				add3x3El(this.Ksys,[index0*3,index0*3],beam.k.n00);
 			}
 
-			var index = 0;
-			_.each(this.nodes, function(node) {
-				if (node.fixed) {
-					node.u = [0, 0, 0];
-				} else {
-					node.u = [getEl(this.u,[index,0]),
-						      getEl(this.u,[index+1,0]),
-						      getEl(this.u,[index+2,0])];
-					index+=3;
-				}
-			},this);
-
-			_.each(this.beams, function(beam) {
-				beam.assemble_u_local();
-
-					Beam.prototype.assemble_u_local = function() {
-						var ug1 = this.nodes[0].u;
-						var ug2 = this.nodes[1].u;
-						var u_global = math.flatten(math.matrix([ug1, ug2]));
-						this.u_local = math.multiply(math.transpose(this.full_T),u_global);
-					}
-
-				beam.calculate_local_force();
-
-					Beam.prototype.calculate_local_force = function() {
-						this.f_local = math.multiply(this.k_prime,this.u_local);
-					}
-
-				beam.calculate_global_force();
-
-					Beam.prototype.calculate_global_force = function() {
-						this.f_global = math.multiply(this.full_T,this.f_local);
-					}
-
-			});
-		}
-
-		// ****** DEFORM / UPDATE GEOMETRY *****
-		globals.beam_forces = [];
-		_.each(globals.geom.beams, function(beam) {
-			// var f = Math.sqrt(Math.pow(beam.f_local._data[0],2) + Math.pow(beam.f_local._data[1],2));
-			var f = Math.abs(beam.f_local._data[0]);
-			globals.beam_forces.push(f);
-		})
-
-		var max_disp_node = null;
-		var max_u_norm = 0;
-		_.each(globals.geom.nodes, function(node) {
-			var u_norm = Math.sqrt(Math.pow(node.u[0],2) + Math.pow(node.u[1],2));
-			if (u_norm > max_u_norm) {
-				max_u_norm = u_norm;
-				max_disp_node = node;
+			if (index1 != -1) {
+				add3x3El(this.Ksys,[index1*3,index1*3],beam.k.n11);
 			}
-		});
 
-		return max_u_norm;
+			// then add the off diagonals
+			if (index0 != -1 && index1 != -1) {
+				add3x3El(this.Ksys,[index0*3,index1*3],beam.k.n01);
+				add3x3El(this.Ksys,[index1*3,index0*3],beam.k.n10);
+			}
+				
+		},this);
+		
+		return this.Ksys
 	}
+
+solver.beams = globals.geom.beams;
+solver.nodes = globals.geom.nodes;
+u_max = solver.solve();
+
+// u_max = solve('frame',globals.geom);
+
+	// function solve(type='frame',geom=globals.geom,debug=false) {
+		// solver.solve();
+
+	FrameSolver.prototype.solve = function() {
+	this.calculate_U();
+
+		FrameSolver.prototype.calculate_U = function() {	
+			this.u = math.lusolve(this.Ksys,this.X);
+			return this.u
+		}
+
+
+	var index = 0;
+	var max_u_norm = 0;
+	_.each(this.nodes, function(node) {
+		if (node.fixed) {
+			node.u = [0, 0, 0];
+		} else {
+			node.u = [getEl(this.u,[index,0]),
+				      getEl(this.u,[index+1,0]),
+				      getEl(this.u,[index+2,0])];
+			index+=3;
+
+			node.u_cumulative[0] += node.u[0];
+			node.u_cumulative[1] += node.u[1];
+			node.u_cumulative[2] += node.u[2];
+
+			var u_norm = Math.sqrt(Math.pow(node.u[0],2) + Math.pow(node.u[1],2));
+			if (u_norm > max_u_norm) { max_u_norm = u_norm; }
+		}
+	},this);
+
+	_.each(this.beams, function(beam) {
+		beam.assemble_u_local();
+
+			Beam.prototype.assemble_u_local = function() {
+				var ug1 = this.nodes[0].u;
+				var ug2 = this.nodes[1].u;
+				var u_global = math.flatten(math.matrix([ug1, ug2]));
+				this.u_local = math.multiply(math.transpose(this.full_T),u_global);
+			}
+
+		beam.calculate_local_force();
+
+			Beam.prototype.calculate_local_force = function() {
+				this.f_local = math.multiply(this.k_prime,this.u_local);
+			}
+
+		beam.calculate_global_force();
+
+			Beam.prototype.calculate_global_force = function() {
+				this.f_global = math.multiply(this.full_T,this.f_local);
+			}
+
+	});
+
+	return max_u_norm;
+}
+
+
+// 	// ****** DEFORM / UPDATE GEOMETRY *****
+// 	globals.beam_forces = [];
+// 	_.each(globals.geom.beams, function(beam) {
+// 		// var f = Math.sqrt(Math.pow(beam.f_local._data[0],2) + Math.pow(beam.f_local._data[1],2));
+// 		var f = Math.abs(beam.f_local._data[0]);
+// 		globals.beam_forces.push(f);
+// 	})
+
+// 	var max_disp_node = null;
+// 	var max_u_norm = 0;
+// 	_.each(globals.geom.nodes, function(node) {
+// 		var u_norm = Math.sqrt(Math.pow(node.u[0],2) + Math.pow(node.u[1],2));
+// 		if (u_norm > max_u_norm) {
+// 			max_u_norm = u_norm;
+// 			max_disp_node = node;
+// 		}
+// 	});
+
+// 	return max_u_norm;
+// }
 
 	
