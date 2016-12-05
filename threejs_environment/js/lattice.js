@@ -85,8 +85,13 @@ var globals = {
 			dynSolver.setup(globals.geom);
 		},
 		runDynamicSolve: function() {
-			dynSolver.step();
-		}
+			for (var i=0; i < globals.control_parameters.ntimes; i++) {
+				dynSolver.step();
+			}
+			renderDynamic();
+
+		},
+		ntimes: 50
 	}
 };
 
@@ -144,7 +149,7 @@ nonlin_solve.add(globals.control_parameters,'solveIterations').name("Solve (incr
 nonlin_solve.open();
 
 var dynamic_solve = gui.addFolder('Dynamic Solver');
-// nonlin_solve.add(globals.control_parameters,'eps',-5,1);
+dynamic_solve.add(globals.control_parameters,'ntimes',1,1000);
 dynamic_solve.add(globals.control_parameters,'setupDynamicSolve').name("Setup");
 dynamic_solve.add(globals.control_parameters,'runDynamicSolve').name("Solve (dynamic)");
 dynamic_solve.open();
@@ -487,4 +492,17 @@ function loadGeometry() {
 	    }, false );
 		reader.readAsText( file );
 	})
+}
+
+function renderDynamic() {
+	var pos = dynSolver.position;
+	var nodes = globals.geom.nodes;
+	console.log(nodes)
+	for (var i=0; i < nodes.length; i++) {
+		console.log([pos[i*3],pos[i*3+1],pos[i*3+2]])
+		nodes[i].u_cumulative[0] = pos[i*3];
+		nodes[i].u_cumulative[1] = pos[i*3+1];
+		nodes[i].u_cumulative[2] = pos[i*3+2];
+	}
+	deformGeometryBending(globals.geom,1.0);
 }

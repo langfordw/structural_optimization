@@ -59,41 +59,86 @@ SimBeam.prototype.calcK = function() {
 	var rho = this.beam.rho;
 	var a1 = this.beam.a1;
 	var a2 = this.beam.a2;
-
 	var i = 0;
 	var j = 0;
-	this.Kel[i+0][j+0] = a1;
-	this.Kel[i+1][j+1] = 12*a2;
-	this.Kel[i+2][j+1] = 6*l*a2;
-	this.Kel[i+1][j+2] = 6*l*a2;
-	this.Kel[i+2][j+2] = 4*Math.pow(l,2)*a2;
 
-	i = 3;
-	j = 3;
-	this.Kel[i+0][j+0] = a1;
-	this.Kel[i+1][j+1] = 12*a2;
-	this.Kel[i+2][j+1] = -6*l*a2;
-	this.Kel[i+1][j+2] = -6*l*a2;
-	this.Kel[i+2][j+2] = 4*Math.pow(l,2)*a2;
+	// if (this.node1fixed && this.node2fixed) {
+	// 	i = 0;
+	// 	j = 0;
+	// 	this.Kel[i+0][j+0] = 1;
+	// 	this.Kel[i+1][j+1] = 1;
+	// 	this.Kel[i+2][j+2] = 1;
 
-	i = 0;
-	j = 3;
-	this.Kel[i+0][j+0] = -a1;
-	this.Kel[i+1][j+1] = -12*a2;
-	this.Kel[i+2][j+1] = -6*l*a2;
-	this.Kel[i+1][j+2] = 6*l*a2;
-	this.Kel[i+2][j+2] = 2*Math.pow(l,2)*a2;
+	// 	i = 3;
+	// 	j = 3;
+	// 	this.Kel[i+0][j+0] = 1;
+	// 	this.Kel[i+1][j+1] = 1;
+	// 	this.Kel[i+2][j+2] = 1;
+	// }
+	// if (this.node1fixed && !this.node2fixed) {
+	// 	i = 0;
+	// 	j = 0;
+	// 	this.Kel[i+0][j+0] = 1;
+	// 	this.Kel[i+1][j+1] = 1;
+	// 	this.Kel[i+2][j+2] = 1;
 
-	i = 3;
-	j = 0;
-	this.Kel[i+0][j+0] = -a1;
-	this.Kel[i+1][j+1] = -12*a2;
-	this.Kel[i+2][j+1] = 6*l*a2;
-	this.Kel[i+1][j+2] = -6*l*a2;
-	this.Kel[i+2][j+2] = 2*Math.pow(l,2)*a2;
+	// 	i = 3;
+	// 	j = 3;
+	// 	this.Kel[i+0][j+0] = a1;
+	// 	this.Kel[i+1][j+1] = 12*a2;
+	// 	this.Kel[i+2][j+1] = -6*l*a2;
+	// 	this.Kel[i+1][j+2] = -6*l*a2;
+	// 	this.Kel[i+2][j+2] = 4*Math.pow(l,2)*a2;
+	// }
+	// else if (!this.node1fixed && this.node2fixed) {
+	// 	i = 3;
+	// 	j = 3;
+	// 	this.Kel[i+0][j+0] = 1;
+	// 	this.Kel[i+1][j+1] = 1;
+	// 	this.Kel[i+2][j+2] = 1;
+
+	// 	i = 0;
+	// 	j = 0;
+	// 	this.Kel[i+0][j+0] = a1;
+	// 	this.Kel[i+1][j+1] = 12*a2;
+	// 	this.Kel[i+2][j+1] = 6*l*a2;
+	// 	this.Kel[i+1][j+2] = 6*l*a2;
+	// 	this.Kel[i+2][j+2] = 4*Math.pow(l,2)*a2;
+	// } else {
+		i = 0;
+		j = 0;
+		this.Kel[i+0][j+0] = a1;
+		this.Kel[i+1][j+1] = 12*a2;
+		this.Kel[i+2][j+1] = 6*l*a2;
+		this.Kel[i+1][j+2] = 6*l*a2;
+		this.Kel[i+2][j+2] = 4*Math.pow(l,2)*a2;
+
+		i = 3;
+		j = 3;
+		this.Kel[i+0][j+0] = a1;
+		this.Kel[i+1][j+1] = 12*a2;
+		this.Kel[i+2][j+1] = -6*l*a2;
+		this.Kel[i+1][j+2] = -6*l*a2;
+		this.Kel[i+2][j+2] = 4*Math.pow(l,2)*a2;
+
+		i = 0;
+		j = 3;
+		this.Kel[i+0][j+0] = -a1;
+		this.Kel[i+1][j+1] = -12*a2;
+		this.Kel[i+2][j+1] = -6*l*a2;
+		this.Kel[i+1][j+2] = 6*l*a2;
+		this.Kel[i+2][j+2] = 2*Math.pow(l,2)*a2;
+
+		i = 3;
+		j = 0;
+		this.Kel[i+0][j+0] = -a1;
+		this.Kel[i+1][j+1] = -12*a2;
+		this.Kel[i+2][j+1] = 6*l*a2;
+		this.Kel[i+1][j+2] = -6*l*a2;
+		this.Kel[i+2][j+2] = 2*Math.pow(l,2)*a2;
+	// }
 }
 
 SimBeam.prototype.calcMinv = function() {
-	console.log(this.Mel)
 	this.Mel_inv = numeric.inv(this.Mel);
 }

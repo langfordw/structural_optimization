@@ -1,5 +1,5 @@
 function DynamicSolver() {
-	this.delT = 1;
+	this.delT = .0001;
 	this.position;
 	this.lastPosition;
 	this.nextPosition;
@@ -14,30 +14,13 @@ function DynamicSolver() {
 	this.simNodes = [];
 }
 
-// to do:
-// handle fixed nodes
-
 
 DynamicSolver.prototype.setup = function(geom) {
-	this.numNodes = geom.nodes.length-geom.constraints.length;
+	this.numNodes = geom.nodes.length;
 	this.numBeams = geom.beams.length;
 
-	// probably need to change these back to normal arrays for use with Numeric
-	// this.position = new Float32Array(this.numNodes*3);
-	// this.lastPosition = new Float32Array(this.numNodes*3);
-	// this.nextPosition = new Float32Array(this.numNodes*3);
-	// this.velocity = new Float32Array(this.numNodes*3);
-	// this.acceleration = new Float32Array(this.numNodes*3);
-	// this.externalForces = new Float32Array(this.numNodes*3);
-
-	// this.position = new Array(this.numNodes*3);
-	// this.lastPosition = new Array(this.numNodes*3);
-	// this.nextPosition = new Array(this.numNodes*3);
-	// this.velocity = new Array(this.numNodes*3);
-	// this.acceleration = new Array(this.numNodes*3);
-	// this.externalForces = new Array(this.numNodes*3);
-
 	this.position = Array.vector(this.numNodes*3,0);
+	this.global_position = Array.vector(this.numNodes*3,0);
 	this.lastPosition = Array.vector(this.numNodes*3,0);
 	this.nextPosition = Array.vector(this.numNodes*3,0);
 	this.velocity = Array.vector(this.numNodes*3,0);
@@ -51,155 +34,327 @@ DynamicSolver.prototype.setup = function(geom) {
 	},this);
 
 	var index = 0;
-	_.each(geom.nodes, function(node) {
-		if (!node.fixed) {
-			this.indexMap[node.index] = index;
-			var simNode = new SimNode(node)
-			this.simNodes.push(simNode);
+	for (var i=0; i < this.numNodes; i++) {
+		var node = geom.nodes[i];
+		var simNode = new SimNode(node);
+		this.simNodes.push(simNode);
 
-			this.externalForces[index] = simNode.externalForce[0];
-			this.externalForces[index+1] = simNode.externalForce[1];
-			this.externalForces[index+2] = simNode.externalForce[2];
+		this.externalForces[simNode.index*3] = simNode.externalForce[0];
+		this.externalForces[simNode.index*3+1] = simNode.externalForce[1];
+		this.externalForces[simNode.index*3+2] = simNode.externalForce[2];
 
-			index += 3;
-		}
-	},this);
+		var pos = node.getPosition();
+		this.global_position[simNode.index*3] = pos.x;
+		this.global_position[simNode.index*3+1] = pos.z;
+		this.global_position[simNode.index*3+2] = node.theta;
+	}
 
 	console.log(this);
 	this.firstStep();
 }
 
 DynamicSolver.prototype.firstStep = function() {
-	for (var i=0; i < this.numNodes; i++) {
-		this.lastPosition[i] = this.position[i]-this.delT*this.velocity[i] + this.acceleration[i]*Math.pow(this.delT,2)/2;
-	}
-	console.log("set last position:");
-	console.log(this);
+	// for (var i=0; i < this.numNodes*3; i+=3) {
+	// 	// this.lastPosition[i] = this.position[i]-this.delT*this.velocity[i] + this.acceleration[i]*Math.pow(this.delT,2)/2;
+		
+	// 	// this is probably wrong.... need to get initial acceleration from F/M
+	// 	this.lastPosition[i] = this.position[i];
+	// 	this.lastPosition[i+1] = this.position[i+1];
+	// 	this.lastPosition[i+2] = this.position[i+2];
+	// }
 
 	this.calcPosition();
+	this.lastPosition = this.position;
+	this.position = this.nextPosition;
+	this.global_position = numeric.add(this.global_position,numeric.sub(this.position,this.lastPosition));
 	console.log("first step:");
 	console.log(this)
 }
 
 DynamicSolver.prototype.step = function() {
 	this.calcPosition();
-	this.calcAccleration();
-	this.calcVelocity();
+	this.lastPosition = this.position;
+	this.position = this.nextPosition;
+	this.global_position = numeric.add(this.global_position,numeric.sub(this.position,this.lastPosition));
+
+	// this.calcAccleration();
+	// this.calcVelocity();
+	console.log(this);
 }
 
 DynamicSolver.prototype.calcAccleration = function() {
-	for (var i=0; i < this.numBeams; i++) {
-		var Mel_inv = this.simBeams[i].Mel_inv;
-		var Kel = this.simBeams[i].Kel;
+	for (var beam_index=0; beam_index < this.numBeams; beam_index++) {
+		var Mel_inv = this.simBeams[beam_index].Mel_inv;
+		var Kel = this.simBeams[beam_index].Kel;
 
-		var node1index = this.simBeams[i].node1index;
-		var node2index = this.simBeams[i].node2index;
+		var node1index = this.simBeams[beam_index].node1index;
+		var node2index = this.simBeams[beam_index].node2index;
 
-		var pos = [this.position[this.indexMap[node1index]], 
-				   this.position[this.indexMap[node1index]+1], 
-				   this.position[this.indexMap[node1index]+2], 
-				   this.position[this.indexMap[node2index]], 
-				   this.position[this.indexMap[node2index]+1], 
-				   this.position[this.indexMap[node2index]+2]];
+		var node1fixed = this.simBeams[beam_index].node1fixed;
+		var node2fixed = this.simBeams[beam_index].node2fixed;
 
-		// var lastPos = [this.lastPosition[indexMap[node1index]], 
-		// 			   this.lastPosition[indexMap[node1index]+1], 
-		// 			   this.lastPosition[indexMap[node1index]+2],
-		// 		   	   this.lastPosition[indexMap[node2index]], 
-		// 		   	   this.lastPosition[indexMap[node2index]+1], 
-		// 		   	   this.lastPosition[indexMap[node2index]+2]];
+		var pos = [this.position[node1index*3], 
+				   this.position[node1index*3+1], 
+				   this.position[node1index*3+2], 
+				   this.position[node2index*3], 
+				   this.position[node2index*3+1], 
+				   this.position[node2index*3+2]];
 
-		var T = this.calcT(pos);
+		var lastPos = [this.lastPosition[node1index*3], 
+					   this.lastPosition[node1index*3+1], 
+					   this.lastPosition[node1index*3+2], 
+				   	   this.lastPosition[node2index*3], 
+				   	   this.lastPosition[node2index*3+1], 
+				   	   this.lastPosition[node2index*3+2]];
+
+		var global_pos = [this.global_position[node1index*3], 
+						  this.global_position[node1index*3+1], 
+						  this.global_position[node1index*3+2], 
+						  this.global_position[node2index*3], 
+						  this.global_position[node2index*3+1], 
+						  this.global_position[node2index*3+2]];
+
+		var external_forces = [this.externalForces[node1index*3], 
+							   this.externalForces[node1index*3+1], 
+							   this.externalForces[node1index*3+2], 
+							   this.externalForces[node2index*3], 
+							   this.externalForces[node2index*3+1], 
+							   this.externalForces[node2index*3+2]];
+
+		var T = this.calcT(global_pos);
 		var K_global = numeric.dot(numeric.transpose(T),numeric.dot(Kel,T));
 		var M_global = numeric.dot(T,numeric.dot(Mel_inv,numeric.transpose(T)));
 
-		var external_forces = [this.externalForces[node1index], this.externalForces[node1index+1], this.externalForces[node1index+2],
-							   this.externalForces[node2index], this.externalForces[node2index+1], this.externalForces[node2index+2]];
+		if (node1fixed) {
+			for (var i =0; i < 3; i++) {
+				for (var j = 0; j < 6; j++) {
+					if (i == j) {
+						K_global[i][j] = 1;
+					} else {
+						K_global[i][j] = 0;
+					}
+				}
+			}
+			for (var i =0; i < 6; i++) {
+				for (var j = 0; j < 3; j++) {
+					if (i == j) {
+						K_global[i][j] = 1;
+					} else {
+						K_global[i][j] = 0;
+					}
+				}
+			}
+		}
+
+		if (node2fixed) {
+			for (var i = 3; i < 6; i++) {
+				for (var j = 0; j < 6; j++) {
+					if (i == j) {
+						K_global[i][j] = 1;
+					} else {
+						K_global[i][j] = 0;
+					}
+				}
+			}
+			for (var i = 0; i < 6; i++) {
+				for (var j = 3; j < 6; j++) {
+					if (i == j) {
+						K_global[i][j] = 1;
+					} else {
+						K_global[i][j] = 0;
+					}
+				}
+			}
+		}
 
 		var internal_forces = numeric.dot(K_global,pos);
 		
-		var netforce = numeric.sub(external_forces - internal_forces);
+		var netforce = numeric.sub(external_forces,internal_forces);
 
 		var accel = numeric.dot(M_global, netforce); // 6 x 1
 
-		if (!this.simBeams[i].node1fixed) {
-			this.acceleration[this.indexMap[node1index]] += accel[0];
-			this.acceleration[this.indexMap[node1index]+1] += accel[1];
-			this.acceleration[this.indexMap[node1index]+2] += accel[2];
-		}
-		if (!this.simBeams[i].node2fixed) {
-			this.acceleration[this.indexMap[node2index]] += accel[3];
-			this.acceleration[this.indexMap[node2index]+1] += accel[4];
-			this.acceleration[this.indexMap[node2index]+2] += accel[5];
-		}
+		// if (!this.simBeams[i].node1fixed) {
+			this.acceleration[node1index*3] += accel[0];
+			this.acceleration[node1index*3+1] += accel[1];
+			this.acceleration[node1index*3+2] += accel[2];
+		// }
+		// if (!this.simBeams[i].node2fixed) {
+			this.acceleration[node2index*3] += accel[3];
+			this.acceleration[node2index*3+1] += accel[4];
+			this.acceleration[node2index*3+2] += accel[5];
+		// }
 	}
 }
 
 DynamicSolver.prototype.calcVelocity = function() {
 
-	this.lastPosition = position;
+	this.lastPosition = this.position;
 	this.position = this.nextPosition;
+	this.global_position = numeric.add(this.global_position,numeric.sub(this.position,this.lastPosition));
 
-	for (var i=0; i < this.numNodes; i++) {
-		velocity[i] = numeric.div(this.position[i]-this.lastPosition[i],2*this.delT);
+	for (var i=0; i < this.numNodes*3; i+=3) {
+		var pos1 = [this.position[i],this.position[i+1],this.position[i+2]];
+		var pos2 = [this.lastPosition[i],this.lastPosition[i+1],this.lastPosition[i+2]];
+		var vel = numeric.div(numeric.sub(pos1,pos2),2*this.delT);
+		this.velocity[i] = vel[0];
+		this.velocity[i+1] = vel[1];
+		this.velocity[i+2] = vel[2];
 	}
 }
 
 DynamicSolver.prototype.calcPosition = function() {
-	for (var i=0; i < this.numBeams; i++) {
-		var Mel = this.simBeams[i].Mel;
-		var Mel_inv = this.simBeams[i].Mel_inv;
-		var Kel = this.simBeams[i].Kel;
+	this.nextPosition = Array.vector(this.numNodes*3,0);
+	console.log("num beams = " + this.numBeams);
+	for (var beam_index=0; beam_index < this.numBeams; beam_index++) {
+		var Mel = this.simBeams[beam_index].Mel;
+		var Mel_inv = this.simBeams[beam_index].Mel_inv;
+		var Kel = this.simBeams[beam_index].Kel;
 
-		var node1index = this.simBeams[i].node1index;
-		var node2index = this.simBeams[i].node2index;
+		var node1index = this.simBeams[beam_index].node1index;
+		var node2index = this.simBeams[beam_index].node2index;
 
-		console.log(M_inv_global)
-		return;
+		var node1fixed = this.simBeams[beam_index].node1fixed;
+		var node2fixed = this.simBeams[beam_index].node2fixed;
 
-		var pos = [this.position[this.indexMap[node1index]], 
-				   this.position[this.indexMap[node1index]+1], 
-				   this.position[this.indexMap[node1index]+2], 
-				   this.position[this.indexMap[node2index]], 
-				   this.position[this.indexMap[node2index]+1], 
-				   this.position[this.indexMap[node2index]+2]];
+		var pos = [this.position[node1index*3], 
+				   this.position[node1index*3+1], 
+				   this.position[node1index*3+2], 
+				   this.position[node2index*3], 
+				   this.position[node2index*3+1], 
+				   this.position[node2index*3+2]];
 
-		var lastPos = [this.lastPosition[indexMap[node1index]], 
-					   this.lastPosition[indexMap[node1index]+1], 
-					   this.lastPosition[indexMap[node1index]+2],
-				   	   this.lastPosition[indexMap[node2index]], 
-				   	   this.lastPosition[indexMap[node2index]+1], 
-				   	   this.lastPosition[indexMap[node2index]+2]];
+		var lastPos = [this.lastPosition[node1index*3], 
+					   this.lastPosition[node1index*3+1], 
+					   this.lastPosition[node1index*3+2], 
+				   	   this.lastPosition[node2index*3], 
+				   	   this.lastPosition[node2index*3+1], 
+				   	   this.lastPosition[node2index*3+2]];
 
-		var T = this.calcT(pos);
+		var global_pos = [this.global_position[node1index*3], 
+						  this.global_position[node1index*3+1], 
+						  this.global_position[node1index*3+2], 
+						  this.global_position[node2index*3], 
+						  this.global_position[node2index*3+1], 
+						  this.global_position[node2index*3+2]];
+
+		var external_forces = [this.externalForces[node1index*3], 
+							   this.externalForces[node1index*3+1], 
+							   this.externalForces[node1index*3+2], 
+							   this.externalForces[node2index*3], 
+							   this.externalForces[node2index*3+1], 
+							   this.externalForces[node2index*3+2]];
+
+		var T = this.calcT(global_pos);
 		var K_global = numeric.dot(numeric.transpose(T),numeric.dot(Kel,T));
 		var M_inv_global = numeric.dot(T,numeric.dot(Mel_inv,numeric.transpose(T)));
 		var M_global = numeric.dot(numeric.transpose(T),numeric.dot(Mel,T));
 
-
-
-		// var external_forces = [this.externalForces[node1index], this.externalForces[node1index+1], this.externalForces[node1index+2],
-		// 					   this.externalForces[node2index], this.externalForces[node2index+1], this.externalForces[node2index+2]];
-
-		// var internal_forces = numeric.dot(K_global,pos);
+		console.log("beam: " + beam_index);
+		console.log("nodes: " + node1index + " --> " + node2index);
+		console.log("indexes: " + node1index*3 + " --> " + node2index*3);
+		console.log("T: ");
+		console.log(T);
+		console.log("Pos: ");
+		console.log(pos);
 		
-		// var netforce = numeric.sub(external_forces - internal_forces);
+		if (node1fixed) {
+			for (var i =0; i < 3; i++) {
+				for (var j = 0; j < 6; j++) {
+					if (i == j) {
+						K_global[i][j] = 1;
+						M_inv_global[i][j] = 1;
+						M_global[i][j] = 1;
+					} else {
+						K_global[i][j] = 0;
+						M_inv_global[i][j] = 0;
+						M_global[i][j] = 0;
+					}
+				}
+			}
+			for (var i =0; i < 6; i++) {
+				for (var j = 0; j < 3; j++) {
+					if (i == j) {
+						K_global[i][j] = 1;
+						M_inv_global[i][j] = 1;
+						M_global[i][j] = 1;
+					} else {
+						K_global[i][j] = 0;
+						M_inv_global[i][j] = 0;
+						M_global[i][j] = 0;
+					}
+				}
+			}
+		}
 
-		// var term1 = numeric.mul(Math.pow(this.delT,2),external_forces);
-		// var term2 = numeric.dot(numeric.sub(numeric.mul(2,M_global),numeric.mul(Math.pow(this.delT,2),K_global)),pos);
-		// var term3 = numeric.dot(M_global,lastPos);
+		if (node2fixed) {
+			for (var i = 3; i < 6; i++) {
+				for (var j = 0; j < 6; j++) {
+					if (i == j) {
+						K_global[i][j] = 1;
+						M_inv_global[i][j] = 1;
+						M_global[i][j] = 1;
+					} else {
+						K_global[i][j] = 0;
+						M_inv_global[i][j] = 0;
+						M_global[i][j] = 0;
+					}
+				}
+			}
+			for (var i = 0; i < 6; i++) {
+				for (var j = 3; j < 6; j++) {
+					if (i == j) {
+						K_global[i][j] = 1;
+						M_inv_global[i][j] = 1;
+						M_global[i][j] = 1;
+					} else {
+						K_global[i][j] = 0;
+						M_inv_global[i][j] = 0;
+						M_global[i][j] = 0;
+					}
+				}
+			}
+		}
 
+		console.log("K_global:");
+		console.log(K_global);
+		console.log("M_global:");
+		console.log(M_global);
+		console.log("M_inv:");
+		console.log(M_inv_global);
+							   
+		var internal_forces = numeric.dot(K_global,pos);
+		var netforce = numeric.sub(external_forces,internal_forces);
+		// var netforce = numeric.sub(internal_forces,external_forces);
+
+		console.log("internal forces:")
+		console.log(internal_forces)
+		console.log("external forces:")
+		console.log(external_forces)
+		console.log("net force:")
+		console.log(netforce)
+
+		var term1 = numeric.mul(Math.pow(this.delT,2),external_forces);
+		var term2 = numeric.dot(numeric.sub(numeric.mul(2,M_global),numeric.mul(Math.pow(this.delT,2),K_global)),pos);
+		var term3 = numeric.dot(M_global,lastPos);
+
+		var accel = numeric.dot(M_inv_global,netforce);
+		console.log("accel:")
+		console.log(accel)
+
+		var temp = numeric.sub(numeric.mul(2,pos),lastPos);
+
+		var new_pos = numeric.add(temp,numeric.mul(Math.pow(this.delT,2),accel));
 		// var new_pos = numeric.dot(M_inv_global,numeric.add(numeric.add(term1,term2),term3));
 
-		// if (!this.simBeams[i].node1fixed) {
-		// 	this.nextPosition[this.indexMap[node1index]] += new_pos[0];
-		// 	this.nextPosition[this.indexMap[node1index]+1] += new_pos[1];
-		// 	this.nextPosition[this.indexMap[node1index]+2] += new_pos[2];
+		// if (!this.simBeams[beam_index].node1fixed) {
+			this.nextPosition[node1index*3] += new_pos[0];
+			this.nextPosition[node1index*3+1] += new_pos[1];
+			this.nextPosition[node1index*3+2] += new_pos[2];
 		// }
-		// if (!this.simBeams[i].node2fixed) {
-		// 	this.nextPosition[this.indexMap[node2index]] += new_pos[3];
-		// 	this.nextPosition[this.indexMap[node2index]+1] += new_pos[4];
-		// 	this.nextPosition[this.indexMap[node2index]+2] += new_pos[5];
+		// if (!this.simBeams[beam_index].node2fixed) {
+			this.nextPosition[node2index*3] += new_pos[3];
+			this.nextPosition[node2index*3+1] += new_pos[4];
+			this.nextPosition[node2index*3+2] += new_pos[5];
 		// }
 	}
 }
@@ -220,14 +375,14 @@ DynamicSolver.prototype.calcT = function(pos) {
 	T[i][i] = c;
 	T[i+1][i+1] = c;
 	T[i][i+1] = s;
-	T[i+1][i] = s;
+	T[i+1][i] = -s;
 	T[i+2][i+2] = 1;
 
 	var i = 3;
 	T[i][i] = c;
 	T[i+1][i+1] = c;
 	T[i][i+1] = s;
-	T[i+1][i] = s;
+	T[i+1][i] = -s;
 	T[i+2][i+2] = 1;
 
 	return T;
