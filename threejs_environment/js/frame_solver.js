@@ -15,7 +15,6 @@ function FrameSolver(nodes, beams, constraints) {
 	this.calculate_Ksys();
 
 	this.u = math.zeros(num_dofs);
-	this.f = math.zeros(num_beams);
 }
 
 FrameSolver.prototype.getFreeNodes = function() {
@@ -76,7 +75,9 @@ FrameSolver.prototype.calculate_Ksys = function() {
 }
 
 FrameSolver.prototype.calculate_U = function() {	
+	// this.u = math.lusolve(math.lup(this.Ksys),this.X);
 	this.u = math.lusolve(this.Ksys,this.X);
+
 	return this.u
 }
 
@@ -110,4 +111,65 @@ FrameSolver.prototype.solve = function() {
 	});
 
 	return max_u_norm;
+}
+
+FrameSolver.prototype.reset = function(nodes,beams,constraints) {
+	var geomChange = false;
+	if (nodes != undefined) {
+		this.nodes = nodes;
+		this.free_nodes = this.getFreeNodes();
+		geomChange = true;
+	}
+	if (beams != undefined) {
+		this.beams = beams;
+		geomChange = true;
+	}
+	if (constraints != undefined) {
+		this.constraints = constraints;
+		geomChange = true;
+	}
+
+	if (geomChange) {
+		var num_dofs = (this.nodes.length - this.constraints.length)*3;
+		var num_beams = this.beams.length;
+		this.num_dofs = num_dofs;
+		this.num_beams = num_beams;
+
+		for (var i = 0; i < this.beams.length; i++) {
+			var beam = this.beams[i];
+			beam.k_prime = math.zeros(6,6);
+			beam.assemble_k_prime();
+
+			beam.full_T = math.zeros(6,6);
+			beam.assemble_full_T();
+
+			beam.T = math.matrix([0]);
+			beam.assemble_T();
+
+			beam.k = {
+				n00: null,
+				n11: null,
+				n01: null,
+				n10: null,
+				full: null
+			};
+			beam.k.n00 = math.zeros(3,3);
+			beam.k.n11 = math.zeros(3,3);
+			beam.k.n01 = math.zeros(3,3);
+			beam.k.n10 = math.zeros(3,3);
+			beam.k.full = math.zeros(3,3);
+			beam.calculate_4ks();
+
+			beam.u_local = math.zeros(6,1);
+			beam.f_local = math.zeros(6,1);
+		}
+	}
+
+	this.X = math.zeros(this.num_dofs);
+	this.assemble_X();
+
+	this.Ksys = math.zeros(this.num_dofs, this.num_dofs);
+	this.calculate_Ksys();
+
+	this.u = math.zeros(this.num_dofs);
 }

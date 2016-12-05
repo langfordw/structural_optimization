@@ -28,8 +28,8 @@ Tracer.prototype.update = function() {
 }
 
 Tracer.prototype.drawTraces = function() {
-	if (!this.drawn) {
-		var beamMat = new THREE.LineBasicMaterial({color: 0x00ffff, linewidth: 5});
+	// if (!this.drawn) {
+		var beamMat = new THREE.LineBasicMaterial({color: 'yellow', linewidth: 5});
 		
 		for (var i=0; i < this.nodes.length; i++) {
 			var lineGeo = new THREE.Geometry();
@@ -37,21 +37,28 @@ Tracer.prototype.drawTraces = function() {
 			lineGeo.vertices = this.traces[i];
 			var object3D = new THREE.Line(lineGeo, beamMat);
 			this.traceWrapper.add(object3D);
-			console.log(wrapper)
 		}
 
 		this.drawn = true;
 		this.traceWrapper.visible = true;
-	} else {
-		this.traceWrapper.visible = true;
-	}
+	// } else {
+	// 	this.traceWrapper.visible = true;
+	// }
 	this.visible = true;
 }
 
-Tracer.prototype.clearTraces = function() {
+Tracer.prototype.hideTraces = function() {
 	if (this.visible) {
 		this.traceWrapper.visible = false;
 		this.visible = false;
 	}
-	
+}
+
+Tracer.prototype.clearTraces = function() {
+	this.traceWrapper.children = [];
+	for (var i = 0; i < this.nodes.length; i++) {
+		this.traces[i] = [];
+	}
+	this.visible = false;
+	this.drawn = false;
 }

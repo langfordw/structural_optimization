@@ -25,4 +25,22 @@ function add3x3El(matrix, index, values){
 }
 
 
+Array.matrix = function(numrows, numcols, initial){
+   var arr = [];
+   for (var i = 0; i < numrows; ++i){
+      var columns = [];
+      for (var j = 0; j < numcols; ++j){
+         columns[j] = initial;
+      }
+      arr[i] = columns;
+    }
+    return arr;
+}
 
+Array.vector = function(numrows, initial){
+   var arr = [];
+   for (var i = 0; i < numrows; ++i){
+      arr[i] = initial;
+    }
+    return arr;
+}

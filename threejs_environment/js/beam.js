@@ -16,6 +16,8 @@ function Beam(nodes, index, a1a2=[10000000,10000000],type='rigid') {
 
 	this.a1 = a1a2[0]/this.len0; // AE/L
 	this.a2 = a1a2[1]/Math.pow(this.len0,3); // EI/L^3
+	this.rho = 1;
+	this.A = 1;
 
 	this.k_prime = math.zeros(6,6);
 	this.assemble_k_prime();

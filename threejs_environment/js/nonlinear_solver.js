@@ -10,14 +10,16 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 	var u_total = 0;
 
 	updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
-	setup_solve('frame',globals.geom);
-	u_max = solve('frame',globals.geom);
+	solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+	// setup_solve('frame',globals.geom);
+
+	// u_max = solve('frame',globals.geom);
 	// var solver = new FrameSolver(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
-	// var u_max = solver.solve();
+	var u_max = solver.solve();
 
 	var trace = [];
 
-	setTimeout(displayMessage("test"),1000);
+	// setTimeout(displayMessage("test"),1000);
 
 	if (debug) {
 		console.log("full force = " + full_magnitude);
@@ -33,29 +35,32 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 				magnitude *= 0.5;
 
 				updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
-				setup_solve('frame',globals.geom);
+				solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+				// setup_solve('frame',globals.geom);
 				// solver.assemble_X();
 				// solver.Ksys = math.zeros(solver.num_dofs, solver.num_dofs);
 				// solver.calculate_Ksys();
 				// solver.beams = globals.geom.beams;
 				// solver.nodes = globals.geom.nodes;
-				u_max = solve('frame',globals.geom);
-				// u_max = solver.solve();
+				// u_max = solve('frame',globals.geom);
+				u_max = solver.solve();
 				iter_count++;
 			}
 		} else {
 			bakeGeometry();
 
 			tracer.update();
-			
+
 			// solver.Ksys = math.zeros(solver.num_dofs, solver.num_dofs);
 			// solver.calculate_Ksys();
 			// solver.beams = globals.geom.beams;
 			// solver.nodes = globals.geom.nodes;
 			// console.log(solver)
-			// u_max = solver.solve();
-			setup_solve('frame',globals.geom);
-			u_max = solve('frame',globals.geom);
+			updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
+			solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+			u_max = solver.solve();
+			// setup_solve('frame',globals.geom);
+			// u_max = solve('frame',globals.geom);
 			deformGeometryBending(globals.geom,1.0);
 			// deformGeometryFast(globals.geom);
 			iter_count++;

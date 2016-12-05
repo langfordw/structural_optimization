@@ -1,6 +1,6 @@
 var globals = {
 	nwide: 2,
-	ntall: 3,
+	ntall: 2,
 	lattice_pitch: 100,
 	linear_scale: 1.0,
 	angular_scale: 1.0,
@@ -24,11 +24,13 @@ var globals = {
 			}
 		},
 		reset: function() {
+			tracer.clearTraces();
 			_.each(globals.geom.nodes, function(node) {
 				node.u_cumulative = [0,0,0];
 			});
 			if (globals.geom != null) {
 				resetLattice();
+				solver.reset();
 			}
 		},
 		bake: function() {
@@ -77,7 +79,14 @@ var globals = {
 		load: function() {
 			loadGeometry();
 		},
-		eps: 0
+		eps: 0,
+		setupDynamicSolve: function() {
+			dynSolver = new DynamicSolver();
+			dynSolver.setup(globals.geom);
+		},
+		runDynamicSolve: function() {
+			dynSolver.step();
+		}
 	}
 };
 
@@ -86,6 +95,7 @@ var total_max_disp = [0,0];
 var total_max_norm = 0;
 
 var solver;
+var dynSolver;
 
 var gui = new dat.GUI();
 gui.domElement.id = 'gui'
@@ -133,6 +143,12 @@ nonlin_solve.add(globals.control_parameters,'reset_nonlin').name("Reset");
 nonlin_solve.add(globals.control_parameters,'solveIterations').name("Solve (incremental)");
 nonlin_solve.open();
 
+var dynamic_solve = gui.addFolder('Dynamic Solver');
+// nonlin_solve.add(globals.control_parameters,'eps',-5,1);
+dynamic_solve.add(globals.control_parameters,'setupDynamicSolve').name("Setup");
+dynamic_solve.add(globals.control_parameters,'runDynamicSolve').name("Solve (dynamic)");
+dynamic_solve.open();
+
 var disp = gui.addFolder('Display');
 
 disp.add(globals.control_parameters,'deformGeometry').onChange((function(value) {
@@ -173,6 +189,7 @@ filter.add(globals.control_parameters,'stressSelectionThreshold',0,10000).name("
 	console.log('selected:')
 	console.log(selected)
 	resetLattice();
+	solver.reset();
 	subdivideSelection(selected);
 });
 filter.add(globals.control_parameters,'subdivideSelection')
@@ -225,50 +242,49 @@ function resetLattice() {
 	globals.control_parameters.deformGeometry = false;
 	gui.updateDisplay();
 	undeformGeometryBending(globals.geom);
-
-	total_max_norm = 0;
-	total_max_disp = [0,0];
-
-	var num_dofs = (globals.geom.nodes.length - globals.geom.constraints.length)*3;
-	var num_beams = globals.geom.beams.length;
-
-	solver.X = math.zeros(num_dofs);
-	solver.assemble_X();
-
-	solver.Ksys = math.zeros(num_dofs, num_dofs);
-	solver.calculate_Ksys();
-
-	solver.u = math.zeros(num_dofs);
-	solver.f = math.zeros(num_beams);
-
-	_.each(globals.geom.beams, function(beam) {
-		beam.k_prime = math.zeros(6,6);
-		beam.assemble_k_prime();
-
-		beam.full_T = math.zeros(6,6);
-		beam.assemble_full_T();
-
-		beam.T = math.matrix([0]);
-		beam.assemble_T();
-
-		beam.k = {
-			n00: null,
-			n11: null,
-			n01: null,
-			n10: null,
-			full: null
-		};
-		beam.k.n00 = math.zeros(3,3);
-		beam.k.n11 = math.zeros(3,3);
-		beam.k.n01 = math.zeros(3,3);
-		beam.k.n10 = math.zeros(3,3);
-		beam.k.full = math.zeros(3,3);
-		beam.calculate_4ks();
-
-		beam.u_local = math.zeros(6,1);
-		beam.f_local = math.zeros(6,1);
-	});
 }
+
+// function resetSolver() {
+// 	var num_dofs = (globals.geom.nodes.length - globals.geom.constraints.length)*3;
+// 	var num_beams = globals.geom.beams.length;
+
+// 	solver.X = math.zeros(num_dofs);
+// 	solver.assemble_X();
+
+// 	solver.Ksys = math.zeros(num_dofs, num_dofs);
+// 	solver.calculate_Ksys();
+
+// 	solver.u = math.zeros(num_dofs);
+// 	solver.f = math.zeros(num_beams);
+
+// 	_.each(globals.geom.beams, function(beam) {
+// 		beam.k_prime = math.zeros(6,6);
+// 		beam.assemble_k_prime();
+
+// 		beam.full_T = math.zeros(6,6);
+// 		beam.assemble_full_T();
+
+// 		beam.T = math.matrix([0]);
+// 		beam.assemble_T();
+
+// 		beam.k = {
+// 			n00: null,
+// 			n11: null,
+// 			n01: null,
+// 			n10: null,
+// 			full: null
+// 		};
+// 		beam.k.n00 = math.zeros(3,3);
+// 		beam.k.n11 = math.zeros(3,3);
+// 		beam.k.n01 = math.zeros(3,3);
+// 		beam.k.n10 = math.zeros(3,3);
+// 		beam.k.full = math.zeros(3,3);
+// 		beam.calculate_4ks();
+
+// 		beam.u_local = math.zeros(6,1);
+// 		beam.f_local = math.zeros(6,1);
+// 	});
+// }
 
 function setup_solve(type='frame',geom,debug=true) {
 	if (type == 'frame') {
@@ -365,6 +381,7 @@ function measureRadialStiffness() {
 		var unit_vector = [100*Math.cos(angle),100*Math.sin(angle)];
 		updateExternalForce(unit_vector[0],unit_vector[1]);
 		resetLattice();
+		solver.reset();
 		setup_solve('frame',globals.geom);
 		deflections.push([angle,1/Math.pow(solve('frame',globals.geom),0.25)]);
 	}
