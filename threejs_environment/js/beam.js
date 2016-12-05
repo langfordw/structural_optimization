@@ -1,3 +1,4 @@
+// function Beam(nodes, index, a1a2=[10000000,10000000],type='rigid') {
 function Beam(nodes, index, a1a2=[10000000,10000000],type='rigid') {
 	this.index = index;
 	this.part = null;

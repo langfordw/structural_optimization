@@ -85,13 +85,16 @@ var globals = {
 			dynSolver.setup(globals.geom);
 		},
 		runDynamicSolve: function() {
+			var start = new Date().getTime();
 			for (var i=0; i < globals.control_parameters.ntimes; i++) {
 				dynSolver.step();
 			}
+			var dt = new Date().getTime() - start;
+			console.log('Solved in ' + dt + 'ms');
 			renderDynamic();
 
 		},
-		ntimes: 50
+		ntimes: 1
 	}
 };
 
@@ -497,9 +500,9 @@ function loadGeometry() {
 function renderDynamic() {
 	var pos = dynSolver.position;
 	var nodes = globals.geom.nodes;
-	console.log(nodes)
+	// console.log(nodes)
 	for (var i=0; i < nodes.length; i++) {
-		console.log([pos[i*3],pos[i*3+1],pos[i*3+2]])
+		// console.log([pos[i*3],pos[i*3+1],pos[i*3+2]])
 		nodes[i].u_cumulative[0] = pos[i*3];
 		nodes[i].u_cumulative[1] = pos[i*3+1];
 		nodes[i].u_cumulative[2] = pos[i*3+2];
