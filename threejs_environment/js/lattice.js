@@ -1,6 +1,6 @@
 var globals = {
 	nwide: 10,
-	ntall: 10,
+	ntall: 2,
 	lattice_pitch: 100,
 	linear_scale: 1.0,
 	angular_scale: 1.0,
@@ -321,7 +321,7 @@ function solve(type='frame',geom=globals.geom,debug=true) {
 	if (type == 'frame') {
 		// ****** SOLVE ******
 		var start = new Date().getTime();
-		solver.solve();
+		solver.solve(true);
 		globals.solved = true;
 		disp.open();
 		selection.close();
@@ -334,12 +334,12 @@ function solve(type='frame',geom=globals.geom,debug=true) {
 		if (debug) { console.log('Solved in ' + dt + 'ms'); }
 
 		// ****** DEFORM / UPDATE GEOMETRY *****
-		globals.beam_forces = [];
-		_.each(globals.geom.beams, function(beam) {
-			// var f = Math.sqrt(Math.pow(beam.f_local._data[0],2) + Math.pow(beam.f_local._data[1],2));
-			var f = Math.abs(beam.f_local._data[0]);
-			globals.beam_forces.push(f);
-		})
+		// globals.beam_forces = [];
+		// _.each(globals.geom.beams, function(beam) {
+		// 	// var f = Math.sqrt(Math.pow(beam.f_local._data[0],2) + Math.pow(beam.f_local._data[1],2));
+		// 	var f = Math.abs(getEl(beam.f_local,[0,0]));
+		// 	globals.beam_forces.push(f);
+		// })
 
 		var max_disp_node = null;
 		var max_u_norm = 0;

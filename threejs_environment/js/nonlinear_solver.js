@@ -42,7 +42,7 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 				node.u_cumulative = [0,0,0];
 			}
 		} else {
-			bakeGeometry();
+			// bakeGeometry();
 
 			tracer.update();
 

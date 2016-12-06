@@ -52,6 +52,8 @@ FrameSolver.prototype.assemble_X = function() {
 FrameSolver.prototype.init_Ksys = function() {
 	this.free_nodes = this.getFreeNodes();
 
+	this.indexMap0 = [];
+	this.indexMap1 = [];
 	for (var i = 0; i < this.beams.length; i++) {
 		var beam = this.beams[i]
 		this.indexMap0.push(_.indexOf(this.free_nodes,beam.nodes[0].index));
@@ -67,7 +69,6 @@ FrameSolver.prototype.calculate_Ksys = function() {
 	for (var i = 0; i < this.beams.length; i++) {
 		var beam = this.beams[i]
 		// first add all the unfixed nodes to the diagonals
-
 		var index0 = this.indexMap0[i];
 		var index1 = this.indexMap1[i];
 

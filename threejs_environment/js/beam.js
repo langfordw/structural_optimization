@@ -319,8 +319,12 @@ Beam.prototype.calculate_global_force = function() {
 
 Beam.prototype.updatePosition = function(){
     this.object3D.geometry.verticesNeedUpdate = true;
-    this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
+    this.updateLength();
 };
+
+Beam.prototype.updateLength = function() {
+	this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
+}
 
 Beam.prototype.highlight = function() {
 	if (!this.highlighted) {
