@@ -1,5 +1,5 @@
 // function Beam(nodes, index, a1a2=[10000000,10000000],type='rigid') {
-function Beam(nodes, index, a1a2=[10000000,10000000],type='rigid') {
+function Beam(nodes, index, a1a2=[10000000,100000000],type='rigid') {
 	this.index = index;
 	this.part = null;
 	this.nodes = [nodes[0], nodes[1]];
@@ -15,21 +15,21 @@ function Beam(nodes, index, a1a2=[10000000,10000000],type='rigid') {
 	this.highlighted = false;
 	this.type = type;
 
-	this.a1 = a1a2[0]/this.len0; // AE/L
-	this.a2 = a1a2[1]/Math.pow(this.len0,3); // EI/L^3
-	this.rho = 100;
-	this.A = 100;
+	this.a1 = a1a2[0]/this.len0; // AE/L 100GPa * 100 mm^2
+	this.a2 = a1a2[1]/Math.pow(this.len0,3); // EI/L^3 100GPa * 10mm^4/12
+	this.rho = 1.0e1;//2.7e2; //e-6 aluminum = 2.7g/cm^3 (in kg/mm^3) //2700;//kg/m^3
+	this.A = 100; // 10 x 10 mm
 
-	this.k_prime = math.zeros(6,6);
+	this.k_prime = math.zeros(6,6,'sparse');
 	this.assemble_k_prime();
 
-	this.kp = math.zeros(6,6);
+	this.kp = math.zeros(6,6,'sparse');
 	this.assemble_kp();
 
-	this.full_T = math.zeros(6,6);
+	this.full_T = math.zeros(6,6,'sparse');
 	this.assemble_full_T();
 
-	this.T = math.matrix([0]);
+	this.T = math.matrix([0],'sparse');
 	this.assemble_T();
 
 	this.angular_deformation_scale = this.len/4.
@@ -41,11 +41,11 @@ function Beam(nodes, index, a1a2=[10000000,10000000],type='rigid') {
 		n10: null,
 		full: null
 	};
-	this.k.n00 = math.zeros(3,3);
-	this.k.n11 = math.zeros(3,3);
-	this.k.n01 = math.zeros(3,3);
-	this.k.n10 = math.zeros(3,3);
-	this.k.full = math.zeros(3,3);
+	this.k.n00 = math.zeros(3,3,'sparse');
+	this.k.n11 = math.zeros(3,3,'sparse');
+	this.k.n01 = math.zeros(3,3,'sparse');
+	this.k.n10 = math.zeros(3,3,'sparse');
+	this.k.full = math.zeros(3,3,'sparse');
 	this.calculate_4ks();
 
 	this.u_local = math.zeros(6,1);
@@ -159,24 +159,49 @@ Beam.prototype.assemble_full_T = function() {
 	return this.full_T;
 }
 
+Beam.prototype.reset = function() {
+	this.k_prime = math.zeros(6,6,'sparse');
+	this.assemble_k_prime();
+
+	this.kp = math.zeros(6,6,'sparse');
+	this.assemble_kp();
+
+	this.full_T = math.zeros(6,6,'sparse');
+	this.assemble_full_T();
+
+	this.T = math.matrix([0],'sparse');
+	this.assemble_T();
+
+	this.angular_deformation_scale = this.len/4.
+
+	this.k = {
+		n00: null,
+		n11: null,
+		n01: null,
+		n10: null,
+		full: null
+	};
+	this.k.n00 = math.zeros(3,3,'sparse');
+	this.k.n11 = math.zeros(3,3,'sparse');
+	this.k.n01 = math.zeros(3,3,'sparse');
+	this.k.n10 = math.zeros(3,3,'sparse');
+	this.k.full = math.zeros(3,3,'sparse');
+	this.calculate_4ks();
+
+	this.u_local = math.zeros(6,1);
+
+	this.f_local = math.zeros(6,1);
+}
+
 Beam.prototype.assemble_T = function() {
 	var index = 0;
 	var dof_count = 0;
 	this.T = math.matrix([0]);
-	_.each(this.nodes, function(node) {
-		// var c = Math.abs(Math.cos(this.getAngle(node.getPosition())));
-		// var s = Math.abs(Math.sin(this.getAngle(node.getPosition())));
+	for (var i=0; i < this.nodes.length; i++) {
+		var node = this.nodes[i];
 
 		var c = (this.nodes[1].getPosition().x - this.nodes[0].getPosition().x)/this.len;
 		var s = (this.nodes[1].getPosition().z - this.nodes[0].getPosition().z)/this.len;
-
-		// othernode = this.nodes[1]
-		// if (othernode.index == node.index) {
-		// 	othernode = this.nodes[0]
-		// }
-
-		// var c = (othernode.getPosition().x - node.getPosition().x)/this.len;
-		// var s = (othernode.getPosition().z - node.getPosition().z)/this.len;
 		
 		if (!node.fixed_dof.x) {
 			dof_count++;
@@ -195,25 +220,10 @@ Beam.prototype.assemble_T = function() {
 			setEl(this.T,[index+2,dof_count-1],1);
 		}
 		index += 3
-	}, this);
+	}
 	this.T = this.T.resize([6,dof_count]);
 	return this.T
 }
-
-// Beam.prototype.calculate_k = function() {
-// 	if (this.T._size[1] > 0){
-// 		if (this.index == -1) {
-// 			this.k = this.k_prime;
-// 			return this.k;
-// 		} else {
-// 			this.k = math.multiply(math.multiply(math.transpose(this.T),this.k_prime),this.T);
-// 			return this.k;
-// 		}
-		
-// 	} else {
-// 		return null;
-// 	}
-// }
 
 Beam.prototype.calculate_4ks = function() {
 	// return series of 3x3 matrices:
@@ -259,7 +269,8 @@ Beam.prototype.assemble_kp = function() {
 	if (this.f_local == null) {
 		this.f_local = math.zeros(6,1);
 	}
-	var p = this.f_local._data[0]-this.f_local._data[3];
+
+	var p = getEl(this.f_local,[0,0])-getEl(this.f_local,[3,0]);
 	var l = this.len;
 
 	var i = 0;
@@ -309,10 +320,6 @@ Beam.prototype.calculate_global_force = function() {
 Beam.prototype.updatePosition = function(){
     this.object3D.geometry.verticesNeedUpdate = true;
     this.len = Math.sqrt(Math.pow(this.vertices[1].x-this.vertices[0].x,2) + Math.pow(this.vertices[1].z-this.vertices[0].z,2));
-    // this.object3D.geometry.normalsNeedUpdate = true;
-    // this.object3D.geometry.computeFaceNormals();
-    // this.object3D.geometry.computeVertexNormals();
-    // this.object3D.geometry.computeBoundingSphere(); // this is very expensive (roughly doubles the compute time for an update)
 };
 
 Beam.prototype.highlight = function() {

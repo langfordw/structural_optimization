@@ -1,5 +1,7 @@
+var T = Array.matrix(6,6,0);
+
 function DynamicSolver() {
-	this.delT = 0.01;
+	this.delT = 1.0;
 	this.position;
 	this.lastPosition;
 	this.nextPosition;
@@ -12,7 +14,8 @@ function DynamicSolver() {
 	this.simBeams = [];
 	this.indexMap = [];
 	this.simNodes = [];
-	this.debug = 0;
+	this.debug = 2;
+	
 }
 
 
@@ -65,21 +68,19 @@ DynamicSolver.prototype.firstStep = function() {
 	// }
 	// this.calcAccel();
 	this.calcPosition();
-	this.lastPosition = this.position;
-	this.position = this.nextPosition;
-	this.global_position = numeric.add(this.global_position,numeric.sub(this.position,this.lastPosition));
+	// this.lastPosition = this.position;
+	// this.position = this.nextPosition;
+	// this.global_position = numeric.add(this.global_position,numeric.sub(this.position,this.lastPosition));
 	console.log("first step:");
 	console.log(this)
 }
 
 DynamicSolver.prototype.step = function() {
 	this.calcPosition();
-	this.lastPosition = this.position;
-	this.position = this.nextPosition;
-	this.global_position = numeric.add(this.global_position,numeric.sub(this.position,this.lastPosition));
+	
 
 	// this.calcAccleration();
-	this.calcVelocity();
+	// this.calcVelocity();
 	if(this.debug) console.log(this);
 }
 
@@ -206,6 +207,7 @@ DynamicSolver.prototype.calcVelocity = function() {
 DynamicSolver.prototype.calcAccel = function() {
 	this.nextPosition = Array.vector(this.numNodes*3,0);
 	this.acceleration = Array.vector(this.numNodes*3,0);
+	this.velocity = Array.vector(this.numNodes*3,0);
 	for (var beam_index=0; beam_index < this.numBeams; beam_index++) {
 		var Mel = this.simBeams[beam_index].Mel;
 		var Mel_inv = this.simBeams[beam_index].Mel_inv;
@@ -361,6 +363,7 @@ DynamicSolver.prototype.calcAccel = function() {
 
 
 DynamicSolver.prototype.calcPosition = function() {
+	this.velocity = Array.vector(this.numNodes*3,0);
 	this.nextPosition = Array.vector(this.numNodes*3,0);
 	this.acceleration = Array.vector(this.numNodes*3,0);
 	for (var beam_index=0; beam_index < this.numBeams; beam_index++) {
@@ -402,7 +405,7 @@ DynamicSolver.prototype.calcPosition = function() {
 							   this.externalForces[node2index*3+1], 
 							   this.externalForces[node2index*3+2]];
 
-		var T = this.calcT(global_pos);
+		this.calcT(global_pos,T);
 		var K_global = numeric.dot(numeric.transpose(T),numeric.dot(Kel,T));
 		var M_inv_global = numeric.dot(T,numeric.dot(Mel_inv,numeric.transpose(T)));
 		var M_global = numeric.dot(numeric.transpose(T),numeric.dot(Mel,T));
@@ -476,15 +479,21 @@ DynamicSolver.prototype.calcPosition = function() {
 		var term3 = numeric.dot(M_global,lastPos);
 
 		var vel = numeric.sub(pos,lastPos);
-		var beta = 1.0;
-		var alpha = 1.0;
+		var beta = 0.1;
+		var alpha = 0.1;
 		var damping = numeric.add(numeric.mul(beta,K_global),numeric.mul(alpha,M_global));
-		console.log("damping: ");
-		console.log(numeric.dot(damping,vel))
+		console.log("mass damping: ");
+		console.log(numeric.dot(numeric.mul(alpha,M_global),vel))
+
+		console.log("stiffness damping: ");
+		console.log(numeric.dot(numeric.mul(beta,K_global),vel))
+
 		numeric.subeq(netforce,numeric.dot(damping,vel));
+		console.log("netforce:")
+		console.log(netforce)
+
 		var accel = numeric.dot(M_inv_global,netforce);
 		
-
 		var temp = numeric.sub(numeric.mul(2,pos),lastPos);
 
 		var new_pos = numeric.add(temp,numeric.mul(Math.pow(this.delT,2),accel));
@@ -493,24 +502,30 @@ DynamicSolver.prototype.calcPosition = function() {
 		this.acceleration[node1index*3] += accel[0];
 		this.acceleration[node1index*3+1] += accel[1];
 		this.acceleration[node1index*3+2] += accel[2];
-	// }
-	// if (!this.simBeams[i].node2fixed) {
-		this.acceleration[node2index*3] += accel[3];
-		this.acceleration[node2index*3+1] += accel[4];
-		this.acceleration[node2index*3+2] += accel[5];
-		
-		// if (!this.simBeams[beam_index].node1fixed) {
-			this.nextPosition[node1index*3] += new_pos[0];
-			this.nextPosition[node1index*3+1] += new_pos[1];
-			this.nextPosition[node1index*3+2] += new_pos[2];
-		// }
-		// if (!this.simBeams[beam_index].node2fixed) {
-			this.nextPosition[node2index*3] += new_pos[3];
-			this.nextPosition[node2index*3+1] += new_pos[4];
-			this.nextPosition[node2index*3+2] += new_pos[5];
-		// }
 
-		console.log(" " + accel.toString());
+		this.acceleration[node2index*3] -= accel[3];
+		this.acceleration[node2index*3+1] -= accel[4];
+		this.acceleration[node2index*3+2] -= accel[5];
+		
+		this.velocity[node1index*3] += vel[0];
+		this.velocity[node1index*3+1] += vel[1];
+		this.velocity[node1index*3+2] += vel[2];
+
+		this.velocity[node2index*3] -= vel[3];
+		this.velocity[node2index*3+1] -= vel[4];
+		this.velocity[node2index*3+2] -= vel[5];
+
+		this.nextPosition[node1index*3] += new_pos[0];
+		this.nextPosition[node1index*3+1] += new_pos[1];
+		this.nextPosition[node1index*3+2] += new_pos[2];
+
+		this.nextPosition[node2index*3] -= new_pos[3];
+		this.nextPosition[node2index*3+1] -= new_pos[4];
+		this.nextPosition[node2index*3+2] -= new_pos[5];
+
+
+		console.log("accel:")
+		console.log(accel);
 
 		if (this.debug>=2) {
 			console.log("beam: " + beam_index);
@@ -518,6 +533,8 @@ DynamicSolver.prototype.calcPosition = function() {
 			console.log("indexes: " + node1index*3 + " --> " + node2index*3);
 			console.log("T: ");
 			console.log(T);
+			console.log("K:");
+			console.log(Kel)
 			console.log("Pos: ");
 			console.log(pos);
 
@@ -541,19 +558,22 @@ DynamicSolver.prototype.calcPosition = function() {
 			console.log(temp)
 		}
 	}
+	this.lastPosition = this.position;
+	this.position = this.nextPosition;
+	this.global_position = numeric.add(this.global_position,numeric.sub(this.position,this.lastPosition));
 }
 
 DynamicSolver.prototype.updateForces = function() {
 
 }
 
-DynamicSolver.prototype.calcT = function(pos) {
+DynamicSolver.prototype.calcT = function(pos,T) {
 	// pos is a 6x1 vector
 	var len = Math.sqrt(Math.pow((pos[3]-pos[0]),2) + Math.pow((pos[4]-pos[1]),2));
-	var c = (pos[3]-pos[0])/len;
-	var s = (pos[4]-pos[1])/len;
+	var c = -(pos[0]-pos[3])/len;
+	var s = (pos[1]-pos[4])/len;
 
-	var T = Array.matrix(6,6,0);
+	if (this.debug>1) console.log("c: " + c + "  s: " + s);
 
 	var i = 0;
 	T[i][i] = c;

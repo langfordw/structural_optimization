@@ -136,6 +136,22 @@ SimBeam.prototype.calcK = function() {
 		this.Kel[i+2][j+1] = 6*l*a2;
 		this.Kel[i+1][j+2] = -6*l*a2;
 		this.Kel[i+2][j+2] = 2*Math.pow(l,2)*a2;
+
+		// i = 0;
+		// j = 3;
+		// this.Kel[i+0][j+0] = -a1;
+		// this.Kel[i+1][j+1] = -12*a2;
+		// this.Kel[i+2][j+1] = 6*l*a2;
+		// this.Kel[i+1][j+2] = -6*l*a2;
+		// this.Kel[i+2][j+2] = 2*Math.pow(l,2)*a2;
+
+		// i = 3;
+		// j = 0;
+		// this.Kel[i+0][j+0] = -a1;
+		// this.Kel[i+1][j+1] = -12*a2;
+		// this.Kel[i+2][j+1] = -6*l*a2;
+		// this.Kel[i+1][j+2] = 6*l*a2;
+		// this.Kel[i+2][j+2] = 2*Math.pow(l,2)*a2;
 	// }
 }
 

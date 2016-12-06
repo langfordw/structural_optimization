@@ -1,6 +1,6 @@
 var globals = {
-	nwide: 2,
-	ntall: 2,
+	nwide: 10,
+	ntall: 10,
 	lattice_pitch: 100,
 	linear_scale: 1.0,
 	angular_scale: 1.0,
@@ -88,11 +88,11 @@ var globals = {
 			var start = new Date().getTime();
 			for (var i=0; i < globals.control_parameters.ntimes; i++) {
 				dynSolver.step();
+				renderDynamic();
 			}
 			var dt = new Date().getTime() - start;
 			console.log('Solved in ' + dt + 'ms');
-			renderDynamic();
-
+			
 		},
 		ntimes: 1
 	}
@@ -439,7 +439,8 @@ function stringifyGeometry() {
 
 function buildFromJSON(objects) {
 	console.log("building objects...")
-	// sceneClear();
+	sceneClear();
+	sceneClearBeam();
 	var _nodes = [];
 	var _beams = [];
 	var _constraints = [];
@@ -469,6 +470,7 @@ function buildFromJSON(objects) {
 	globals.geom = {nodes:_nodes,
 					beams:_beams,
 					constraints:_constraints}
+	sceneAdd(beamWrapper)
 	console.log(globals.geom)
 }
 

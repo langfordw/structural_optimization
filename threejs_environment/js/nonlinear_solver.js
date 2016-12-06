@@ -11,10 +11,6 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 
 	updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
 	solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
-	// setup_solve('frame',globals.geom);
-
-	// u_max = solve('frame',globals.geom);
-	// var solver = new FrameSolver(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
 	var u_max = solver.solve();
 
 	var trace = [];
@@ -35,34 +31,27 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 				magnitude *= 0.5;
 
 				updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
-				solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
-				// setup_solve('frame',globals.geom);
-				// solver.assemble_X();
-				// solver.Ksys = math.zeros(solver.num_dofs, solver.num_dofs);
-				// solver.calculate_Ksys();
-				// solver.beams = globals.geom.beams;
-				// solver.nodes = globals.geom.nodes;
-				// u_max = solve('frame',globals.geom);
+
+				solver.setupIteration();
 				u_max = solver.solve();
+
 				iter_count++;
+			}
+			for (var i=0; i < globals.geom.nodes.length; i++) {
+				var node = globals.geom.nodes[i];
+				node.u_cumulative = [0,0,0];
 			}
 		} else {
 			bakeGeometry();
 
 			tracer.update();
 
-			// solver.Ksys = math.zeros(solver.num_dofs, solver.num_dofs);
-			// solver.calculate_Ksys();
-			// solver.beams = globals.geom.beams;
-			// solver.nodes = globals.geom.nodes;
-			// console.log(solver)
 			updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
-			solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
-			u_max = solver.solve();
-			// setup_solve('frame',globals.geom);
-			// u_max = solve('frame',globals.geom);
-			deformGeometryBending(globals.geom,1.0);
-			// deformGeometryFast(globals.geom);
+
+			solver.setupIteration();
+			u_max = solver.solve(false);
+			// deformGeometryBending(globals.geom,1.0);
+			deformGeometryFast(globals.geom);
 			iter_count++;
 
 			force_sum += magnitude;	
@@ -76,23 +65,18 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 			}
 			
 		}
+		solver.solve(true);
 
 	}
 
 	if (iter_count == maxiter) {
 		console.log("Max iterations reached.")
 	}
-	console.log(tracer.traces);
 	tracer.drawTraces();
 
-	// total_max_norm += max_u_norm;
-	// total_max_disp[0] += max_disp_node.u[0];
-	// total_max_disp[1] += max_disp_node.u[1];
 	globals.control_parameters.n_iter = "" + iter_count;
 	globals.control_parameters.displacement_norm = "" + u_total.toFixed(2) + "mm";
 	gui.updateDisplay();
-	// globals.control_parameters.displacement_norm = '' + total_max_norm.toFixed(2) + 'mm @ node ' + max_disp_node.index;
-	// globals.control_parameters.displacement_xyz = "(" + total_max_disp[0].toFixed(2) + ", " + total_max_disp[1].toFixed(2) + ") mm";
 
 	deformGeometryBending(globals.geom,globals.linear_scale);
 

@@ -61,11 +61,11 @@ function generateGeometry() {
 
 function deformGeometryBending(geom,linear_scale=1.0) {
 	_.each(geom.nodes, function(node) {
-		if (node.u_cumulative == null) {
-			_.each(globals.geom.nodes, function(node) {
-				node.u_cumulative = node.u;
-			});	
-		}
+		// if (node.u_cumulative == null) {
+		// 	_.each(globals.geom.nodes, function(node) {
+		// 		node.u_cumulative = node.u;
+		// 	});	
+		// }
 		node.setPosition(new THREE.Vector3(node.x0+linear_scale*node.u_cumulative[0],0,node.z0-linear_scale*node.u_cumulative[1]));
 		node.theta = node.theta0 + linear_scale*node.u_cumulative[2];
 		// node.moveBy(linear_scale*node.u[0],linear_scale*node.u[1],node.u[2]);
@@ -133,12 +133,11 @@ function displayBeamForces(beams) {
 
 	_.each(beams, function(beam) {
 		// var f = Math.abs(beam.f_local._data[f_index]);
-		
 		if (f_index < 2) {
-			f = Math.abs(beam.f_local._data[f_index]-beam.f_local._data[f_index+3]);
+			f = Math.abs(getEl(beam.f_local,[f_index,0])-getEl(beam.f_local,[f_index+3,0]));
 		} else {
 			// for moment
-			f = Math.abs(beam.f_local._data[f_index])+Math.abs(beam.f_local._data[f_index+3]);
+			f = Math.abs(getEl(beam.f_local,[f_index,0]))+Math.abs(getEl(beam.f_local,[f_index+3,0]));
 		}
 		
 		if(f < minf) {
@@ -150,9 +149,9 @@ function displayBeamForces(beams) {
 
 	_.each(beams, function(beam) {
 		if (f_index < 2) {
-			beam.setHSLColor(Math.abs(beam.f_local._data[f_index]-beam.f_local._data[f_index+3]),minf,maxf);
+			beam.setHSLColor(Math.abs(getEl(beam.f_local,[f_index,0])-getEl(beam.f_local,[f_index+3,0])),minf,maxf);
 		} else {
-			beam.setHSLColor(Math.abs(beam.f_local._data[f_index])+Math.abs(beam.f_local._data[f_index+3]),minf,maxf);
+			beam.setHSLColor(Math.abs(getEl(beam.f_local,[f_index,0]))+Math.abs(getEl(beam.f_local,[f_index+3,0])),minf,maxf);
 		}
 		
 	});
