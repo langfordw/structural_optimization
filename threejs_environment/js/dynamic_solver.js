@@ -12,7 +12,7 @@ function DynamicSolver() {
 	this.simBeams = [];
 	this.indexMap = [];
 	this.simNodes = [];
-	this.debug = 2;
+	this.debug = 0;
 }
 
 
@@ -464,7 +464,7 @@ DynamicSolver.prototype.calcPosition = function() {
 				}
 			}
 		}
-		M_global = numeric.diag([1,1,1,1,1,1])
+		// M_global = numeric.diag([1,1,1,1,1,1])
 		var M_inv_global = numeric.inv(M_global);
 							   
 		var internal_forces = numeric.dot(K_global,pos);
@@ -475,6 +475,13 @@ DynamicSolver.prototype.calcPosition = function() {
 		var term2 = numeric.dot(numeric.sub(numeric.mul(2,M_global),numeric.mul(Math.pow(this.delT,2),K_global)),pos);
 		var term3 = numeric.dot(M_global,lastPos);
 
+		var vel = numeric.sub(pos,lastPos);
+		var beta = 1.0;
+		var alpha = 1.0;
+		var damping = numeric.add(numeric.mul(beta,K_global),numeric.mul(alpha,M_global));
+		console.log("damping: ");
+		console.log(numeric.dot(damping,vel))
+		numeric.subeq(netforce,numeric.dot(damping,vel));
 		var accel = numeric.dot(M_inv_global,netforce);
 		
 
@@ -503,6 +510,7 @@ DynamicSolver.prototype.calcPosition = function() {
 			this.nextPosition[node2index*3+2] += new_pos[5];
 		// }
 
+		console.log(" " + accel.toString());
 
 		if (this.debug>=2) {
 			console.log("beam: " + beam_index);
