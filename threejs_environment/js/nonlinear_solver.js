@@ -1,4 +1,4 @@
-function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
+function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) {
 	// first, do a linear solve with the full force and check max displacement
 	var magnitude = Math.sqrt(Math.pow(full_force[0],2) + Math.pow(full_force[1],2));
 	var full_magnitude = magnitude;
@@ -23,9 +23,13 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 
 		console.log("starting loop...");
 	}
+	
+	var solve_count = 0;
+	var solve_timer = new Date().getTime();
 	while (force_sum < full_magnitude && iter_count < maxiter) {
 
 		if (u_max > eps) {
+			console.log("determining step size...")
 			while (u_max > eps && iter_count < maxiter) {
 				if (debug) { console.log("refining step") }
 				magnitude *= 0.5;
@@ -34,6 +38,7 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 
 				solver.setupIteration();
 				u_max = solver.solve();
+				solve_count++;
 
 				iter_count++;
 			}
@@ -41,6 +46,20 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 				var node = globals.geom.nodes[i];
 				node.u_cumulative = [0,0,0];
 			}
+			console.log("found valid step size: f_step = " + magnitude);
+			if (solve_count != 0) {
+				var solve_time = ((new Date().getTime()) - solve_timer)/solve_count;
+				console.log("avg. evaluation time = " + solve_time + "ms");
+				var num_iterations = full_magnitude/magnitude;
+				console.log("num iterations = " + num_iterations);
+				var expected_time = solve_time * num_iterations;
+				console.log("expected solve time = " + expected_time + "ms");
+				if (expected_time > 60000) {
+					console.warn("solve will take a long time")
+					break;
+				}
+			}
+			
 		} else {
 			// bakeGeometry();
 
@@ -56,6 +75,8 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=1000,debug=false) {
 
 			force_sum += magnitude;	
 			u_total += u_max;
+
+			console.log("force_sum = " + force_sum);
 
 			if (debug) { 
 				console.log("found valid step");

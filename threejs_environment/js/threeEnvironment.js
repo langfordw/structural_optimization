@@ -122,11 +122,36 @@ function render(){
     renderer.render(scene, camera);
 }
 
-function animate() {
-	requestAnimationFrame( animate );
-	render();
-	controls.update();
+function startAnimation(callback){
+    if (globals.isAnimating){
+        console.warn("already animating");
+        return;
+    }
+    console.log("starting animation");
+    globals.isAnimating = true;
+    loop(function(){
+        callback();
+        render();
+    });
+
 }
+function stopAnimation(){
+    if (globals.isAnimating) console.log("stopping animation");
+    globals.isAnimating = false;
+}
+
+function loop(callback){
+    callback();
+    requestAnimationFrame(function(){
+        if (globals.isAnimating) loop(callback);
+    });
+}
+
+// function animate() {
+// 	requestAnimationFrame( animate );
+// 	render();
+// 	controls.update();
+// }
 
 function onWindowResizeThree() {
     camera.aspect = window.innerWidth / window.innerHeight;

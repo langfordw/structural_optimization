@@ -55,6 +55,8 @@ window.addEventListener('dblclick',function() {
 			subdivideBeam(highlightedObj);
 		}
 	}
+
+	render();
 }, false);
 
 window.addEventListener('mousedown', function(e){
@@ -69,6 +71,7 @@ window.addEventListener('mousedown', function(e){
 
     // window.removeEventListener( 'mousemove', mouseMove );
 	}
+	render();
 }, false);
 window.addEventListener('mouseup', function(){
 	if (mouseInEnv) {
@@ -90,6 +93,7 @@ window.addEventListener('mouseup', function(){
 
         // window.addEventListener( 'mousemove', mouseMove, false );
     }
+    render();
 }, false);
 
 window.addEventListener( 'mousemove', mouseMove, false );
@@ -291,7 +295,8 @@ function mouseMove(e){
 				   				(-tmp2.y+1)/2*window.innerHeight];
 			$selectbox.css({left:selectbounds[0], top:selectbounds[3]});
 			$selectbox.css({height:selectbounds[1]-selectbounds[3], width:selectbounds[2]-selectbounds[0]});
-	    	
+
+	    	render();
 	    } else {
 	    	var intersections = raycaster.intersectObjects(wrapper.children.concat(beamWrapper.children));
 		    highlightedObj = null;
@@ -313,6 +318,7 @@ function mouseMove(e){
 			            }
 			        });
 		        }
+		        render();
 		    }
 
 		    if (highlightedObj) {
@@ -399,6 +405,7 @@ function mouseMove(e){
 			    $toolTip3.hide();
 
 			    highlightedObj = null;
+			    render();
 			}
 	    }
 	}

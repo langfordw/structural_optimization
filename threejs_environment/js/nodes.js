@@ -62,7 +62,6 @@ Node.prototype.addPart = function(part) {
 }
 
 Node.prototype.removeBeamRef = function(beam) {
-	console.log("here")
 	var index = this.beams.indexOf(beam);
 	this.beams.splice(index,1);
 
@@ -128,10 +127,10 @@ Node.prototype.setFixed = function(fixed,dof_object) {
 	} else {
 		this.fixed_dof = {x:0,z:0,c:0};
 		wrapper.remove(this.fixed_triangle);
-		_.each(this.beams, function(beam){
-			beam.assemble_T();
-			beam.calculate_4ks();
-		});
+		// _.each(this.beams, function(beam){
+		// 	beam.assemble_T();
+		// 	beam.calculate_4ks();
+		// });
 	}
 }
 

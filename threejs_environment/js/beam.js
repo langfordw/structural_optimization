@@ -20,7 +20,7 @@ function Beam(nodes, index, a1a2=[10000000,100000000],type='rigid') {
 	this.rho = 1.0e1;//2.7e2; //e-6 aluminum = 2.7g/cm^3 (in kg/mm^3) //2700;//kg/m^3
 	this.A = 100; // 10 x 10 mm
 
-	this.k_prime = math.zeros(6,6,'sparse');
+	this.k_prime = math.zeros(6,6);
 	this.assemble_k_prime();
 
 	this.kp = math.zeros(6,6,'sparse');
@@ -237,10 +237,14 @@ Beam.prototype.calculate_4ks = function() {
 	if (!node0.fixed && !node1.fixed) {
 		// K is 6x6
 		this.k.full = math.multiply(math.multiply(math.transpose(this.T),k0),this.T);
-		this.k.n00 = math.subset(this.k.full, math.index(math.range(0,3),math.range(0,3)));
-		this.k.n11 = math.subset(this.k.full, math.index(math.range(3,6),math.range(3,6)));
-		this.k.n01 = math.subset(this.k.full, math.index(math.range(0,3),math.range(3,6)));
-		this.k.n10 = math.subset(this.k.full, math.index(math.range(3,6),math.range(0,3)));
+		// this.k.n00 = math.subset(this.k.full, math.index(math.range(0,3),math.range(0,3)));
+		// this.k.n11 = math.subset(this.k.full, math.index(math.range(3,6),math.range(3,6)));
+		// this.k.n01 = math.subset(this.k.full, math.index(math.range(0,3),math.range(3,6)));
+		// this.k.n10 = math.subset(this.k.full, math.index(math.range(3,6),math.range(0,3)));
+		get3x3subset(this.k.full, [0,0], this.k.n00);
+		get3x3subset(this.k.full, [3,3], this.k.n11);
+		get3x3subset(this.k.full, [0,3], this.k.n01);
+		get3x3subset(this.k.full, [3,0], this.k.n10);
 	} else if (!node0.fixed) {
 		// only node0 is free, K is 3x3
 		this.k.full = math.multiply(math.multiply(math.transpose(this.T),k0),this.T);

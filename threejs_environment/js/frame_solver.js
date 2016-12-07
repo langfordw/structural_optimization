@@ -38,9 +38,9 @@ FrameSolver.prototype.assemble_X = function() {
 		var node = this.nodes[i];
 		if (!node.fixed) {
 			if (node.externalForce != null) {
-				this.X.subset(math.index(index),node.externalForce.x);
-				this.X.subset(math.index(index+1),node.externalForce.z);
-				this.X.subset(math.index(index+2),node.externalMoment);
+				setEl1(this.X,index,node.externalForce.x);
+				setEl1(this.X,index+1,node.externalForce.x);
+				setEl1(this.X,index+2,node.externalForce.x);
 			}
 			index += 3;	
 		}	
@@ -93,14 +93,21 @@ FrameSolver.prototype.calculate_Ksys = function() {
 
 FrameSolver.prototype.calculate_U = function() {	
 	// this.u = math.lusolve(math.lup(this.Ksys),this.X);
-	this.u = math.lusolve(this.Ksys,this.X);
+	this.u = math.lusolve(math.slu(this.Ksys,3,0),this.X);
+	// this.u = math.lusolve(this.Ksys,this.X);
+	// var L = cholesky(this.Ksys);
+	// this.u = math.lsolve(L,this.X);
+	// console.log(this.u)
 
 	return this.u
 }
 
 FrameSolver.prototype.solve = function(calc_local=false) {
 	this.calculate_U();
+	// this.u = math.zeros(this.num_dofs,1);
+}
 
+FrameSolver.prototype.updateUCumulative = function() {
 	var index = 0;
 	var max_u_norm = 0;
 	for (var i = 0; i < this.nodes.length; i++) {
@@ -189,4 +196,27 @@ FrameSolver.prototype.setupIteration = function() {
 
 	this.assemble_X();
 	this.calculate_Ksys();
+}
+
+function cholesky(A) {
+	var n = A._size[0];
+	// var L = Array.matrix(n,n,0);
+	var L = math.zeros(n,n,'sparse');
+	var s = 0;
+	console.log(L)
+	for (var i = 0; i < n; i++)
+        for (var j = 0; j < (i+1); j++) {
+            s = 0;
+            for (var k = 0; k < j; k++) {
+                // s += L[i * n + k] * L[j * n + k];
+                s += getEl(L,[i,k]) * getEl(L,[j,k]);
+
+            }
+
+            // L[i * n + j] = (i == j) ? Math.pow(A[i * n + i] - s,2) : (1.0 / L[j * n + j] * (A[i * n + j] - s));
+            setEl(L,[i,j],(i == j) ? Math.pow(getEl(A,[i,i]) - s,2) : (1.0 / getEl(L,[j,j]) * (getEl(A,[i,j]) - s)));
+
+        }
+ 
+    return L;
 }

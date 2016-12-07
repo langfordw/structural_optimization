@@ -1,5 +1,5 @@
 var globals = {
-	nwide: 10,
+	nwide: 2,
 	ntall: 2,
 	lattice_pitch: 100,
 	linear_scale: 1.0,
@@ -8,6 +8,7 @@ var globals = {
 	view_mode: { deformed: false },
 	geom: null,
 	solved: false,
+	isAnimating: false,
 	control_parameters: {
 		deformGeometry: false,
 		forceMode: "axial",
@@ -22,6 +23,7 @@ var globals = {
 				gui.updateDisplay();
 				deformGeometryBending(globals.geom,globals.linear_scale);
 			}
+			render();
 		},
 		reset: function() {
 			tracer.clearTraces();
@@ -32,9 +34,11 @@ var globals = {
 				resetLattice();
 				solver.reset();
 			}
+			render();
 		},
 		bake: function() {
 			bakeGeometry();
+			render();
 		},
 		n_iter: '50',
 		solveIterations: function() {
@@ -49,13 +53,14 @@ var globals = {
 			gui.updateDisplay();
 			disp.open();
 			selection.close();
+			render();
 		},
 		reset_nonlin: function() {
 			tracer.clearTraces();
 			if (globals.geom != null) {
 				resetNonlinearSolve();
 			}
-
+			render();
 		},
 		selectMode: "none",
 		fv_x: 100,
@@ -64,6 +69,7 @@ var globals = {
 		displacement_xyz: '(0, 0, 0)',
 		radialStiffness: function() {
 			measureRadialStiffness();
+			render();
 		},
 		stressSelectionThreshold: 1000,
 		subdivideSelection: function() {
@@ -71,6 +77,7 @@ var globals = {
 			console.log('selected:')
 			console.log(selected)
 			subdivideSelection(selected);
+			render();
 		},
 		download: function() {
 			var data = stringifyGeometry();
@@ -92,7 +99,7 @@ var globals = {
 			}
 			var dt = new Date().getTime() - start;
 			console.log('Solved in ' + dt + 'ms');
-			
+			render();
 		},
 		ntimes: 1
 	}
@@ -167,6 +174,7 @@ disp.add(globals.control_parameters,'deformGeometry').onChange((function(value) 
 	} else {
 		undeformGeometryBending(globals.geom);
 	}
+	render();
 }));
 
 var deformation_scale_control = disp.add(globals.control_parameters, 'deformationScale', 0, 2).name("Scale");
@@ -178,10 +186,12 @@ deformation_scale_control.onChange(function(value) {
 	if (globals.control_parameters.deformGeometry) {
  		deformGeometryBending(globals.geom,globals.linear_scale);
 	}
+	render();
 });
 
 force_mode_control.onChange(function(value) {
 	displayBeamForces(globals.geom.beams);
+	render();
 });
 
 disp.add(globals.control_parameters,'n_iter').name("Iterations");
@@ -192,6 +202,7 @@ var filter = gui.addFolder('Selection Filter');
 filter.add(globals.control_parameters,'stressSelectionThreshold',0,10000).name("stress threshold").onChange(function(value) {
 	globals.control_parameters.stressSelectionThreshold = value;
 	selectStressed(value);
+	render();
 }).onFinishChange(function(value) {
 	var selected = selectStressed(value);
 	console.log('selected:')
@@ -199,6 +210,7 @@ filter.add(globals.control_parameters,'stressSelectionThreshold',0,10000).name("
 	resetLattice();
 	solver.reset();
 	subdivideSelection(selected);
+	render();
 });
 filter.add(globals.control_parameters,'subdivideSelection')
 
@@ -472,6 +484,7 @@ function buildFromJSON(objects) {
 					constraints:_constraints}
 	sceneAdd(beamWrapper)
 	console.log(globals.geom)
+	render();
 }
 
 function download(text, name, type) {

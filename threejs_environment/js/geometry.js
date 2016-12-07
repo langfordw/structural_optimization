@@ -81,15 +81,14 @@ function deformGeometryBending(geom,linear_scale=1.0) {
 }
 
 function deformGeometryFast(geom) {
-	_.each(geom.nodes, function(node) {
+	for (var i=0; i < geom.nodes.length; i++) {
+		var node = geom.nodes[i]
 		if (node.u_cumulative == null) {
-			_.each(globals.geom.nodes, function(node) {
-				node.u_cumulative = node.u;
-			});	
+			node.u_cumulative = node.u;
 		}
 		node.setPosition(new THREE.Vector3(node.x0+node.u_cumulative[0],0,node.z0-node.u_cumulative[1]));
 		node.theta = node.theta0 + node.u_cumulative[2];
-	});
+	}
 }
 
 function undeformGeometryBending(geom) {
@@ -205,11 +204,12 @@ function displayBeamForces(beams) {
 
 function updateExternalForce(fx, fy) {
 	if (globals.geom != null) {
-		_.each(globals.geom.nodes, function(node) {
+		for (var i = 0; i < globals.geom.nodes.length; i++) {
+			var node = globals.geom.nodes[i];
 			if (node.externalForce != null) {
 				node.setExternalForce(fx,-fy);
 			}
-		});
+		}
 	}
 }
 
