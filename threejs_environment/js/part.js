@@ -118,15 +118,15 @@ Part.prototype.destroy = function() {
 }
 
 Part.prototype.pushNodes = function(nodes) {
-	console.log("push nodes")
+	// console.log("push nodes")
 	var nodes = _.difference(nodes, this.nodes);
 	_.each(nodes, function(node) {
 		this.nodes.push(node);
 		if (node.internal) { 
-			console.log("internal")
+			// console.log("internal")
 			this.internal_nodes.push(node);
 		} else {
-			console.log("external")
+			// console.log("external")
 			this.edge_nodes.push(node);
 		}
 	},this);

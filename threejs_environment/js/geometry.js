@@ -479,11 +479,11 @@ function addBeams(thisnode,othernodes) {
 		_.each(globals.geom.parts, function(part) {
 			if (_.contains(part.nodes,thisnode) && _.contains(part.nodes,othernode)) {
 				beam_exists = true;
-				console.log("part exists")
+				// console.log("part exists")
 				// console.log(thisnode)
 				// console.log(othernode)
 			} else {
-				console.log("should make part")
+				// console.log("should make part")
 			}
 		});
 		if (!beam_exists) {

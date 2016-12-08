@@ -24,27 +24,46 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 	console.log("# of steps required: " + num_steps)
 	console.log("expected time per step = " + solve_time + "ms");
 	console.log("expected total time = " + expected_time + "ms");
-	if (expected_time > 60000) {
+	if (expected_time > 30000) {
 		console.warn("solve will take a long time")
 		return;
 	}
 
 	var trace = [];
 
-	updateExternalForce(unit_v[0]*fstep*10,unit_v[1]*fstep*10);
+	updateExternalForce(unit_v[0]*fstep,unit_v[1]*fstep);
 	solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
 	
-	while (1) {
-		globals.isAnimating = true;
+	// // globals.isAnimating = true;
+	// startAnimation(function() {
+	// 	while(1) {
+	// 		stepSolve(unit_v[0]*fstep,unit_v[1]*fstep);
+	// 		console.log(iter_count);
+	// 		console.log(globals.geom.nodes[5].u)
+	// 		console.log(globals.geom)
+	// 		iter_count++;
+	// 		if (iter_count > num_steps) {
+	// 			stopAnimation();
+	// 			break;
+	// 		}
+	// 	}
+	// });
+	globals.isAnimating = true;
+	loop( function() {
 		stepSolve([unit_v[0]*fstep,unit_v[1]*fstep]);
 		iter_count++;
-
-		console.log(solver)
-		console.log(globals.geom.nodes[3].u_cumulative)
-		if (iter_count >= num_steps) break;
-		if (iter_count >= maxiter) break;
-	}
+		render();
+		// console.log(solver)
+		// console.log(globals.geom.nodes[3].u_cumulative)
+		if (iter_count >= num_steps) globals.isAnimating = false;
+		if (iter_count >= maxiter) globals.isAnimating = false;
+	})
+	// while (1) {
+		
+	// }
 	console.log(globals.geom)
+	console.log(globals.control_parameters.fv_x)
+	console.log(globals.control_parameters.fv_y)
 }
 
 
@@ -82,12 +101,15 @@ function stepSolve(fstep) {
 	tracer.update();
 	if (fstep != undefined) updateExternalForce(fstep[0],fstep[1]);
 	solver.setupIteration();
+	// solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
 	u_max = solver.solve(true);
-	// deformGeometryBending(globals.geom,1.0);
-	deformGeometryFast(globals.geom);
+	// console.log(u_max)
+	deformGeometryBending(globals.geom,1.0);
+	// deformGeometryFast(globals.geom);
 }
 
 function resetNonlinearSolve() {
+	globals.isAnimating = false;
 	resetLattice();
 	_.each(globals.geom.nodes, function(node) {
 		node.u = [0,0,0];

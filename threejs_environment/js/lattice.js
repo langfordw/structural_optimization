@@ -110,7 +110,10 @@ var globals = {
 			console.log('Solved in ' + dt + 'ms');
 			render();
 		},
-		ntimes: 1
+		ntimes: 1,
+		loadExample: function(value) {
+			loadGeo
+		}
 	}
 };
 
@@ -277,6 +280,7 @@ filter.add(globals.control_parameters,'subdivideSelection')
 var load_save = gui.addFolder('Save/Load Geometry');
 load_save.add(globals.control_parameters,'download').name("Download");
 load_save.add(globals.control_parameters,'load').name("Load JSON");
+load_save.add(globals.control_parameters,'loadExample',['arm','auxetic']).name("Load Example");
 
 function initLattice() {
 	// ******** GENERATE BASE GEOMETRY ********
@@ -481,6 +485,9 @@ function buildFromJSON(objects) {
 					globals.geom.constraints.push(node);
 				}
 				if (object.force != null) {
+					globals.control_parameters.fv_x = object.force.x;
+					globals.control_parameters.fv_y = object.force.z;
+					gui.updateDisplay();
 					node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
 				}
 				globals.geom.nodes.push(node)
@@ -538,6 +545,12 @@ function loadGeometry() {
 	    }, false );
 		reader.readAsText( file );
 	})
+}
+
+function loadExample(filename) {
+	$.getJSON( "examples/"+filename+".json", function( json ) {
+	  console.log( json );
+	});
 }
 
 function renderDynamic() {

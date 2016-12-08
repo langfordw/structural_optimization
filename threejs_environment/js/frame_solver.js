@@ -92,7 +92,7 @@ FrameSolver.prototype.calculate_Ksys = function() {
 
 FrameSolver.prototype.calculate_U = function() {	
 	// this.u = math.lusolve(math.lup(this.Ksys),this.X);
-	console.log(this.Ksys)
+	// console.log(this.Ksys)
 	this.u = math.lusolve(math.slu(this.Ksys,3,0),this.X);
 	// this.u = math.lusolve(this.Ksys,this.X);
 	// var L = cholesky(this.Ksys);
@@ -191,17 +191,24 @@ FrameSolver.prototype.reset = function(nodes,beams,constraints) {
 }
 
 FrameSolver.prototype.setupIteration = function() {
-	// do these every evaluation:
-	for (var i = 0; i < this.beams.length; i++) {
-		var beam = this.beams[i];
-		// beam.reset();
-		beam.assemble_T();
-		beam.assemble_kp(); // this is pointless unless i also update u_local and f_local
-		beam.calculate_4ks();
-	}
+	this.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+	// // do these every evaluation:
+	// this.nodes = globals.geom.nodes;
+	// this.beams = globals.geom.beams;
+	// this.constraints = globals.geom.constraints;
+	// for (var i = 0; i < this.beams.length; i++) {
+	// 	var beam = this.beams[i];
+		
+	// 	// beam.reset();
 
+	// 	beam.assemble_T();
+	// 	beam.assemble_kp(); // this is pointless unless i also update u_local and f_local
+	// 	beam.calculate_4ks();
+	// }
+
+	// this.u = math.zeros(this.num_dofs);
 	// this.assemble_X();
-	this.calculate_Ksys();
+	// this.calculate_Ksys();
 }
 
 function cholesky(A) {
