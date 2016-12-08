@@ -202,7 +202,8 @@ function displayBeamForces(beams) {
 // 	globals.geom.nodes.splice(index,1);
 // }
 
-function updateExternalForce(fx, fy) {
+function updateExternalForce(fx, fy, updateDisplay=false) {
+	
 	if (globals.geom != null) {
 		for (var i = 0; i < globals.geom.nodes.length; i++) {
 			var node = globals.geom.nodes[i];
@@ -210,6 +211,14 @@ function updateExternalForce(fx, fy) {
 				node.setExternalForce(fx,-fy);
 			}
 		}
+	}
+	if (updateDisplay) {
+		if (fx <= 1 || fy <= 1) {
+			throw "force is zero"
+		}
+		globals.control_parameters.fv_x = fx;
+		globals.control_parameters.fv_x = fy;
+		gui.updateDisplay();
 	}
 }
 

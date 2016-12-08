@@ -39,13 +39,12 @@ FrameSolver.prototype.assemble_X = function() {
 		if (!node.fixed) {
 			if (node.externalForce != null) {
 				setEl1(this.X,index,node.externalForce.x);
-				setEl1(this.X,index+1,node.externalForce.x);
-				setEl1(this.X,index+2,node.externalForce.x);
+				setEl1(this.X,index+1,node.externalForce.z);
+				setEl1(this.X,index+2,node.externalMoment);
 			}
 			index += 3;	
 		}	
 	}
-
 	return this.X;
 }
 
@@ -102,12 +101,10 @@ FrameSolver.prototype.calculate_U = function() {
 	return this.u
 }
 
-FrameSolver.prototype.solve = function(calc_local=false) {
+FrameSolver.prototype.solve = function(calc_local=false,updateNodes=true) {
 	this.calculate_U();
 	// this.u = math.zeros(this.num_dofs,1);
-}
 
-FrameSolver.prototype.updateUCumulative = function() {
 	var index = 0;
 	var max_u_norm = 0;
 	for (var i = 0; i < this.nodes.length; i++) {
@@ -121,9 +118,12 @@ FrameSolver.prototype.updateUCumulative = function() {
 				      getEl(this.u,[index+2,0])];
 			index+=3;
 
-			node.u_cumulative[0] += node.u[0];
-			node.u_cumulative[1] += node.u[1];
-			node.u_cumulative[2] += node.u[2];
+			if (updateNodes) {
+				if (node.u[0] > 10) throw this
+				node.u_cumulative[0] += node.u[0];
+				node.u_cumulative[1] += node.u[1];
+				node.u_cumulative[2] += node.u[2];
+			}
 
 			var u_norm = Math.sqrt(Math.pow(node.u[0],2) + Math.pow(node.u[1],2));
 			if (u_norm > max_u_norm) { max_u_norm = u_norm; }
@@ -135,7 +135,7 @@ FrameSolver.prototype.updateUCumulative = function() {
 			var beam = this.beams[i];
 			beam.assemble_full_T();
 			beam.assemble_u_local();
-			beam.calculate_local_force();
+			beam.calculate_local_force(); // do need this to update kp...
 			beam.calculate_global_force();
 		}
 	}
@@ -171,30 +171,35 @@ FrameSolver.prototype.reset = function(nodes,beams,constraints) {
 			this.beams[i].reset();
 		}
 
+		// for (var i = 0; i < this.nodes.length; i++) {
+		// 	this.nodes[i].u = [0,0,0];
+		// 	this.nodes[i].u_cumulative = [0,0,0];
+		// }
+
+		this.u = math.zeros(this.num_dofs);
+
+		this.X = math.zeros(this.num_dofs);
+
+		this.init_Ksys();
 	}
 
-	this.u = math.zeros(this.num_dofs);
-
-	this.X = math.zeros(this.num_dofs);
 	this.assemble_X();
 	
 	this.Ksys = math.zeros(this.num_dofs, this.num_dofs, 'sparse');
-	this.init_Ksys();
 	this.calculate_Ksys();
 }
 
 FrameSolver.prototype.setupIteration = function() {
 	// do these every evaluation:
-
 	for (var i = 0; i < this.beams.length; i++) {
 		var beam = this.beams[i];
-
+		// beam.reset();
 		beam.assemble_T();
-		beam.assemble_kp();
+		beam.assemble_kp(); // this is pointless unless i also update u_local and f_local
 		beam.calculate_4ks();
 	}
 
-	this.assemble_X();
+	// this.assemble_X();
 	this.calculate_Ksys();
 }
 

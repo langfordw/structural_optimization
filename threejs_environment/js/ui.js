@@ -363,8 +363,8 @@ function mouseMove(e){
 		    		text3 = "<p><b>beam " + highlightedObj.index + "</b><br>";
 
 		    		if (highlightedObj.f_local != null) {
-		    			var forces = forces2text(highlightedObj.f_local);
-
+		    			var forces = forces2text(highlightedObj.f_local.toArray());
+		    			// console.log(highlightedObj.f_local.toArray().flatten)
 		    			text1 += "fx: " + forces[0] + "<br>"
 			    		text1 += "fy: " + forces[1] + "<br>"
 			    		text1 += "m: " + forces[2] + "<br>"
@@ -414,7 +414,8 @@ function mouseMove(e){
 
 function forces2text(fmatrix) {
 	output = []
-	fmatrix.forEach(function (value, index, matrix) {
+	// fmatrix.forEach(function (value, index, matrix) {
+	_.each(_.flatten(fmatrix), function(value) {
   		output.push(value.toFixed(2));
 	});
 

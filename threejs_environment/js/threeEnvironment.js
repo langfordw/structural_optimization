@@ -7,6 +7,7 @@ var camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.inner
 
 var wrapper = new THREE.Object3D();//object to set global scale and position
 var beamWrapper = new THREE.Object3D();//object to set global scale and position
+var gridHelper;
 
 // var reflectionCube;
 // var refractionCube;
@@ -47,7 +48,9 @@ function initThreeJS() {
 
 	// renderer.setSize( window.innerWidth, window.innerHeight );
 	// container.append(renderer.domElement);
-	scene.background = new THREE.Color(0x404040);
+	// scene.background = new THREE.Color(0x404040);
+	// scene.background = new THREE.Color(0xffffff);
+	scene.background = new THREE.Color(0xdedede);
 	
 
 	// top view
@@ -58,11 +61,17 @@ function initThreeJS() {
 	camera.updateProjectionMatrix();
 	scene.add( camera );
 
-	var helper = new THREE.GridHelper( 10000, 1000, 0xfffff );
-	helper.position.y = 0;
-	helper.material.opacity = 0.5;
-	helper.material.transparent = true;
-	scene.add( helper );
+	// var helper = new THREE.GridHelper( 10000, 1000, 0xfffff );
+	// helper.position.y = 0;
+	// helper.material.opacity = 0.5;
+	// helper.material.transparent = true;
+	// scene.add( helper );
+
+	gridHelper = new THREE.GridHelper( 10000, 1000, 0x202020 );
+	gridHelper.position.y = -20;
+	gridHelper.material.opacity = 0.25;
+	gridHelper.material.transparent = true;
+	scene.add( gridHelper );
 	
 	var ambient = new THREE.AmbientLight( 0xffffff );
 	scene.add( ambient );

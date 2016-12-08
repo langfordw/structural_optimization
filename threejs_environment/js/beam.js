@@ -237,10 +237,6 @@ Beam.prototype.calculate_4ks = function() {
 	if (!node0.fixed && !node1.fixed) {
 		// K is 6x6
 		this.k.full = math.multiply(math.multiply(math.transpose(this.T),k0),this.T);
-		// this.k.n00 = math.subset(this.k.full, math.index(math.range(0,3),math.range(0,3)));
-		// this.k.n11 = math.subset(this.k.full, math.index(math.range(3,6),math.range(3,6)));
-		// this.k.n01 = math.subset(this.k.full, math.index(math.range(0,3),math.range(3,6)));
-		// this.k.n10 = math.subset(this.k.full, math.index(math.range(3,6),math.range(0,3)));
 		get3x3subset(this.k.full, [0,0], this.k.n00);
 		get3x3subset(this.k.full, [3,3], this.k.n11);
 		get3x3subset(this.k.full, [0,3], this.k.n01);
@@ -344,10 +340,6 @@ Beam.prototype.unhighlight = function() {
 	this.highlighted = false;
 }
 
-Beam.prototype.getPE = function() {
-	return (this.a1 * Math.pow(this.len-this.len0,2));
-};
-
 Beam.prototype.getIndex = function() {
 	return this.index;
 };
@@ -413,12 +405,6 @@ Beam.prototype.attachToPart = function(part) {
 Beam.prototype.create = function() {
 	globals.geom.beams.push(this);
 }
-
-// Beam.prototype.detachPart = function() {
-// 	// need to detach the part from the beam and the beam's nodes
-// 	var index = this.part.beams.indexOf(this);
-// 	this.part.beams.splice(index,1);
-// }
 
 Beam.prototype.destroy = function() {
 	console.log("destroy beam " + this.index)

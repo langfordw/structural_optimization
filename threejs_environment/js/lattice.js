@@ -14,10 +14,16 @@ var globals = {
 		forceMode: "axial",
 		deformationScale: 1.0,
 		hideArrows: false,
+		showGrid: true,
+		showPartGrid: false,
+		background: 'light',
 		solve: function() {
 			if (globals.geom != null) {
-				setup_solve('frame',globals.geom);
-				var umax = solve('frame',globals.geom);
+				// solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+				// var umax = solver.solve();
+				// setup_solve(globals.geom);
+				solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+				var umax = solve(globals.geom);
 				globals.control_parameters.displacement_norm = "" + umax.toFixed(2) + "mm";
 				this.deformGeometry = true;
 				gui.updateDisplay();
@@ -27,17 +33,17 @@ var globals = {
 		},
 		reset: function() {
 			tracer.clearTraces();
-			_.each(globals.geom.nodes, function(node) {
-				node.u_cumulative = [0,0,0];
-			});
 			if (globals.geom != null) {
-				resetLattice();
-				solver.reset();
+				resetNonlinearSolve();
 			}
-			render();
-		},
-		bake: function() {
-			bakeGeometry();
+			// tracer.clearTraces();
+			// _.each(globals.geom.nodes, function(node) {
+			// 	node.u_cumulative = [0,0,0];
+			// });
+			// if (globals.geom != null) {
+			// 	resetLattice();
+			// 	solver.reset();
+			// }
 			render();
 		},
 		n_iter: '50',
@@ -115,12 +121,50 @@ var dynSolver;
 var gui = new dat.GUI();
 gui.domElement.id = 'gui'
 
+var env = gui.addFolder('Environment');
+env.add(globals.control_parameters, 'showGrid').onChange(function(value) {
+	if (value) {
+		gridHelper.visible = true;
+	} else {
+		gridHelper.visible = false;
+	}
+	render();
+}).name('Show Grid');
+env.add(globals.control_parameters, 'showPartGrid').onChange(function(value) {
+	if (value) {
+		_.each(globals.geom.parts, function(part) {
+			part.object3D.visible = true;
+		})
+	} else {
+		_.each(globals.geom.parts, function(part) {
+			part.object3D.visible = false;
+		})
+	}
+	render();
+}).name('Part Grid');
+env.add(globals.control_parameters, 'background',['light','dark','white']).onChange(function(value) {
+	if (value == 'white') {
+		scene.background = new THREE.Color(0xffffff);
+		gridHelper.color1 = new THREE.Color(0x202020);
+	} else if (value == 'light') {
+		scene.background = new THREE.Color(0xdedede);
+		gridHelper.color1 = new THREE.Color(0x202020);
+	} else if (value == 'dark') {
+		scene.background = new THREE.Color(0x404040);
+		gridHelper.color1 = new THREE.Color(0xffffff);
+		gridHelper.color2 = new THREE.Color(0x00ffff);
+	}
+	render();
+}).name('Background');
+
 var fv = gui.addFolder('Force Vector');
 fv.add(globals.control_parameters, 'fv_x',-5000,5000).onChange((function() {
-	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y);
+	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y,false);
+	render();
 }));
 fv.add(globals.control_parameters, 'fv_y',-5000,5000).onChange((function() {
-	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y)
+	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y,false);
+	render();
 }));
 fv.add(globals.control_parameters,'hideArrows').onChange((function(value) {
 	if (!value) {
@@ -136,6 +180,7 @@ fv.add(globals.control_parameters,'hideArrows').onChange((function(value) {
 			}
 		})
 	}
+	render();
 }));
 
 var selection = gui.addFolder('Selection');
@@ -162,7 +207,7 @@ var dynamic_solve = gui.addFolder('Dynamic Solver');
 dynamic_solve.add(globals.control_parameters,'ntimes',1,1000);
 dynamic_solve.add(globals.control_parameters,'setupDynamicSolve').name("Setup");
 dynamic_solve.add(globals.control_parameters,'runDynamicSolve').name("Solve (dynamic)");
-dynamic_solve.open();
+dynamic_solve.close();
 
 var disp = gui.addFolder('Display');
 
@@ -227,32 +272,20 @@ function initLattice() {
 
 	undeformGeometryBending(globals.geom);
 
-	setup_solve('frame',globals.geom);
+	setup_solve(globals.geom);
 }
 
-function bakeGeometry() {
-	// _.each(globals.geom.nodes, function(node) {
-	// 	if (node.u_cumulative == null) {
-	// 		node.u_cumulative = [0,0,0];
-	// 	}
-	// 	node.u_cumulative[0] += node.u[0];
-	// 	node.u_cumulative[1] += node.u[1];
-	// 	node.u_cumulative[2] += node.u[2];
-	// })
+// function bakeGeometry() {
 
-	_.each(globals.geom.beams, function(beam) {
-		beam.len = Math.sqrt(Math.pow(beam.vertices[1].x-beam.vertices[0].x,2) + Math.pow(beam.vertices[1].z-beam.vertices[0].z,2));
-		// beam.assemble_k_prime();
-		beam.assemble_kp();
-		beam.assemble_full_T();
-		beam.assemble_T();
-		beam.calculate_4ks();
-	});
-
-	// undeformGeometryBending(globals.geom);
-
-	// setup_solve('frame',globals.geom);
-}
+// 	_.each(globals.geom.beams, function(beam) {
+// 		beam.len = Math.sqrt(Math.pow(beam.vertices[1].x-beam.vertices[0].x,2) + Math.pow(beam.vertices[1].z-beam.vertices[0].z,2));
+// 		// beam.assemble_k_prime();
+// 		beam.assemble_kp();
+// 		beam.assemble_full_T();
+// 		beam.assemble_T();
+// 		beam.calculate_4ks();
+// 	});
+// }
 
 function resetLattice() {
 	globals.solved = false;
@@ -264,134 +297,49 @@ function resetLattice() {
 	undeformGeometryBending(globals.geom);
 }
 
-// function resetSolver() {
-// 	var num_dofs = (globals.geom.nodes.length - globals.geom.constraints.length)*3;
-// 	var num_beams = globals.geom.beams.length;
-
-// 	solver.X = math.zeros(num_dofs);
-// 	solver.assemble_X();
-
-// 	solver.Ksys = math.zeros(num_dofs, num_dofs);
-// 	solver.calculate_Ksys();
-
-// 	solver.u = math.zeros(num_dofs);
-// 	solver.f = math.zeros(num_beams);
-
-// 	_.each(globals.geom.beams, function(beam) {
-// 		beam.k_prime = math.zeros(6,6);
-// 		beam.assemble_k_prime();
-
-// 		beam.full_T = math.zeros(6,6);
-// 		beam.assemble_full_T();
-
-// 		beam.T = math.matrix([0]);
-// 		beam.assemble_T();
-
-// 		beam.k = {
-// 			n00: null,
-// 			n11: null,
-// 			n01: null,
-// 			n10: null,
-// 			full: null
-// 		};
-// 		beam.k.n00 = math.zeros(3,3);
-// 		beam.k.n11 = math.zeros(3,3);
-// 		beam.k.n01 = math.zeros(3,3);
-// 		beam.k.n10 = math.zeros(3,3);
-// 		beam.k.full = math.zeros(3,3);
-// 		beam.calculate_4ks();
-
-// 		beam.u_local = math.zeros(6,1);
-// 		beam.f_local = math.zeros(6,1);
-// 	});
-// }
-
-function setup_solve(type='frame',geom,debug=true) {
-	if (type == 'frame') {
-		solver = new FrameSolver(geom.nodes,geom.beams,geom.constraints);
-		if (debug) {
-			console.log("solver setup:");
-			console.log(solver);
-		}
-	} else if (type == 'axial') {
-		// axial solve
-		// solver = new DirectStiffnessSolver(geom.nodes,geom.beams,geom.constraints);
-		// deformGeometry(solver.u._data);
-		// var forces = _.flatten(solver.f._data);
-		// updateForces(geom.beams,forces);
-		// displayForces(geom.beams,forces);
-	} else if (type == 'kinematic') {
-		// kinematic solve:
-		// solveNums = calculateSolveNums();
-		// var x = new Array(solveNums.n);
-		// var con = new Array(solveNums.m);
-		// x = getX(x);
+function setup_solve(geom,debug=true) {
+	solver = new FrameSolver(geom.nodes,geom.beams,geom.constraints);
+	if (debug) {
+		console.log("solver setup:");
+		console.log(solver);
 	}
 }
 
-function solve(type='frame',geom=globals.geom,debug=true) {
-	if (type == 'frame') {
-		// ****** SOLVE ******
-		var start = new Date().getTime();
-		solver.solve(true);
-		globals.solved = true;
-		disp.open();
-		selection.close();
-		if (debug) {
-			console.log("solver results:")
-			console.log(solver)
-		}
+function solve(geom=globals.geom,debug=true) {
 
-		var dt = new Date().getTime() - start;
-		if (debug) { console.log('Solved in ' + dt + 'ms'); }
-
-		// ****** DEFORM / UPDATE GEOMETRY *****
-		// globals.beam_forces = [];
-		// _.each(globals.geom.beams, function(beam) {
-		// 	// var f = Math.sqrt(Math.pow(beam.f_local._data[0],2) + Math.pow(beam.f_local._data[1],2));
-		// 	var f = Math.abs(getEl(beam.f_local,[0,0]));
-		// 	globals.beam_forces.push(f);
-		// })
-
-		var max_disp_node = null;
-		var max_u_norm = 0;
-		_.each(globals.geom.nodes, function(node) {
-			var u_norm = Math.sqrt(Math.pow(node.u[0],2) + Math.pow(node.u[1],2));
-			if (u_norm > max_u_norm) {
-				max_u_norm = u_norm;
-				max_disp_node = node;
-			}
-		});
-
-		if (max_disp_node == null) {
-			max_disp_node = globals.geom.nodes[0];
-		}
-
-		// total_max_norm += max_u_norm;
-		// total_max_disp[0] += max_disp_node.u[0];
-		// total_max_disp[1] += max_disp_node.u[1];
-
-		// globals.control_parameters.displacement_norm = '' + total_max_norm.toFixed(2) + 'mm @ node ' + max_disp_node.index;
-		// globals.control_parameters.displacement_xyz = "(" + total_max_disp[0].toFixed(2) + ", " + total_max_disp[1].toFixed(2) + ") mm";
-
-		// deformGeometryBending(geom,globals.linear_scale,globals.angular_scale);
-
-		if (debug) {
-			console.log("end state:")
-			console.log(geom);
-		}
-		return max_u_norm;
-	} else if (type == 'axial') {
-		// axial solve
-		// solver = new DirectStiffnessSolver(geom.nodes,geom.beams,geom.constraints);
-		// deformGeometry(solver.u._data);
-		// var forces = _.flatten(solver.f._data);
-		// updateForces(geom.beams,forces);
-		// displayForces(geom.beams,forces);
-	} else if (type == 'kinematic') {
-		// kinematic solve:
-		// solveEquilibrium(solveNums);
+	// ****** SOLVE ******
+	var start = new Date().getTime();
+	var umax = solver.solve(true);
+	globals.solved = true;
+	disp.open();
+	selection.close();
+	if (debug) {
+		console.log("solver results:")
+		console.log(solver)
 	}
+
+	var dt = new Date().getTime() - start;
+	if (debug) { console.log('Solved in ' + dt + 'ms'); }
+
+	// var max_disp_node = null;
+	// var max_u_norm = 0;
+	// _.each(globals.geom.nodes, function(node) {
+	// 	var u_norm = Math.sqrt(Math.pow(node.u[0],2) + Math.pow(node.u[1],2));
+	// 	if (u_norm > max_u_norm) {
+	// 		max_u_norm = u_norm;
+	// 		max_disp_node = node;
+	// 	}
+	// });
+
+	// if (max_disp_node == null) {
+	// 	max_disp_node = globals.geom.nodes[0];
+	// }
+
+	if (debug) {
+		console.log("end state:")
+		console.log(geom);
+	}
+	return umax;
 }
 
 function measureRadialStiffness() {

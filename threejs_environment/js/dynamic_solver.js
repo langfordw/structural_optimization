@@ -15,7 +15,6 @@ function DynamicSolver() {
 	this.indexMap = [];
 	this.simNodes = [];
 	this.debug = 2;
-	
 }
 
 
