@@ -119,7 +119,7 @@ FrameSolver.prototype.solve = function(calc_local=false,updateNodes=true) {
 			index+=3;
 
 			if (updateNodes) {
-				if (node.u[0] > 10) throw this
+				// if (node.u[0] > 10) throw this
 				node.u_cumulative[0] += node.u[0];
 				node.u_cumulative[1] += node.u[1];
 				node.u_cumulative[2] += node.u[2];

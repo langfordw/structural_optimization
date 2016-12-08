@@ -5,6 +5,7 @@ var globals = {
 	linear_scale: 1.0,
 	angular_scale: 1.0,
 	beam_forces: [],
+	radial_deflections: [],
 	view_mode: { deformed: false },
 	geom: null,
 	solved: false,
@@ -146,13 +147,16 @@ env.add(globals.control_parameters, 'background',['light','dark','white']).onCha
 	if (value == 'white') {
 		scene.background = new THREE.Color(0xffffff);
 		gridHelper.color1 = new THREE.Color(0x202020);
+		$selectbox.css({'background-color': 'rgba(150, 150, 150, 0.25)'});
 	} else if (value == 'light') {
 		scene.background = new THREE.Color(0xdedede);
 		gridHelper.color1 = new THREE.Color(0x202020);
+		$selectbox.css({'background-color': 'rgba(150, 150, 150, 0.25)'});
 	} else if (value == 'dark') {
 		scene.background = new THREE.Color(0x404040);
 		gridHelper.color1 = new THREE.Color(0xffffff);
 		gridHelper.color2 = new THREE.Color(0x00ffff);
+		$selectbox.css({'background-color': 'rgba(255, 255, 255, 0.1)'});
 	}
 	render();
 }).name('Background');
@@ -291,6 +295,7 @@ function resetLattice() {
 	globals.solved = false;
 	disp.close();
 	selection.open();
+	clearSVG();
 	$plot.hide();
 	globals.control_parameters.deformGeometry = false;
 	gui.updateDisplay();
@@ -349,13 +354,15 @@ function measureRadialStiffness() {
 		var unit_vector = [100*Math.cos(angle),100*Math.sin(angle)];
 		updateExternalForce(unit_vector[0],unit_vector[1]);
 		resetLattice();
-		solver.reset();
-		setup_solve('frame',globals.geom);
-		deflections.push([angle,1/Math.pow(solve('frame',globals.geom),0.25)]);
+		solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+		// setup_solve('frame',globals.geom);
+		// deflections.push([angle,1/Math.pow(solve('frame',globals.geom),0.25)]);
+		deflections.push([angle,1/Math.pow(solver.solve(true),0.25)]);
+		// deflections.push([angle,1/solve(globals.geom)]);
 	}
-
+	globals.radial_deflections = deflections;
 	console.log(deflections)
-	radialPlot(deflections);
+	redrawPlot();
 	$plot.show();
 }
 
@@ -392,6 +399,9 @@ function stringifyGeometry() {
 	})
 	_.each(globals.geom.beams, function(beam) {
 		data.push({type:"beam",index:beam.index,node1:beam.nodes[0].index,node2:beam.nodes[1].index});
+	})
+	_.each(globals.geom.parts, function(part) {
+		data.push({type:"part",beam:part.beam,partType:part.type});
 	})
 	var jsonData = JSON.stringify(data);
 	return jsonData;
@@ -434,6 +444,45 @@ function buildFromJSON(objects) {
 	console.log(globals.geom)
 	render();
 }
+
+
+// function buildFromJSON(objects) {
+// 	console.log("building objects...")
+// 	sceneClear();
+// 	sceneClearBeam();
+// 	var _nodes = [];
+// 	var _beams = [];
+// 	var _constraints = [];
+// 	_.each(objects, function(object) {
+// 		if (object.type == 'node') {
+// 			console.log("build node")
+// 			var node = new Node(new THREE.Vector3(object.x, 0, object.z),object.index);
+// 			if (object.fixed) { 
+// 				node.setFixed(true,{x:1,z:1,c:1}) 
+// 				_constraints.push(node);
+// 			}
+// 			if (object.force != null) {
+// 				node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
+// 			}
+// 			_nodes.push(node);
+// 		} else if (object.type == 'beam') {
+// 			console.log("build beam")
+// 			var beam = new Beam([_nodes[object.node1],_nodes[object.node2]],object.index)
+// 			_beams.push(beam)
+// 		}
+// 	})
+
+// 	console.log(_nodes)
+// 	console.log(_beams)
+// 	console.log(_constraints)
+// 	globals.geom = null;
+// 	globals.geom = {nodes:_nodes,
+// 					beams:_beams,
+// 					constraints:_constraints}
+// 	sceneAdd(beamWrapper)
+// 	console.log(globals.geom)
+// 	render();
+// }
 
 function download(text, name, type) {
     var a = document.createElement("a");

@@ -1,9 +1,15 @@
-var width = 250,
-    barHeight = 20,
-    height = 250,
-    radius = 100;
+// var width = 250,
+//     barHeight = 20,
+//     height = 250,
+//     rad = 100;
+
+var svg;
 
 function radialPlot(data) {
+  var width = document.getElementById("plot").clientWidth;
+  var height = document.getElementById("plot").clientHeight;
+  var radius = _.min([width,height])/2.5;
+
   var r = d3.scaleLinear()
       .domain([0, d3.max(data, function(d) { return d[1] })*1.5])
       .range([0, radius]);
@@ -13,9 +19,7 @@ function radialPlot(data) {
       .angle(function(d) { return -d[0] + Math.PI / 2; }) 
       (data);
 
-  // console.log(line)
-
-  var svg = d3.select(".radial")
+  svg = d3.select(".radial")
       .attr("width", width)
       .attr("height", height)
     .append("g")
@@ -62,6 +66,23 @@ function radialPlot(data) {
       .attr("fill", "none")
       .attr("stroke","black");
 }
+
+function clearSVG() {
+  if (svg != undefined) svg.selectAll("*").remove();
+}
+
+function redrawPlot() {
+  clearSVG();
+  radialPlot(globals.radial_deflections);
+}
+
+var resizeElement = document.getElementById('plot'),
+      resizeCallback = function() {
+          redrawPlot();
+
+      };
+
+addResizeListener(resizeElement, resizeCallback);
 
 function plotForcesHisto(data) {
   var formatCount = d3.format(",.0f");
@@ -173,43 +194,6 @@ function plotForces(data) {
       .text(function(d) { return d.toFixed(2); })
 }
 
-// data = [1,2,5,10,9,20];
-
-// // x.domain([0, d3.max(data, function(d) { return d.value; })]);
-// x.domain([0, d3.max(data)]);
-
-// console.log(data)
-
-// chart.attr("height", barHeight * data.length);
-
-// var bar = chart.selectAll("g")
-//     .data(data)
-//   .enter().append("g")
-//     .attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
-
-// bar.append("rect")
-//     .attr("width", function(d) {
-//       console.log(x(d));
-//       return x(d); 
-//     })
-//     .attr("height", barHeight - 1)
-//     .attr("fill","steelblue")
-//     .attr("id", function(d,i) {
-//       return i;
-//     })
-//     .on("mouseover", function() {
-//       d3.select(this)
-//         .attr("fill","brown");
-//     })
-//     .on("mouseout", function(d,i) {
-//       d3.select(this).attr("fill","steelblue");
-//     });
-
-// bar.append("text")
-//     .attr("x", function(d) { return x(d) - 3; })
-//     .attr("y", barHeight / 2)
-//     .attr("dy", ".35em")
-//     .text(function(d) { return d; })
 
 function type(d) {
   d.value = +d.value; // coerce to number

@@ -230,14 +230,18 @@ Part.prototype.make2DOF = function(nodes) {
 	console.log(globals.geom)
 }
 
+Part.prototype.makeRigid = function(nodes) {
+	var beam = new Beam(nodes,0)
+	beam.addPart(this);
+	beam.create();
+}
+
 Part.prototype.changeType = function(toType) {
 	if (this.type != toType) {
 		this.ripupBeams();
 		if (toType == 'rigid') {
 			console.log("change to rigid")
-			var beam = new Beam(this.edge_nodes,0)
-			beam.addPart(this);
-			beam.create();
+			this.makeRigid(this.edge_nodes);
 			this.type = toType;
 		} else if (toType == '1DoF') {
 			console.log("change to 1DoF")

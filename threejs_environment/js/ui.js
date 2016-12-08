@@ -12,7 +12,7 @@ var $toolTip = $('#toolTip');
 var $toolTip2 = $('#toolTip2');
 var $toolTip3 = $('#toolTip3');
 var $selectbox = $('#selectbox');
-var $plot = $('.plot');
+var $plot = $('#plot');
 var $infobox = $('#infobox');
 
 var raycaster = new THREE.Raycaster();
@@ -21,14 +21,32 @@ var mouse = new THREE.Vector2();
 
 var highlightedObj = null;
 var mouseInEnv = true;
+var mouseOverGUI = false;
+var mouseOverPlot = false;
 
 $('#gui').on('mouseenter', function() {
+	mouseOverGUI = true;
+	mouseInEnv = false;
+})
+
+$('#plot').on('mouseenter', function() {
+	mouseOverPlot = true;
 	mouseInEnv = false;
 })
 
 $('#gui').on('mouseleave', function() {
-	mouseInEnv = true;
-})
+	mouseOverGUI = false;
+	if (!mouseOverPlot) {
+		mouseInEnv = true;
+	}
+});
+
+$('#plot').on('mouseleave', function() {
+	mouseOverPlot = false;
+	if (!mouseOverGUI) {
+		mouseInEnv = true;
+	}
+});
 
 window.addEventListener('resize', function(){
         onWindowResizeThree();
