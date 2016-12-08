@@ -479,9 +479,11 @@ function addBeams(thisnode,othernodes) {
 		_.each(globals.geom.parts, function(part) {
 			if (_.contains(part.nodes,thisnode) && _.contains(part.nodes,othernode)) {
 				beam_exists = true;
-				// console.log("part exists")
+				console.log("part exists")
 				// console.log(thisnode)
 				// console.log(othernode)
+			} else {
+				console.log("should make part")
 			}
 		});
 		if (!beam_exists) {
@@ -495,13 +497,27 @@ function addBeams(thisnode,othernodes) {
 function addGeometry(minx,maxx,minz,maxz) {
 	var added_geom = false;
 
+
+	var selected_nodes = [];
 	for (var i = minx; i <= maxx; i+=100) {
 		for (var j = minz; j >= maxz; j-=100) {
 			var node_exists = false;
 			_.each(globals.geom.parts, function(part) {
 				_.each(part.nodes, function(node) {
 					if (node.getPosition().x == i && node.getPosition().z == j) {
+						selected_nodes.push(node);
+						console.log("node exists")
 						node_exists = true;
+						if (getParts(selected_nodes).length > 0) {
+							console.log("part present between nodes")
+						} else {
+							var part_nodes = _.uniq(selected_nodes);
+							if (part_nodes.length == 2) {
+								var new_beam = new Beam(part_nodes,0);
+								globals.geom.beams.push(new_beam);
+								globals.geom.parts.push(new Part([new_beam]));
+							}
+						}
 					}
 				})
 			})
@@ -513,6 +529,10 @@ function addGeometry(minx,maxx,minz,maxz) {
 			}
 		}
 	}
+
+	console.log(_.uniq(selected_nodes))
+	console.log(getParts(_.uniq(selected_nodes)))
+
 	if (added_geom) {
 		reindex(globals.geom.nodes)
 		reindex(globals.geom.beams)
