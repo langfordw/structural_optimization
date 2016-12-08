@@ -1,6 +1,6 @@
 var globals = {
-	nwide: 2,
-	ntall: 2,
+	// nwide: 2,
+	// ntall: 2,
 	lattice_pitch: 100,
 	linear_scale: 1.0,
 	angular_scale: 1.0,
@@ -11,6 +11,8 @@ var globals = {
 	solved: false,
 	isAnimating: false,
 	control_parameters: {
+		nwide: 2,
+		ntall: 3,
 		deformGeometry: false,
 		forceMode: "axial",
 		deformationScale: 1.0,
@@ -160,7 +162,16 @@ env.add(globals.control_parameters, 'background',['light','dark','white']).onCha
 	}
 	render();
 }).name('Background');
-
+env.add(globals.control_parameters, 'nwide', 2, 20).step(1).onFinishChange(function() {
+	sceneClear();
+	sceneAdd(beamWrapper);
+	initLattice();
+});
+env.add(globals.control_parameters, 'ntall', 2, 20).step(1).onFinishChange(function() {
+	sceneClear();
+	sceneAdd(beamWrapper);
+	initLattice();
+});
 var fv = gui.addFolder('Force Vector');
 fv.add(globals.control_parameters, 'fv_x',-5000,5000).onChange((function() {
 	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y,false);
@@ -361,7 +372,7 @@ function measureRadialStiffness() {
 		// deflections.push([angle,1/solve(globals.geom)]);
 	}
 	globals.radial_deflections = deflections;
-	console.log(deflections)
+	console.log(deflections);
 	redrawPlot();
 	$plot.show();
 }
@@ -395,56 +406,17 @@ function subdivideSelection(selected) {
 function stringifyGeometry() {
 	var data = [];
 	_.each(globals.geom.nodes, function(node) {
-		data.push({type:"node",index:node.index,x:node.x0,z:node.z0,fixed:node.fixed,force:node.externalForce});
+		data.push({type:"node",index:node.index,x:node.x0,z:node.z0,fixed:node.fixed,force:node.externalForce,internal:node.internal});
 	})
 	_.each(globals.geom.beams, function(beam) {
 		data.push({type:"beam",index:beam.index,node1:beam.nodes[0].index,node2:beam.nodes[1].index});
 	})
 	_.each(globals.geom.parts, function(part) {
-		data.push({type:"part",beam:part.beam,partType:part.type});
+		data.push({type:"part",beams:part.getBeamIndices(),partType:part.type});
 	})
 	var jsonData = JSON.stringify(data);
 	return jsonData;
 }
-
-function buildFromJSON(objects) {
-	console.log("building objects...")
-	sceneClear();
-	sceneClearBeam();
-	var _nodes = [];
-	var _beams = [];
-	var _constraints = [];
-	_.each(objects, function(object) {
-		if (object.type == 'node') {
-			console.log("build node")
-			var node = new Node(new THREE.Vector3(object.x, 0, object.z),object.index);
-			if (object.fixed) { 
-				node.setFixed(true,{x:1,z:1,c:1}) 
-				_constraints.push(node);
-			}
-			if (object.force != null) {
-				node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
-			}
-			_nodes.push(node);
-		} else if (object.type == 'beam') {
-			console.log("build beam")
-			var beam = new Beam([_nodes[object.node1],_nodes[object.node2]],object.index)
-			_beams.push(beam)
-		}
-	})
-
-	console.log(_nodes)
-	console.log(_beams)
-	console.log(_constraints)
-	globals.geom = null;
-	globals.geom = {nodes:_nodes,
-					beams:_beams,
-					constraints:_constraints}
-	sceneAdd(beamWrapper)
-	console.log(globals.geom)
-	render();
-}
-
 
 // function buildFromJSON(objects) {
 // 	console.log("building objects...")
@@ -454,22 +426,26 @@ function buildFromJSON(objects) {
 // 	var _beams = [];
 // 	var _constraints = [];
 // 	_.each(objects, function(object) {
-// 		if (object.type == 'node') {
-// 			console.log("build node")
-// 			var node = new Node(new THREE.Vector3(object.x, 0, object.z),object.index);
-// 			if (object.fixed) { 
-// 				node.setFixed(true,{x:1,z:1,c:1}) 
-// 				_constraints.push(node);
-// 			}
-// 			if (object.force != null) {
-// 				node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
-// 			}
-// 			_nodes.push(node);
-// 		} else if (object.type == 'beam') {
-// 			console.log("build beam")
-// 			var beam = new Beam([_nodes[object.node1],_nodes[object.node2]],object.index)
-// 			_beams.push(beam)
+// 		if (object.type == 'part') {
+// 			console.log("build part: type= " + object.partType + " beams:" + object.beams)
+// 			_parts.push(new Part(beam,'rigid'))
 // 		}
+// 		// if (object.type == 'node') {
+// 		// 	console.log("build node")
+// 		// 	var node = new Node(new THREE.Vector3(object.x, 0, object.z),object.index);
+// 		// 	if (object.fixed) { 
+// 		// 		node.setFixed(true,{x:1,z:1,c:1}) 
+// 		// 		_constraints.push(node);
+// 		// 	}
+// 		// 	if (object.force != null) {
+// 		// 		node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
+// 		// 	}
+// 		// 	_nodes.push(node);
+// 		// } else if (object.type == 'beam') {
+// 		// 	console.log("build beam")
+// 		// 	var beam = new Beam([_nodes[object.node1],_nodes[object.node2]],object.index)
+// 		// 	_beams.push(beam)
+// 		// }
 // 	})
 
 // 	console.log(_nodes)
@@ -483,6 +459,57 @@ function buildFromJSON(objects) {
 // 	console.log(globals.geom)
 // 	render();
 // }
+
+
+function buildFromJSON(objects) {
+	console.log("building objects...")
+	sceneClear();
+	sceneClearBeam();
+	var _nodes = [];
+	var _beams = [];
+	var _constraints = [];
+	var _parts = [];
+	_.each(objects, function(object) {
+		if (object.type == 'node') {
+			console.log("build node")
+			var node = new Node(new THREE.Vector3(object.x, 0, object.z),object.index);
+			node.internal = object.internal;
+			if (object.fixed) { 
+				node.setFixed(true,{x:1,z:1,c:1}) 
+				_constraints.push(node);
+			}
+			if (object.force != null) {
+				node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
+			}
+			_nodes.push(node);
+		} else if (object.type == 'beam') {
+			console.log("build beam")
+			var beam = new Beam([_nodes[object.node1],_nodes[object.node2]],object.index)
+			_beams.push(beam)
+		}
+	});
+	_.each(objects, function(object) {
+		if (object.type == 'part') {
+			var part_beams = _.map(object.beams,function(beam){return _beams[beam]});
+			var part = new Part(part_beams,"rigid");
+			part.changeType(object.partType);
+			_parts.push(part);
+		}
+	})
+
+	console.log(_nodes)
+	console.log(_beams)
+	console.log(_constraints)
+	console.log(_parts)
+	globals.geom = null;
+	globals.geom = {nodes: _nodes,
+					beams: _beams,
+					constraints: _constraints,
+					parts: _parts}
+	sceneAdd(beamWrapper)
+	console.log(globals.geom)
+	render();
+}
 
 function download(text, name, type) {
     var a = document.createElement("a");

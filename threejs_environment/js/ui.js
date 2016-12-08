@@ -14,6 +14,7 @@ var $toolTip3 = $('#toolTip3');
 var $selectbox = $('#selectbox');
 var $plot = $('#plot');
 var $infobox = $('#infobox');
+var $resizable = $('.resizable');
 
 var raycaster = new THREE.Raycaster();
 raycaster.linePrecision = 8;

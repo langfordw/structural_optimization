@@ -1,6 +1,9 @@
-function Part(beam,type='rigid') {
+function Part(beams,type='rigid') {
 	this.beams = [];
-	this.beams.push(beam);
+	_.each(beams, function(beam) {
+		this.beams.push(beam);
+	},this);
+	// this.beams.push(beam);
 	this.nodes = [];
 	this.type = type;
 	this.internal_nodes = [];
@@ -11,6 +14,8 @@ function Part(beam,type='rigid') {
 		this.pushNodes(beam.nodes)
 	},this);
 
+	// console.log(this)
+
 	var partMat = new THREE.LineDashedMaterial({color: 0xff0000, linewidth: 2, dashSize: 8, gapSize: 5});
 	var lineGeo = new THREE.Geometry();
 	lineGeo.dynamic = true;
@@ -20,6 +25,14 @@ function Part(beam,type='rigid') {
 	lineGeo.computeLineDistances();
 	this.object3D = new THREE.Line(lineGeo, partMat);
 	sceneAdd(this.object3D);
+}
+
+Part.prototype.getBeamIndices = function() {
+	var indices = [];
+	_.each(this.beams, function(beam) {
+		indices.push(beam.index);
+	});
+	return indices;
 }
 
 Part.prototype.addBeam = function(beam) {

@@ -8,6 +8,12 @@ var svg;
 function radialPlot(data) {
   var width = document.getElementById("plot").clientWidth;
   var height = document.getElementById("plot").clientHeight;
+  if (width < 400) {
+    width = 400;
+  }
+  if (height < 400) {
+    height = 400;
+  }
   var radius = _.min([width,height])/2.5;
 
   var r = d3.scaleLinear()
@@ -79,7 +85,6 @@ function redrawPlot() {
 var resizeElement = document.getElementById('plot'),
       resizeCallback = function() {
           redrawPlot();
-
       };
 
 addResizeListener(resizeElement, resizeCallback);

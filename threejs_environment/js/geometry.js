@@ -8,8 +8,8 @@ function generateGeometry() {
 
 	var index = 0;
 	var beam_index = 0;
-	for (var i=0; i < globals.nwide; i++) {
-		for (var j=0; j < globals.ntall; j++) {
+	for (var i=0; i < globals.control_parameters.nwide; i++) {
+		for (var j=0; j < globals.control_parameters.ntall; j++) {
 
 			// add node
 			var node = new Node(new THREE.Vector3(_l*i, 0, _h*j),index)
@@ -17,9 +17,9 @@ function generateGeometry() {
 
 			// Horizontal beams
 			if (i > 0){
-				var beam = new Beam([_nodes[index],_nodes[index-globals.ntall]],beam_index)
+				var beam = new Beam([_nodes[index],_nodes[index-globals.control_parameters.ntall]],beam_index)
 				_beams.push(beam)
-				_parts.push(new Part(beam,'rigid'))
+				_parts.push(new Part([beam],'rigid'))
 				beam_index++;
 			}
 
@@ -27,7 +27,7 @@ function generateGeometry() {
 			if (j > 0){
 				var beam = new Beam([_nodes[index],_nodes[index-1]],beam_index)
 				_beams.push(beam)
-				_parts.push(new Part(beam,'rigid'))
+				_parts.push(new Part([beam],'rigid'))
 				beam_index++;
 			}			
 
@@ -37,18 +37,18 @@ function generateGeometry() {
 
 	// ***** CONSTRAIN NODES *******
 	var bottomleft = 0
-	var bottomright = globals.ntall*(globals.nwide-1);
+	var bottomright = globals.control_parameters.ntall*(globals.control_parameters.nwide-1);
 
 	_nodes[bottomleft].setFixed(true,{x:1,z:1,c:1});
-	_constraints.push(_nodes[bottomright]);
+	_constraints.push(_nodes[bottomleft]);
 	
 	_nodes[bottomright].setFixed(true,{x:1,z:1,c:1});
 	_constraints.push(_nodes[bottomright]);
 	
 	// **** PRESCRIBE FORCES AND DISPLACEMENTS ******
-	var force_node = globals.ntall-1;
+	var force_node = globals.control_parameters.ntall-1;
 	_nodes[force_node].addExternalForce( new THREE.Vector3(globals.control_parameters.fv_x,0,-globals.control_parameters.fv_y));
-	var force_node = globals.ntall*globals.nwide-1;
+	var force_node = globals.control_parameters.ntall*globals.control_parameters.nwide-1;
 	_nodes[force_node].addExternalForce( new THREE.Vector3(globals.control_parameters.fv_x,0,-globals.control_parameters.fv_y));
 
 	return {
