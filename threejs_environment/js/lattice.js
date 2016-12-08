@@ -111,9 +111,7 @@ var globals = {
 			render();
 		},
 		ntimes: 1,
-		loadExample: function(value) {
-			loadGeo
-		}
+		loadExample: 'none'
 	}
 };
 
@@ -280,7 +278,10 @@ filter.add(globals.control_parameters,'subdivideSelection')
 var load_save = gui.addFolder('Save/Load Geometry');
 load_save.add(globals.control_parameters,'download').name("Download");
 load_save.add(globals.control_parameters,'load').name("Load JSON");
-load_save.add(globals.control_parameters,'loadExample',['arm','auxetic']).name("Load Example");
+load_save.add(globals.control_parameters,'loadExample',['arm','auxetic','basic']).name("Load Example").onChange(function(value) {
+	console.log(value)
+	loadExample(value)
+});
 
 function initLattice() {
 	// ******** GENERATE BASE GEOMETRY ********
@@ -364,7 +365,13 @@ function solve(geom=globals.geom,debug=true) {
 
 function measureRadialStiffness() {
 	var deflections = [];
-	for (var i = 0; i <= 360; i+=5) {
+	globals.isAnimating = true;
+	// for (var i = 0; i <= 360; i+=5) {
+	var i = 0;
+	var finished = false;
+	var max = -1000;
+	var min = 1000;
+	loop( function() {
 		var angle = i*Math.PI/180;
 		var unit_vector = [100*Math.cos(angle),100*Math.sin(angle)];
 		updateExternalForce(unit_vector[0],unit_vector[1]);
@@ -372,13 +379,33 @@ function measureRadialStiffness() {
 		solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
 		// setup_solve('frame',globals.geom);
 		// deflections.push([angle,1/Math.pow(solve('frame',globals.geom),0.25)]);
-		deflections.push([angle,1/Math.pow(solver.solve(true),0.25)]);
+		var def = solver.solve(true);
+		deflections.push([angle,1/Math.pow(def,0.25)]);
 		// deflections.push([angle,1/solve(globals.geom)]);
-	}
-	globals.radial_deflections = deflections;
-	console.log(deflections);
-	redrawPlot();
-	$plot.show();
+
+		if (def > max) { max = def; }
+		else if (def < min) { min = def; }
+
+		if (i >= 360) {
+			globals.isAnimating = false;
+			finished = true;
+		}
+		i+=5;
+		render();
+		if (finished) {
+			globals.radial_deflections = deflections;
+			// var kmax = _.max(_.map(globals.radial_deflections,function(data) {return data[1]}));
+			// var kmin = _.min(_.map(globals.radial_deflections,function(data) {return data[1]}))
+			var kmax = 1/min;
+			var kmin = 1/max;
+			console.log("kmax = " + kmax);
+			console.log("kmin = " + kmin);
+			console.log(deflections);
+			redrawPlot();
+			$plot.show();
+		}
+	});
+
 }
 
 function selectStressed(thresh) {
@@ -421,49 +448,6 @@ function stringifyGeometry() {
 	var jsonData = JSON.stringify(data);
 	return jsonData;
 }
-
-// function buildFromJSON(objects) {
-// 	console.log("building objects...")
-// 	sceneClear();
-// 	sceneClearBeam();
-// 	var _nodes = [];
-// 	var _beams = [];
-// 	var _constraints = [];
-// 	_.each(objects, function(object) {
-// 		if (object.type == 'part') {
-// 			console.log("build part: type= " + object.partType + " beams:" + object.beams)
-// 			_parts.push(new Part(beam,'rigid'))
-// 		}
-// 		// if (object.type == 'node') {
-// 		// 	console.log("build node")
-// 		// 	var node = new Node(new THREE.Vector3(object.x, 0, object.z),object.index);
-// 		// 	if (object.fixed) { 
-// 		// 		node.setFixed(true,{x:1,z:1,c:1}) 
-// 		// 		_constraints.push(node);
-// 		// 	}
-// 		// 	if (object.force != null) {
-// 		// 		node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
-// 		// 	}
-// 		// 	_nodes.push(node);
-// 		// } else if (object.type == 'beam') {
-// 		// 	console.log("build beam")
-// 		// 	var beam = new Beam([_nodes[object.node1],_nodes[object.node2]],object.index)
-// 		// 	_beams.push(beam)
-// 		// }
-// 	})
-
-// 	console.log(_nodes)
-// 	console.log(_beams)
-// 	console.log(_constraints)
-// 	globals.geom = null;
-// 	globals.geom = {nodes:_nodes,
-// 					beams:_beams,
-// 					constraints:_constraints}
-// 	sceneAdd(beamWrapper)
-// 	console.log(globals.geom)
-// 	render();
-// }
-
 
 function buildFromJSON(objects) {
 	console.log("building objects...")
@@ -549,7 +533,7 @@ function loadGeometry() {
 
 function loadExample(filename) {
 	$.getJSON( "examples/"+filename+".json", function( json ) {
-	  console.log( json );
+	  buildFromJSON(json);
 	});
 }
 

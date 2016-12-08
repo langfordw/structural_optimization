@@ -26,6 +26,7 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 	console.log("expected total time = " + expected_time + "ms");
 	if (expected_time > 30000) {
 		console.warn("solve will take a long time")
+		alert('Solve will take longer than 30s, reduce force.')
 		return;
 	}
 

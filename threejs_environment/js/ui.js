@@ -442,16 +442,16 @@ function forces2text(fmatrix) {
 }
 
 function displayMessage(message) {
-	$infobox.html("<p><b>"+message+"</b></p>");
-	// console.log($infobox)
-	$infobox.show();
-	$infobox.hide();
-	$infobox.show();
+	// $infobox.html("<p><b>"+message+"</b></p>");
+	// // console.log($infobox)
+	// $infobox.show();
+	// $infobox.hide();
+	// $infobox.show();
 }
 
 function hideMessage() {
 	// $infobox.css({display:none});
-	$infobox.hide();
+	// $infobox.hide();
 	// console.log($infobox)
 }
 
