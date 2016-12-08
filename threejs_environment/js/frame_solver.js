@@ -92,6 +92,7 @@ FrameSolver.prototype.calculate_Ksys = function() {
 
 FrameSolver.prototype.calculate_U = function() {	
 	// this.u = math.lusolve(math.lup(this.Ksys),this.X);
+	console.log(this.Ksys)
 	this.u = math.lusolve(math.slu(this.Ksys,3,0),this.X);
 	// this.u = math.lusolve(this.Ksys,this.X);
 	// var L = cholesky(this.Ksys);

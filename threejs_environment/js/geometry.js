@@ -19,7 +19,7 @@ function generateGeometry() {
 			if (i > 0){
 				var beam = new Beam([_nodes[index],_nodes[index-globals.control_parameters.ntall]],beam_index)
 				_beams.push(beam)
-				_parts.push(new Part([beam],'rigid'))
+				_parts.push(new Part([beam],[],'rigid'))
 				beam_index++;
 			}
 
@@ -27,7 +27,7 @@ function generateGeometry() {
 			if (j > 0){
 				var beam = new Beam([_nodes[index],_nodes[index-1]],beam_index)
 				_beams.push(beam)
-				_parts.push(new Part([beam],'rigid'))
+				_parts.push(new Part([beam],[],'rigid'))
 				beam_index++;
 			}			
 
@@ -487,7 +487,7 @@ function addBeams(thisnode,othernodes) {
 		if (!beam_exists) {
 			var beam = new Beam([thisnode,othernode],0)
 			globals.geom.beams.push(beam);
-			globals.geom.parts.push(new Part(beam));
+			globals.geom.parts.push(new Part([beam]));
 		}
 	})
 }

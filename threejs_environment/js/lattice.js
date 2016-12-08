@@ -412,7 +412,7 @@ function stringifyGeometry() {
 		data.push({type:"beam",index:beam.index,node1:beam.nodes[0].index,node2:beam.nodes[1].index});
 	})
 	_.each(globals.geom.parts, function(part) {
-		data.push({type:"part",beams:part.getBeamIndices(),partType:part.type});
+		data.push({type:"part",beams:part.getBeamIndices(),nodes:part.getNodeIndices('edge'),partType:part.type});
 	})
 	var jsonData = JSON.stringify(data);
 	return jsonData;
@@ -465,47 +465,51 @@ function buildFromJSON(objects) {
 	console.log("building objects...")
 	sceneClear();
 	sceneClearBeam();
-	var _nodes = [];
-	var _beams = [];
-	var _constraints = [];
-	var _parts = [];
+	globals.geom.nodes = [];
+	globals.geom.beams = [];
+	globals.geom.constraints = [];
+	globals.geom.parts = [];
+
 	_.each(objects, function(object) {
 		if (object.type == 'node') {
-			console.log("build node")
-			var node = new Node(new THREE.Vector3(object.x, 0, object.z),object.index);
-			node.internal = object.internal;
-			if (object.fixed) { 
-				node.setFixed(true,{x:1,z:1,c:1}) 
-				_constraints.push(node);
+			if (!object.internal) {
+				console.log("build node")
+				var node = new Node(new THREE.Vector3(object.x, 0, object.z),object.index);
+				node.internal = object.internal;
+				if (object.fixed) { 
+					node.setFixed(true,{x:1,z:1,c:1}) 
+					globals.geom.constraints.push(node);
+				}
+				if (object.force != null) {
+					node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
+				}
+				globals.geom.nodes.push(node)
 			}
-			if (object.force != null) {
-				node.addExternalForce(new THREE.Vector3(object.force.x,0,object.force.z));
-			}
-			_nodes.push(node);
-		} else if (object.type == 'beam') {
-			console.log("build beam")
-			var beam = new Beam([_nodes[object.node1],_nodes[object.node2]],object.index)
-			_beams.push(beam)
-		}
+		} 
 	});
 	_.each(objects, function(object) {
 		if (object.type == 'part') {
-			var part_beams = _.map(object.beams,function(beam){return _beams[beam]});
-			var part = new Part(part_beams,"rigid");
-			part.changeType(object.partType);
-			_parts.push(part);
+			var part_nodes = _.map(object.nodes,function(node){return globals.geom.nodes[node]});
+			globals.geom.beams.push(new Beam(part_nodes, 0));
 		}
+	});
+
+	var index = 0;
+	_.each(objects, function(object,i) {
+		if (object.type == 'part') {
+			var beam = globals.geom.beams[index];
+			index++;
+			var part = new Part([beam],[],"rigid");
+			globals.geom.parts.push(part);
+		}
+	});
+
+	var part_objects = _.filter(objects,function(object) { return object.type=='part' });
+
+	_.each(globals.geom.parts, function(part,i) {
+		part.changeType(part_objects[i].partType);
 	})
 
-	console.log(_nodes)
-	console.log(_beams)
-	console.log(_constraints)
-	console.log(_parts)
-	globals.geom = null;
-	globals.geom = {nodes: _nodes,
-					beams: _beams,
-					constraints: _constraints,
-					parts: _parts}
 	sceneAdd(beamWrapper)
 	console.log(globals.geom)
 	render();

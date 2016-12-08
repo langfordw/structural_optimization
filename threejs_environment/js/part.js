@@ -1,4 +1,4 @@
-function Part(beams,type='rigid') {
+function Part(beams,edge_nodes=[],type='rigid') {
 	this.beams = [];
 	_.each(beams, function(beam) {
 		this.beams.push(beam);
@@ -13,6 +13,8 @@ function Part(beams,type='rigid') {
 		beam.addPart(this);
 		this.pushNodes(beam.nodes)
 	},this);
+
+	if (edge_nodes.length > 0) this.pushNodes(edge_nodes);
 
 	// console.log(this)
 
@@ -32,6 +34,24 @@ Part.prototype.getBeamIndices = function() {
 	_.each(this.beams, function(beam) {
 		indices.push(beam.index);
 	});
+	return indices;
+}
+
+Part.prototype.getNodeIndices = function(type) {
+	var indices = [];
+	if (type == "edge") {
+		_.each(this.edge_nodes, function(node) {
+			indices.push(node.index);
+		});
+	} else if (type == "internal") {
+		_.each(this.internal_nodes, function(node) {
+			indices.push(node.index);
+		});
+	} else if (type == "both") {
+		_.each(this.nodes, function(node) {
+			indices.push(node.index);
+		});
+	}
 	return indices;
 }
 
@@ -98,12 +118,15 @@ Part.prototype.destroy = function() {
 }
 
 Part.prototype.pushNodes = function(nodes) {
+	console.log("push nodes")
 	var nodes = _.difference(nodes, this.nodes);
 	_.each(nodes, function(node) {
 		this.nodes.push(node);
 		if (node.internal) { 
+			console.log("internal")
 			this.internal_nodes.push(node);
 		} else {
+			console.log("external")
 			this.edge_nodes.push(node);
 		}
 	},this);
@@ -171,12 +194,14 @@ Part.prototype.make1DOF = function(nodes) {
 	var node2 = new Node(new THREE.Vector3(x, 0, z),0);
 	node2.internal = true;
 	globals.geom.nodes.push(node2)
+	this.pushNodes([node2]);
 
 	x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.625;
 	z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.625;
 	var node3 = new Node(new THREE.Vector3(x, 0, z),0);
-	node2.internal = true;
+	node3.internal = true;
 	globals.geom.nodes.push(node3)
+	this.pushNodes([node3]);
 
 	beam.destroy();
 
@@ -214,12 +239,14 @@ Part.prototype.make2DOF = function(nodes) {
 	var node2 = new Node(new THREE.Vector3(x, 0, z),0);
 	node2.internal = true;
 	globals.geom.nodes.push(node2)
+	this.pushNodes([node2]);
 
 	x = node1.getPosition().x - Math.cos(angle)*beam.len0*0.75;
 	z = node1.getPosition().z - Math.sin(angle)*beam.len0*0.75;
 	var node3 = new Node(new THREE.Vector3(x, 0, z),0);
-	node2.internal = true;
+	node3.internal = true;
 	globals.geom.nodes.push(node3)
+	this.pushNodes([node3]);
 
 	beam.destroy();
 
