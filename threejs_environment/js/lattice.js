@@ -6,6 +6,8 @@ var globals = {
 	angular_scale: 1.0,
 	beam_forces: [],
 	radial_deflections: [],
+	kmax: 1,
+	kmin: 1,
 	view_mode: { deformed: false },
 	geom: null,
 	solved: false,
@@ -391,15 +393,16 @@ function measureRadialStiffness() {
 			finished = true;
 		}
 		i+=5;
-		render();
+		// render();
+		renderer.render(scene, camera);
 		if (finished) {
 			globals.radial_deflections = deflections;
 			// var kmax = _.max(_.map(globals.radial_deflections,function(data) {return data[1]}));
 			// var kmin = _.min(_.map(globals.radial_deflections,function(data) {return data[1]}))
-			var kmax = 1/min;
-			var kmin = 1/max;
-			console.log("kmax = " + kmax);
-			console.log("kmin = " + kmin);
+			globals.kmax = 1/min;
+			globals.kmin = 1/max;
+			console.log("kmax = " + globals.kmax);
+			console.log("kmin = " + globals.kmin);
 			console.log(deflections);
 			redrawPlot();
 			$plot.show();

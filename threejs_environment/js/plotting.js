@@ -14,7 +14,7 @@ function radialPlot(data) {
   if (height < 400) {
     height = 400;
   }
-  var radius = _.min([width,height])/2.5;
+  var radius = _.min([width,height])/3.25;
 
   var r = d3.scaleLinear()
       .domain([0, d3.max(data, function(d) { return d[1] })*1.5])
@@ -64,6 +64,21 @@ function radialPlot(data) {
       .style("text-anchor", function(d) { return d < 270 && d > 90 ? "end" : null; })
       .attr("transform", function(d) { return d < 270 && d > 90 ? "rotate(180 " + (radius + 6) + ",0)" : null; })
       .text(function(d) { return d + "°"; });
+
+  svg.append("text")
+      .attr("x", -width/2)
+      .attr("y", height/2.7)
+      .text("Kmax = " + globals.kmax.toFixed(2) + " N/mm");
+
+  svg.append("text")
+      .attr("x", -width/2)
+      .attr("y", height/2.7+20)
+      .text("Kmin = " + globals.kmin.toFixed(2) + " N/mm");
+
+  svg.append("text")
+      .attr("x", -width/2)
+      .attr("y", height/2.7+40)
+      .text("Kmax/Kmin = " + (globals.kmax/globals.kmin).toFixed(2));
 
   svg.append("path")
       .datum(data)

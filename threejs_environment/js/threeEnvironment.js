@@ -128,6 +128,7 @@ function sceneClearBeam(){
 }
 
 function render(){
+	// if (globals.isAnimating) return;
     renderer.render(scene, camera);
 }
 

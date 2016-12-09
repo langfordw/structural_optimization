@@ -53,7 +53,9 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 	loop( function() {
 		stepSolve([unit_v[0]*fstep,unit_v[1]*fstep]);
 		iter_count++;
-		render();
+		// render();
+		renderer.render(scene, camera);
+		// renderer.render(scene, camera);
 		// console.log(solver)
 		// console.log(globals.geom.nodes[3].u_cumulative)
 		if (iter_count >= num_steps) globals.isAnimating = false;
