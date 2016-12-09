@@ -120,6 +120,7 @@ function sceneAddBeam(object){
 }
 
 function sceneClear(){
+	tracer.reset();
     wrapper.children = [];
 }
 
@@ -128,7 +129,7 @@ function sceneClearBeam(){
 }
 
 function render(){
-	// if (globals.isAnimating) return;
+	if (globals.isAnimating) return;
     renderer.render(scene, camera);
 }
 

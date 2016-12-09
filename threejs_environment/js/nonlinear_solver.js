@@ -1,3 +1,5 @@
+var u_total = 0;
+
 function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) {
 	// first, do a linear solve with the full force and check max displacement
 	var magnitude = Math.sqrt(Math.pow(full_force[0],2) + Math.pow(full_force[1],2));
@@ -6,8 +8,6 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 
 	var force_sum = 0;
 	var iter_count = 0;
-
-	var u_total = 0;
 
 	console.log("determining step size...")
 	var solve_timer = new Date().getTime();
@@ -50,10 +50,13 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 	// 	}
 	// });
 	globals.isAnimating = true;
+	u_total = 0;
 	loop( function() {
 		stepSolve([unit_v[0]*fstep,unit_v[1]*fstep]);
 		iter_count++;
+		globals.control_parameters.n_iter = "" + iter_count + " / " + num_steps;
 		// render();
+		gui.updateDisplay();
 		renderer.render(scene, camera);
 		// renderer.render(scene, camera);
 		// console.log(solver)
@@ -65,8 +68,6 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 		
 	// }
 	console.log(globals.geom)
-	console.log(globals.control_parameters.fv_x)
-	console.log(globals.control_parameters.fv_y)
 }
 
 
@@ -102,11 +103,14 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 
 function stepSolve(fstep) {
 	tracer.update();
-	console.log(tracer)
+
 	if (fstep != undefined) updateExternalForce(fstep[0],fstep[1]);
 	solver.setupIteration();
 	// solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
 	u_max = solver.solve(true);
+	u_total += u_max;
+	globals.control_parameters.displacement_norm = u_total.toFixed(3); // this is not quite right... (this assumes the same node displaces the most throughout the whole simulation)
+
 	// console.log(u_max)
 	deformGeometryBending(globals.geom,1.0);
 	tracer.drawTraces();

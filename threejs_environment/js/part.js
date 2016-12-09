@@ -74,11 +74,9 @@ Part.prototype.removeNodeRef = function(node) {
 	if (node.internal) {
 		index = this.internal_nodes.indexOf(node);
 		this.internal_nodes.splice(index,1);
-		console.log("internal")
 	} else {
 		index = this.edge_nodes.indexOf(node);
 		this.edge_nodes.splice(index,1);
-		console.log("external")
 	}
 
 	if (this.beams.length == 0 && this.edge_nodes.length == 0) {
@@ -87,13 +85,13 @@ Part.prototype.removeNodeRef = function(node) {
 }
 
 Part.prototype.detachNode = function(node) {
-	console.log("detaching from node " + node.index);
+	// console.log("detaching from node " + node.index);
 	var index = node.parts.indexOf(this);
 	node.parts.splice(index,1);
 }
 
 Part.prototype.detachBeam = function(beam) {
-	console.log("detaching from beam " + beam.index);
+	// console.log("detaching from beam " + beam.index);
 	beam.part = null;
 }
 
@@ -165,7 +163,7 @@ Part.prototype.pushNodes = function(nodes) {
 // }
 
 Part.prototype.ripupBeams = function() {
-	console.log('ripup beams')
+	// console.log('ripup beams')
 	_.each(this.beams, function(beam) {
 		beam.destroy();
 	});
@@ -280,19 +278,19 @@ Part.prototype.changeType = function(toType) {
 	if (this.type != toType) {
 		this.ripupBeams();
 		if (toType == 'rigid') {
-			console.log("change to rigid")
+			// console.log("change to rigid")
 			this.makeRigid(this.edge_nodes);
 			this.type = toType;
 		} else if (toType == '1DoF') {
-			console.log("change to 1DoF")
+			// console.log("change to 1DoF")
 			this.make1DOF(this.edge_nodes);
 			this.type = toType;
 		} else if (toType == '2DoF') {
-			console.log("change to 2DoF")
+			// console.log("change to 2DoF")
 			this.make2DOF(this.edge_nodes);
 			this.type = toType;
 		} else if (toType == 'none') {
-			console.log("change to none")
+			// console.log("change to none")
 			this.type = toType;
 		}
 	} else {

@@ -259,7 +259,7 @@ force_mode_control.onChange(function(value) {
 
 disp.add(globals.control_parameters,'n_iter').name("Iterations");
 disp.add(globals.control_parameters,'displacement_norm').name("umax norm");
-disp.add(globals.control_parameters,'displacement_xyz').name("umax xyz");
+// disp.add(globals.control_parameters,'displacement_xyz').name("umax xyz");
 
 var filter = gui.addFolder('Selection Filter');
 filter.add(globals.control_parameters,'stressSelectionThreshold',0,10000).name("stress threshold").onChange(function(value) {
@@ -280,7 +280,7 @@ filter.add(globals.control_parameters,'subdivideSelection')
 var load_save = gui.addFolder('Save/Load Geometry');
 load_save.add(globals.control_parameters,'download').name("Download");
 load_save.add(globals.control_parameters,'load').name("Load JSON");
-load_save.add(globals.control_parameters,'loadExample',['arm','auxetic','basic']).name("Load Example").onChange(function(value) {
+load_save.add(globals.control_parameters,'loadExample',['arm','auxetic','parallelogram','basic']).name("Load Example").onChange(function(value) {
 	console.log(value)
 	loadExample(value)
 });
@@ -456,7 +456,6 @@ function buildFromJSON(objects) {
 	console.log("building objects...")
 	sceneClear();
 	sceneClearBeam();
-	tracer.reset();
 	globals.geom.nodes = [];
 	globals.geom.beams = [];
 	globals.geom.constraints = [];
