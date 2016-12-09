@@ -102,12 +102,14 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 
 function stepSolve(fstep) {
 	tracer.update();
+	console.log(tracer)
 	if (fstep != undefined) updateExternalForce(fstep[0],fstep[1]);
 	solver.setupIteration();
 	// solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
 	u_max = solver.solve(true);
 	// console.log(u_max)
 	deformGeometryBending(globals.geom,1.0);
+	tracer.drawTraces();
 	// deformGeometryFast(globals.geom);
 }
 

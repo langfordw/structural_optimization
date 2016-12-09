@@ -62,3 +62,12 @@ Tracer.prototype.clearTraces = function() {
 	this.visible = false;
 	this.drawn = false;
 }
+
+Tracer.prototype.reset = function() {
+	this.nodes = [];
+	this.traces = [];
+	this.visible = false;
+	this.drawn = false;
+	this.traceWrapper = new THREE.Object3D();
+	sceneAdd(this.traceWrapper);
+}

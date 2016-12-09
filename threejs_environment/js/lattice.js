@@ -456,6 +456,7 @@ function buildFromJSON(objects) {
 	console.log("building objects...")
 	sceneClear();
 	sceneClearBeam();
+	tracer.reset();
 	globals.geom.nodes = [];
 	globals.geom.beams = [];
 	globals.geom.constraints = [];
