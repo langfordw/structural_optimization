@@ -102,7 +102,7 @@ FrameSolver.prototype.calculate_U = function() {
 	return this.u
 }
 
-FrameSolver.prototype.solve = function(calc_local=false,updateNodes=true) {
+FrameSolver.prototype.solve = function(calc_local=true,updateNodes=true) {
 	this.calculate_U();
 	// this.u = math.zeros(this.num_dofs,1);
 
@@ -127,7 +127,10 @@ FrameSolver.prototype.solve = function(calc_local=false,updateNodes=true) {
 			}
 
 			var u_norm = Math.sqrt(Math.pow(node.u[0],2) + Math.pow(node.u[1],2));
-			if (u_norm > max_u_norm) { max_u_norm = u_norm; }
+			if (u_norm > max_u_norm) { 
+				max_u_norm = u_norm; 
+				// console.log("node index = " + i)
+			}
 		}
 	}
 
@@ -182,6 +185,10 @@ FrameSolver.prototype.reset = function(nodes,beams,constraints) {
 		this.X = math.zeros(this.num_dofs);
 
 		this.init_Ksys();
+	} else {
+		for (var i = 0; i < this.beams.length; i++) {
+			this.beams[i].reset(false);
+		}
 	}
 
 	this.assemble_X();
@@ -191,7 +198,8 @@ FrameSolver.prototype.reset = function(nodes,beams,constraints) {
 }
 
 FrameSolver.prototype.setupIteration = function() {
-	this.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+	// this.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+	this.reset();
 	// // do these every evaluation:
 	// this.nodes = globals.geom.nodes;
 	// this.beams = globals.geom.beams;

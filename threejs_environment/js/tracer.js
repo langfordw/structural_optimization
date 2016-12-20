@@ -71,3 +71,13 @@ Tracer.prototype.reset = function() {
 	this.traceWrapper = new THREE.Object3D();
 	sceneAdd(this.traceWrapper);
 }
+
+Tracer.prototype.printTraces = function() {
+	var csv = this.traces[0].map(function(d){
+	   return JSON.stringify([d.x,d.z]);
+	})
+	.join('\n') 
+	.replace(/(^\[)|(\]$)/mg, '');
+	console.log(csv)
+	if (globals.control_parameters.downloadData) download(csv, 'tracer_data.csv', 'text/plain');
+}

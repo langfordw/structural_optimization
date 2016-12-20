@@ -1,7 +1,7 @@
 var u_total = 0;
 
-function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) {
-	// first, do a linear solve with the full force and check max displacement
+function solve_newton_raphson(full_force,eps=1.0,maxiter=10000,debug=false) {
+// first, do a linear solve with the full force and check max displacement
 	var magnitude = Math.sqrt(Math.pow(full_force[0],2) + Math.pow(full_force[1],2));
 	var full_magnitude = magnitude;
 	var unit_v = [full_force[0]/magnitude,full_force[1]/magnitude];
@@ -13,7 +13,8 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 	var solve_timer = new Date().getTime();
 	updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
 	solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
-	var u_max = solver.solve(false,false);
+	var u_max = solver.solve(true,false);
+	console.log(u_max)
 	var solve_time = ((new Date().getTime()) - solve_timer);
 	
 
@@ -68,6 +69,91 @@ function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) 
 		
 	// }
 	console.log(globals.geom)
+}
+
+function solve_linear_incremental(full_force,eps=1.0,maxiter=10000,debug=false) {
+	// first, do a linear solve with the full force and check max displacement
+	var magnitude = Math.sqrt(Math.pow(full_force[0],2) + Math.pow(full_force[1],2));
+	var full_magnitude = magnitude;
+	var unit_v = [full_force[0]/magnitude,full_force[1]/magnitude];
+
+	var force_sum = 0;
+	var iter_count = 0;
+
+	console.log("determining step size...")
+	var solve_timer = new Date().getTime();
+	updateExternalForce(unit_v[0]*magnitude,unit_v[1]*magnitude);
+	solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+	var u_max = solver.solve(true,false);
+	var solve_time = ((new Date().getTime()) - solve_timer);
+	
+
+	var num_steps = Math.ceil(u_max/eps);
+	// var num_steps = 100;
+	var expected_time = solve_time*num_steps;
+	var fstep = full_magnitude/num_steps;
+	console.log("force step: " + fstep + "N")
+	console.log("# of steps required: " + num_steps)
+	console.log("expected time per step = " + solve_time + "ms");
+	console.log("expected total time = " + expected_time + "ms");
+	if (expected_time > 30000) {
+		console.warn("solve will take a long time")
+		var continue_value = confirm('Solve will take longer than 30s. Continue?')
+		if (continue_value) {
+			// do nothing
+		} else {
+			return;
+		}
+	}
+
+	var trace = [];
+
+	updateExternalForce(unit_v[0]*fstep,unit_v[1]*fstep);
+	solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+	
+	// // globals.isAnimating = true;
+	// startAnimation(function() {
+	// 	while(1) {
+	// 		stepSolve(unit_v[0]*fstep,unit_v[1]*fstep);
+	// 		console.log(iter_count);
+	// 		console.log(globals.geom.nodes[5].u)
+	// 		console.log(globals.geom)
+	// 		iter_count++;
+	// 		if (iter_count > num_steps) {
+	// 			stopAnimation();
+	// 			break;
+	// 		}
+	// 	}
+	// });
+	globals.isAnimating = true;
+	u_total = 0;
+	solve_timer = new Date().getTime();
+	loop( function() {
+		stepSolve([unit_v[0]*fstep,unit_v[1]*fstep]);
+		iter_count++;
+		globals.control_parameters.n_iter = "" + iter_count + " / " + num_steps;
+		// render();
+		gui.updateDisplay();
+		renderer.render(scene, camera);
+		// renderer.render(scene, camera);
+		// console.log(solver)
+		// console.log(globals.geom.nodes[3].u_cumulative)
+		if (iter_count >= num_steps) {
+			globals.isAnimating = false;
+			console.log(globals.geom);
+			if (tracer.traces.length > 0) tracer.printTraces();
+			solve_time = ((new Date().getTime()) - solve_timer);
+			console.log("dT = " + solve_time)
+		} 
+		if (iter_count >= maxiter) globals.isAnimating = false;
+	})
+	// while (1) {
+		
+	// }
+	// if (!globals.isAnimating) {
+	// 	console.log(globals.geom);
+	// 	tracer.printTraces();
+	// }
 }
 
 

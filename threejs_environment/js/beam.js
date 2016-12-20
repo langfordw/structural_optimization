@@ -1,5 +1,6 @@
 // function Beam(nodes, index, a1a2=[10000000,10000000],type='rigid') {
-function Beam(nodes, index, a1a2=[10000000,100000000],type='rigid') {
+// function Beam(nodes, index, a1a2=[10000000,100000000],type='rigid') {
+function Beam(nodes, index, a1a2=[970000,1.293e6],type='rigid') {
 	this.index = index;
 	this.part = null;
 	this.nodes = [nodes[0], nodes[1]];
@@ -109,26 +110,58 @@ Beam.prototype.updateBeam = function() {
 }
 
 Beam.prototype.assemble_k_prime = function() {
-	this.k_prime.subset(math.index(0,0),this.a1);
-	this.k_prime.subset(math.index(1,1),12*this.a2);
-	this.k_prime.subset(math.index(2,1),6*this.len*this.a2);
-	this.k_prime.subset(math.index(1,2),6*this.len*this.a2);
-	this.k_prime.subset(math.index(2,2),4*Math.pow(this.len,2)*this.a2);
-	this.k_prime.subset(math.index(3,3),this.a1);
-	this.k_prime.subset(math.index(4,4),12*this.a2);
-	this.k_prime.subset(math.index(5,4),-6*this.len*this.a2);
-	this.k_prime.subset(math.index(4,5),-6*this.len*this.a2);
-	this.k_prime.subset(math.index(5,5),4*Math.pow(this.len,2)*this.a2);
-	this.k_prime.subset(math.index(0,3),-this.a1);
-	this.k_prime.subset(math.index(1,4),-12*this.a2);
-	this.k_prime.subset(math.index(2,4),-6*this.len*this.a2);
-	this.k_prime.subset(math.index(1,5),6*this.len*this.a2);
-	this.k_prime.subset(math.index(2,5),2*Math.pow(this.len,2)*this.a2);
-	this.k_prime.subset(math.index(3,0),-this.a1);
-	this.k_prime.subset(math.index(4,1),-12*this.a2);
-	this.k_prime.subset(math.index(5,1),6*this.len*this.a2);
-	this.k_prime.subset(math.index(4,2),-6*this.len*this.a2);
-	this.k_prime.subset(math.index(5,2),2*Math.pow(this.len,2)*this.a2);
+	var i = 0;
+	var j = 0;
+	setEl(this.k_prime,[i+0,j+0],this.a1);
+	setEl(this.k_prime,[i+1,j+1],12*this.a2);
+	setEl(this.k_prime,[i+2,j+1],6*this.len*this.a2);
+	setEl(this.k_prime,[i+1,j+2],6*this.len*this.a2);
+	setEl(this.k_prime,[i+2,j+2],4*Math.pow(this.len,2)*this.a2);
+
+	i = 3;
+	j = 3;
+	setEl(this.k_prime,[i+0,j+0],this.a1);
+	setEl(this.k_prime,[i+1,j+1],12*this.a2);
+	setEl(this.k_prime,[i+2,j+1],-6*this.len*this.a2);
+	setEl(this.k_prime,[i+1,j+2],-6*this.len*this.a2);
+	setEl(this.k_prime,[i+2,j+2],4*Math.pow(this.len,2)*this.a2);
+
+	i = 0;
+	j = 3;
+	setEl(this.k_prime,[i+0,j+0],-this.a1);
+	setEl(this.k_prime,[i+1,j+1],-12*this.a2);
+	setEl(this.k_prime,[i+2,j+1],-6*this.len*this.a2);
+	setEl(this.k_prime,[i+1,j+2],6*this.len*this.a2);
+	setEl(this.k_prime,[i+2,j+2],2*Math.pow(this.len,2)*this.a2);
+
+	i = 3;
+	j = 0;
+	setEl(this.k_prime,[i+0,j+0],-this.a1);
+	setEl(this.k_prime,[i+1,j+1],-12*this.a2);
+	setEl(this.k_prime,[i+2,j+1],6*this.len*this.a2);
+	setEl(this.k_prime,[i+1,j+2],-6*this.len*this.a2);
+	setEl(this.k_prime,[i+2,j+2],2*Math.pow(this.len,2)*this.a2);
+
+	// this.k_prime.subset(math.index(0,0),this.a1);
+	// this.k_prime.subset(math.index(1,1),12*this.a2);
+	// this.k_prime.subset(math.index(2,1),6*this.len*this.a2);
+	// this.k_prime.subset(math.index(1,2),6*this.len*this.a2);
+	// this.k_prime.subset(math.index(2,2),4*Math.pow(this.len,2)*this.a2);
+	// this.k_prime.subset(math.index(3,3),this.a1);
+	// this.k_prime.subset(math.index(4,4),12*this.a2);
+	// this.k_prime.subset(math.index(5,4),-6*this.len*this.a2);
+	// this.k_prime.subset(math.index(4,5),-6*this.len*this.a2);
+	// this.k_prime.subset(math.index(5,5),4*Math.pow(this.len,2)*this.a2);
+	// this.k_prime.subset(math.index(0,3),-this.a1);
+	// this.k_prime.subset(math.index(1,4),-12*this.a2);
+	// this.k_prime.subset(math.index(2,4),-6*this.len*this.a2);
+	// this.k_prime.subset(math.index(1,5),6*this.len*this.a2);
+	// this.k_prime.subset(math.index(2,5),2*Math.pow(this.len,2)*this.a2);
+	// this.k_prime.subset(math.index(3,0),-this.a1);
+	// this.k_prime.subset(math.index(4,1),-12*this.a2);
+	// this.k_prime.subset(math.index(5,1),6*this.len*this.a2);
+	// this.k_prime.subset(math.index(4,2),-6*this.len*this.a2);
+	// this.k_prime.subset(math.index(5,2),2*Math.pow(this.len,2)*this.a2);
 	return this.k_prime;
 }
 
@@ -159,7 +192,8 @@ Beam.prototype.assemble_full_T = function() {
 	return this.full_T;
 }
 
-Beam.prototype.reset = function() {
+Beam.prototype.reset = function(fullReset=true) {
+	if (fullReset) {
 	this.k_prime = math.zeros(6,6,'sparse');
 	this.assemble_k_prime();
 
@@ -191,6 +225,23 @@ Beam.prototype.reset = function() {
 	this.u_local = math.zeros(6,1);
 
 	this.f_local = math.zeros(6,1);
+	} else {
+		this.kp = math.zeros(6,6,'sparse');
+		this.assemble_kp();
+
+		this.full_T = math.zeros(6,6,'sparse');
+		this.assemble_full_T();
+
+		this.T = math.matrix([0],'sparse');
+		this.assemble_T();
+
+		this.k.n00 = math.zeros(3,3,'sparse');
+		this.k.n11 = math.zeros(3,3,'sparse');
+		this.k.n01 = math.zeros(3,3,'sparse');
+		this.k.n10 = math.zeros(3,3,'sparse');
+		this.k.full = math.zeros(3,3,'sparse');
+		this.calculate_4ks();
+	}
 }
 
 Beam.prototype.assemble_T = function() {

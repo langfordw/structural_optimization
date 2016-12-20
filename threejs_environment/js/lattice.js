@@ -22,6 +22,7 @@ var globals = {
 		showGrid: true,
 		showPartGrid: false,
 		background: 'light',
+		downloadData: false,
 		solve: function() {
 			if (globals.geom != null) {
 				// solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
@@ -175,6 +176,7 @@ env.add(globals.control_parameters, 'ntall', 2, 20).step(1).onFinishChange(funct
 	sceneAdd(beamWrapper);
 	initLattice();
 });
+env.add(globals.control_parameters, 'downloadData')
 var fv = gui.addFolder('Force Vector');
 fv.add(globals.control_parameters, 'fv_x',-5000,5000).onChange((function() {
 	updateExternalForce(globals.control_parameters.fv_x,globals.control_parameters.fv_y,false);
@@ -280,7 +282,7 @@ filter.add(globals.control_parameters,'subdivideSelection')
 var load_save = gui.addFolder('Save/Load Geometry');
 load_save.add(globals.control_parameters,'download').name("Download");
 load_save.add(globals.control_parameters,'load').name("Load JSON");
-load_save.add(globals.control_parameters,'loadExample',['arm','auxetic','parallelogram','basic']).name("Load Example").onChange(function(value) {
+load_save.add(globals.control_parameters,'loadExample',['arm','auxetic','parallelogram','revolute','basic']).name("Load Example").onChange(function(value) {
 	console.log(value)
 	loadExample(value)
 });
@@ -339,6 +341,13 @@ function solve(geom=globals.geom,debug=true) {
 	if (debug) {
 		console.log("solver results:")
 		console.log(solver)
+		var nonzero_indices = [];
+		math.forEach(solver.Ksys, function(k,i) {
+			if (k != 0) {
+				nonzero_indices.push(i);
+			}
+		});
+		console.log(toCSV(nonzero_indices));
 	}
 
 	var dt = new Date().getTime() - start;
@@ -373,15 +382,24 @@ function measureRadialStiffness() {
 	var finished = false;
 	var max = -1000;
 	var min = 1000;
+	var original_force_x = globals.control_parameters.fv_x;
+	var original_force_y = globals.control_parameters.fv_y;
+	solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+
+	var forcedNode = _.find(globals.geom.nodes,function(node) { return (node.externalForce != null) });
+	console.log("forced node = " + forcedNode.index);
+
 	loop( function() {
 		var angle = i*Math.PI/180;
 		var unit_vector = [100*Math.cos(angle),100*Math.sin(angle)];
 		updateExternalForce(unit_vector[0],unit_vector[1]);
-		resetLattice();
-		solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
+		solver.assemble_X();
+		// resetLattice();
+		// solver.reset(globals.geom.nodes,globals.geom.beams,globals.geom.constraints);
 		// setup_solve('frame',globals.geom);
 		// deflections.push([angle,1/Math.pow(solve('frame',globals.geom),0.25)]);
-		var def = solver.solve(true);
+		var def = solver.solve(true,false);
+		def = Math.sqrt(Math.pow(forcedNode.u[0],2)+Math.pow(forcedNode.u[1],2));
 		deflections.push([angle,1/Math.pow(def,0.25)]);
 		// deflections.push([angle,1/solve(globals.geom)]);
 
@@ -392,7 +410,7 @@ function measureRadialStiffness() {
 			globals.isAnimating = false;
 			finished = true;
 		}
-		i+=5;
+		i+=2;
 		// render();
 		renderer.render(scene, camera);
 		if (finished) {
@@ -405,10 +423,26 @@ function measureRadialStiffness() {
 			console.log("kmin = " + globals.kmin);
 			console.log(deflections);
 			redrawPlot();
+			var csv = deflections.map(function(d){
+			   return JSON.stringify(d);
+			})
+			.join('\n') 
+			.replace(/(^\[)|(\]$)/mg, '');
+			console.log(csv)
 			$plot.show();
+			updateExternalForce(original_force_x,original_force_y);
 		}
 	});
 
+}
+
+function toCSV(data) {
+	var csv = data.map(function(d){
+	   return JSON.stringify(d);
+	})
+	.join('\n') 
+	.replace(/(^\[)|(\]$)/mg, '');
+	return csv;
 }
 
 function selectStressed(thresh) {
